@@ -111,6 +111,21 @@
                             <span id="streak-badge" class="streak-badge">0일째 출석</span>
                         </div>
 
+                        <figure class="operative-visual">
+                            <img
+                                src="assets/play-data-dashboard.webp"
+                                alt="키보드를 누르며 빛나는 XP 스타를 확인하는 로봇 캐릭터"
+                                width="1200"
+                                height="625"
+                                loading="eager"
+                                decoding="async"
+                            >
+                            <figcaption>
+                                <span>ACTIVE PLAYER</span>
+                                <strong>LV.<span id="operative-art-level">1</span></strong>
+                            </figcaption>
+                        </figure>
+
                         <div class="level-orbit">
                             <div id="level-ring" class="level-ring">
                                 <span>LEVEL</span>
@@ -171,14 +186,29 @@
                 </div>
 
                 <div class="world-brief">
-                    <div>
-                        <span id="mission-world-symbol" class="world-symbol" aria-hidden="true">PLAY</span>
-                        <div>
-                            <p id="mission-world-kicker">기본 문법 구역</p>
-                            <h2 id="mission-world-title">문법 몬스터의 신호를 추적하세요.</h2>
-                        </div>
+                    <figure class="world-brief-art">
+                        <img
+                            id="mission-world-art"
+                            src="assets/world-01-hub.webp"
+                            alt="키보드 길을 따라 다섯 문법 스테이지를 탐험하는 로봇 캐릭터"
+                            width="1440"
+                            height="810"
+                            loading="eager"
+                            decoding="async"
+                        >
+                        <figcaption>
+                            <span id="mission-world-symbol" class="world-symbol" aria-hidden="true">01</span>
+                            <span class="world-explore-progress">
+                                <strong id="world-brief-progress-value">0%</strong>
+                                탐험 완료
+                            </span>
+                        </figcaption>
+                    </figure>
+                    <div class="world-brief-copy">
+                        <p id="mission-world-kicker">기본 문법 구역</p>
+                        <h2 id="mission-world-title">문법 몬스터의 신호를 추적하세요.</h2>
+                        <p id="mission-world-description">출력, 변수, 연산을 익히며 첫 번째 월드를 돌파합니다.</p>
                     </div>
-                    <p id="mission-world-description">출력, 변수, 연산을 익히며 첫 번째 월드를 돌파합니다.</p>
                 </div>
 
                 <div class="mission-mode-tabs" role="tablist" aria-label="미션 모드">
@@ -417,13 +447,29 @@
 
                 <div class="career-grid">
                     <article class="career-primary">
-                        <p class="eyebrow">CURRENT LEVEL</p>
-                        <div class="career-level">
-                            <strong id="stats-level">1</strong>
-                            <span id="stats-level-title">새내기 탐험가</span>
+                        <figure class="career-visual">
+                            <img
+                                src="assets/play-log-champion.webp"
+                                alt="별 트로피를 들고 플레이 기록을 확인하는 로봇 캐릭터"
+                                width="1024"
+                                height="1024"
+                                loading="eager"
+                                decoding="async"
+                            >
+                            <figcaption>
+                                <span>PLAYER CARD</span>
+                                <strong>LV.<span id="stats-avatar-level">1</span></strong>
+                            </figcaption>
+                        </figure>
+                        <div class="career-primary-copy">
+                            <p class="eyebrow">CURRENT LEVEL</p>
+                            <div class="career-level">
+                                <strong id="stats-level">1</strong>
+                                <span id="stats-level-title">새내기 탐험가</span>
+                            </div>
+                            <div class="xp-track"><span id="stats-xp-fill"></span></div>
+                            <p><span id="stats-xp">0</span> XP 획득</p>
                         </div>
-                        <div class="xp-track"><span id="stats-xp-fill"></span></div>
-                        <p><span id="stats-xp">0</span> XP 획득</p>
                     </article>
                     <dl class="career-metrics">
                         <div><dt>완료한 작전</dt><dd id="stats-runs">0</dd></div>
@@ -434,6 +480,17 @@
                         <div><dt>완벽한 작전</dt><dd id="stats-perfect">0</dd></div>
                     </dl>
                 </div>
+
+                <section class="recent-section" aria-labelledby="recent-runs-title">
+                    <div class="section-heading compact">
+                        <div>
+                            <p class="eyebrow">RECENT ADVENTURES</p>
+                            <h2 id="recent-runs-title">최근 플레이</h2>
+                        </div>
+                        <p id="recent-run-count">최근 0판</p>
+                    </div>
+                    <div id="recent-run-list" class="recent-run-list" aria-live="polite"></div>
+                </section>
 
                 <section class="achievement-section" aria-labelledby="achievements-title">
                     <div class="section-heading compact">

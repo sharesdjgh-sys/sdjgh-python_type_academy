@@ -432,12 +432,33 @@ input:focus-visible {
     line-height: 1;
 }
 
+.operative-visual {
+    border-color: rgba(142, 105, 174, 0.2);
+    background: #eee5f8;
+    box-shadow: 0 12px 28px rgba(91, 61, 119, 0.1);
+}
+
+.operative-visual::after {
+    background: linear-gradient(180deg, transparent, rgba(70, 43, 97, 0.38));
+}
+
+.operative-visual figcaption {
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(91, 58, 122, 0.74);
+    box-shadow: 0 7px 18px rgba(70, 43, 97, 0.16);
+}
+
+.operative-visual figcaption strong {
+    color: #ffe68b;
+}
+
 .operative-card {
     position: relative;
     overflow: hidden;
 }
 
 .operative-header,
+.operative-visual,
 .level-orbit,
 .quick-stats,
 .next-unlock {
@@ -501,10 +522,11 @@ input:focus-visible {
 
 .world-card {
     grid-column: auto;
-    min-height: 375px;
+    min-height: 470px;
     height: 100%;
+    padding: 0;
     border-width: 1px;
-    background: #fff2e9;
+    background: #fffdfb;
     box-shadow: 0 16px 36px rgba(157, 91, 67, 0.09);
     transform: none;
 }
@@ -516,7 +538,7 @@ input:focus-visible {
 .world-card:nth-child(2) {
     grid-column: auto;
     border-color: rgba(129, 112, 190, 0.17);
-    background: #f2efff;
+    background: #fcfaff;
     box-shadow: 0 16px 36px rgba(97, 82, 157, 0.09);
     transform: none;
 }
@@ -524,50 +546,106 @@ input:focus-visible {
 .world-card:nth-child(3) {
     grid-column: auto;
     border-color: rgba(92, 157, 199, 0.17);
-    background: #ecf8ff;
+    background: #f8fcff;
     box-shadow: 0 16px 36px rgba(67, 128, 166, 0.09);
 }
 
 .world-card:hover {
     border-color: rgba(217, 88, 93, 0.26);
-    background: #fff8f4;
+    background: #ffffff;
     box-shadow: var(--shadow);
 }
 
 .world-card:nth-child(2):hover {
     border-color: rgba(129, 112, 190, 0.3);
-    background: #f8f6ff;
+    background: #ffffff;
     transform: translateY(-5px);
 }
 
 .world-card:nth-child(3):hover {
     border-color: rgba(92, 157, 199, 0.3);
-    background: #f4fbff;
+    background: #ffffff;
 }
 
 .world-card::before {
-    right: -46px;
-    bottom: -58px;
-    width: 210px;
-    height: 210px;
-    border: 0;
-    background: rgba(255, 255, 255, 0.42);
-    box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.18);
+    display: none;
+}
+
+.world-card-art {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #f5eee9;
+}
+
+.world-card-art::after {
+    position: absolute;
+    inset: 45% 0 0;
+    background: linear-gradient(to bottom, transparent, rgba(39, 28, 34, 0.22));
+    content: "";
+    pointer-events: none;
+}
+
+.world-card-art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 48%;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+
+.world-card:hover .world-card-art img {
+    filter: saturate(1.05) contrast(1.02);
+    transform: scale(1.055);
+}
+
+.world-card-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-height: 225px;
+    flex: 1;
+    flex-direction: column;
+    padding: 18px 20px 20px;
 }
 
 .world-card-index {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    left: 14px;
+    z-index: 2;
     color: var(--muted);
     font-family: var(--font-sans);
 }
 
+.world-card-index > span {
+    padding: 6px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.58);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #5e4c54;
+    box-shadow: 0 6px 16px rgba(55, 35, 43, 0.1);
+    backdrop-filter: blur(10px);
+}
+
 .world-card-symbol {
-    width: 92px;
-    height: 92px;
-    border: 0;
-    border-radius: 26px 26px 26px 8px;
-    background: #ffffff;
+    position: absolute;
+    bottom: 14px;
+    left: 16px;
+    z-index: 2;
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 15px 15px 15px 5px;
+    background: rgba(255, 255, 255, 0.9);
     color: var(--accent-strong);
-    box-shadow: 0 12px 26px rgba(154, 90, 82, 0.11);
+    font-size: 0.84rem;
+    box-shadow: 0 10px 24px rgba(45, 30, 36, 0.16);
+    backdrop-filter: blur(10px);
     transform: rotate(-4deg);
 }
 
@@ -581,7 +659,27 @@ input:focus-visible {
     transform: rotate(-2deg);
 }
 
+.world-card-kicker {
+    color: var(--accent-strong);
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.world-card:nth-child(2) .world-card-kicker {
+    color: #8266ae;
+}
+
+.world-card:nth-child(3) .world-card-kicker {
+    color: #4d98c7;
+}
+
+.world-card h3 {
+    margin-top: 6px;
+}
+
 .world-card p {
+    margin-bottom: 18px;
     color: var(--text-soft);
 }
 
@@ -617,9 +715,25 @@ input:focus-visible {
 
 .world-brief {
     border-color: rgba(233, 109, 112, 0.2);
-    background:
-        linear-gradient(105deg, rgba(255, 224, 216, 0.65), transparent 56%),
-        #fffdfb;
+    background: #fffdfb;
+    box-shadow: 0 18px 42px rgba(126, 82, 96, 0.09);
+}
+
+.world-brief-art::after {
+    background: linear-gradient(180deg, transparent, rgba(85, 52, 81, 0.28));
+}
+
+.world-brief-copy {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 252, 249, 0.88);
+    box-shadow: 0 15px 32px rgba(91, 60, 79, 0.13);
+    color: var(--text);
+}
+
+.world-explore-progress {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(91, 58, 122, 0.75);
+    color: rgba(255, 255, 255, 0.84);
 }
 
 .world-symbol {
@@ -631,13 +745,13 @@ input:focus-visible {
     transform: rotate(-3deg);
 }
 
-.world-brief > div p {
+.world-brief-copy > p:first-child {
     color: var(--accent-strong);
     font-family: var(--font-sans);
     font-weight: 800;
 }
 
-.world-brief > p {
+.world-brief-copy > p:last-child {
     color: var(--text-soft);
 }
 
@@ -687,6 +801,138 @@ input:focus-visible {
     border-color: rgba(217, 88, 93, 0.22);
     background: #ffffff;
     box-shadow: 0 15px 30px rgba(126, 82, 96, 0.09);
+}
+
+#mission-screen[data-visual-map="true"] .stage-card,
+#mission-screen[data-visual-map="true"] .stage-card:nth-child(even) {
+    border-color: rgba(126, 87, 101, 0.12);
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(126, 82, 96, 0.07);
+}
+
+#mission-screen[data-visual-map="true"] .stage-card:nth-child(2),
+#mission-screen[data-visual-map="true"] .stage-card:nth-child(5) {
+    background: #fbf8ff;
+}
+
+#mission-screen[data-visual-map="true"] .stage-card:nth-child(3),
+#mission-screen[data-visual-map="true"] .stage-card:nth-child(4) {
+    background: #f8fcff;
+}
+
+#mission-screen[data-visual-map="true"] .stage-card:hover {
+    border-color: rgba(217, 88, 93, 0.25);
+    box-shadow: 0 18px 34px rgba(126, 82, 96, 0.11);
+}
+
+#mission-screen[data-visual-map="true"] .stage-zone-art {
+    background: #f0e9e5;
+}
+
+#mission-screen[data-visual-map="true"] .stage-zone-art::after {
+    background: linear-gradient(180deg, transparent, rgba(82, 48, 78, 0.42));
+}
+
+#mission-screen[data-visual-map="true"] .stage-zone-art span {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(91, 58, 122, 0.74);
+}
+
+#mission-screen[data-visual-map="true"] .stage-node {
+    border-color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.88);
+    color: var(--accent-strong);
+    box-shadow: 0 7px 18px rgba(83, 51, 73, 0.16);
+}
+
+#mission-screen[data-visual-map="true"] .stage-card.completed .stage-node,
+#mission-screen[data-visual-map="true"] .stage-card.in-progress .stage-node {
+    border-color: rgba(255, 255, 255, 0.78);
+    background: var(--accent);
+    color: #ffffff;
+}
+
+#mission-screen[data-visual-map="true"] .stage-reward {
+    border-top-color: rgba(108, 74, 86, 0.1);
+    background: rgba(255, 248, 245, 0.7);
+}
+
+#mission-screen[data-world="intermediate"] .world-symbol {
+    background: #8f6fdb;
+    box-shadow: 0 10px 20px rgba(111, 82, 183, 0.22);
+}
+
+#mission-screen[data-world="intermediate"] .world-brief-copy > p:first-child,
+#mission-screen[data-world="intermediate"] .stage-node {
+    color: #7656b0;
+}
+
+#mission-screen[data-world="intermediate"] .mission-mode-tabs button[aria-selected="true"] {
+    border-color: rgba(128, 92, 199, 0.38);
+    background: #eee6ff;
+    color: #6d4ca3;
+    box-shadow: 0 9px 22px rgba(111, 82, 183, 0.12);
+}
+
+#mission-screen[data-world="intermediate"] .stage-card:hover {
+    border-color: rgba(128, 92, 199, 0.28);
+    box-shadow: 0 18px 34px rgba(98, 72, 146, 0.13);
+}
+
+#mission-screen[data-world="intermediate"] .stage-zone-art span {
+    background: rgba(91, 58, 122, 0.78);
+}
+
+#mission-screen[data-world="intermediate"] .stage-card.completed .stage-node,
+#mission-screen[data-world="intermediate"] .stage-card.in-progress .stage-node {
+    background: #8f6fdb;
+    color: #ffffff;
+}
+
+#mission-screen[data-world="intermediate"] .mission-button:hover {
+    border-color: rgba(128, 92, 199, 0.3);
+    background: #f0eaff;
+}
+
+#mission-screen[data-world="advanced"] .world-symbol {
+    background: #56a9d4;
+    box-shadow: 0 10px 20px rgba(64, 139, 184, 0.22);
+}
+
+#mission-screen[data-world="advanced"] .world-brief-copy > p:first-child,
+#mission-screen[data-world="advanced"] .stage-node {
+    color: #3e8db8;
+}
+
+#mission-screen[data-world="advanced"] .mission-mode-tabs button[aria-selected="true"] {
+    border-color: rgba(76, 157, 199, 0.38);
+    background: #e6f6ff;
+    color: #327da6;
+    box-shadow: 0 9px 22px rgba(64, 139, 184, 0.12);
+}
+
+#mission-screen[data-world="advanced"] .stage-card:hover {
+    border-color: rgba(76, 157, 199, 0.3);
+    box-shadow: 0 18px 34px rgba(67, 128, 166, 0.13);
+}
+
+#mission-screen[data-world="advanced"] .stage-zone-art span {
+    background: rgba(47, 112, 153, 0.78);
+}
+
+#mission-screen[data-world="advanced"] .stage-card.completed .stage-node,
+#mission-screen[data-world="advanced"] .stage-card.in-progress .stage-node {
+    background: #56a9d4;
+    color: #ffffff;
+}
+
+#mission-screen[data-world="advanced"] .stage-reward {
+    background: rgba(241, 250, 255, 0.82);
+}
+
+#mission-screen[data-world="advanced"] .mission-button:hover {
+    border-color: rgba(76, 157, 199, 0.3);
+    background: #eaf7ff;
 }
 
 .stage-node {
@@ -1070,7 +1316,23 @@ input:focus-visible {
 
 .career-primary {
     border-color: rgba(233, 109, 112, 0.2);
-    background: #fff0ec;
+    background: #fff7f4;
+    box-shadow: 0 16px 36px rgba(126, 82, 96, 0.08);
+}
+
+.career-visual {
+    border-color: rgba(143, 105, 175, 0.18);
+    background: #f3ecff;
+}
+
+.career-visual figcaption {
+    border-color: rgba(255, 255, 255, 0.38);
+    background: rgba(93, 62, 124, 0.76);
+    box-shadow: 0 8px 20px rgba(70, 43, 97, 0.16);
+}
+
+.career-visual figcaption strong {
+    color: #ffe68b;
 }
 
 .career-level strong {
@@ -1089,6 +1351,68 @@ input:focus-visible {
 .career-metrics div:nth-child(4),
 .career-metrics div:nth-child(6) {
     background: #fffaf7;
+}
+
+.recent-run-card {
+    border-color: var(--line);
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(126, 82, 96, 0.07);
+}
+
+.recent-run-card:nth-child(2) {
+    background: #fbf8ff;
+}
+
+.recent-run-card:nth-child(3) {
+    background: #f7fcff;
+}
+
+.recent-run-art {
+    background: #eee6f5;
+}
+
+.recent-run-art::after {
+    background: linear-gradient(180deg, transparent, rgba(70, 43, 97, 0.54));
+}
+
+.recent-run-art > span {
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(91, 57, 121, 0.74);
+}
+
+.recent-run-beginner {
+    border-bottom: 3px solid #f39a91;
+}
+
+.recent-run-intermediate {
+    border-bottom: 3px solid #9b7fe8;
+}
+
+.recent-run-advanced {
+    border-bottom: 3px solid #65b7df;
+}
+
+.recent-run-stars {
+    color: #e7a92d;
+}
+
+.recent-run-metrics {
+    border-color: rgba(125, 93, 139, 0.12);
+    background: rgba(255, 250, 247, 0.72);
+}
+
+.recent-run-metrics div + div {
+    border-left-color: rgba(125, 93, 139, 0.12);
+}
+
+.recent-run-empty {
+    border-color: rgba(144, 107, 175, 0.25);
+    background: linear-gradient(135deg, #fff7f2, #f7f1ff);
+}
+
+.recent-empty-symbol {
+    background: #eee2ff;
+    color: #7852a1;
 }
 
 .achievement-card {
@@ -1317,11 +1641,15 @@ input:focus-visible {
     .world-card:nth-child(2),
     .world-card:nth-child(3) {
         grid-column: auto;
-        min-height: 310px;
+        min-height: 0;
     }
 
     .world-grid {
         grid-template-columns: 1fr;
+    }
+
+    .world-card-body {
+        min-height: 205px;
     }
 
     .world-card:nth-child(2) {

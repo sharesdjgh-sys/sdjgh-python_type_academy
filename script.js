@@ -18,6 +18,17 @@ const WORLD_CONFIG = {
         symbol: "01",
         title: "문법 플레이룸",
         kicker: "STARTER STAGE",
+        art: "assets/world-01-grammar.webp",
+        artAlt: "키보드 발판을 달리며 문법 게이트로 향하는 로봇 캐릭터",
+        hubArt: "assets/world-01-hub.webp",
+        hubAlt: "키보드 길을 따라 다섯 문법 스테이지를 탐험하는 로봇 캐릭터",
+        stageArts: [
+            "assets/world-01-zone-01.webp",
+            "assets/world-01-zone-02.webp",
+            "assets/world-01-zone-03.webp",
+            "assets/world-01-zone-04.webp",
+            "assets/world-01-zone-05.webp"
+        ],
         headline: "첫 코드를 모아 플레이룸을 완성해요.",
         description: "출력, 변수, 연산과 자료형을 짧은 퀘스트로 플레이하며 파이썬 감각을 깨워요.",
         cardDescription: "처음이어도 괜찮아요. 짧은 코드부터 리듬을 타듯 시작해요.",
@@ -29,6 +40,17 @@ const WORLD_CONFIG = {
         symbol: "02",
         title: "로직 아케이드",
         kicker: "LOGIC STAGE",
+        art: "assets/world-02-logic.webp",
+        artAlt: "퍼즐 큐브를 연결해 로직 트랙을 완성하는 로봇 캐릭터",
+        hubArt: "assets/world-02-hub.webp",
+        hubAlt: "빛나는 레일을 따라 다섯 로직 퍼즐 구역을 탐험하는 로봇 캐릭터",
+        stageArts: [
+            "assets/world-02-zone-01.webp",
+            "assets/world-02-zone-02.webp",
+            "assets/world-02-zone-03.webp",
+            "assets/world-02-zone-04.webp",
+            "assets/world-02-zone-05.webp"
+        ],
         headline: "흩어진 로직 조각으로 콤보를 이어가요.",
         description: "조건문, 반복문, 함수와 자료구조를 연결하며 문제 해결 루틴을 완성해요.",
         cardDescription: "조건과 반복을 연결하고, 한 단계 더 짜릿한 로직 콤보에 도전해요.",
@@ -40,6 +62,17 @@ const WORLD_CONFIG = {
         symbol: "03",
         title: "데이터 스테이지",
         kicker: "FINAL STAGE",
+        art: "assets/world-03-data.webp",
+        artAlt: "차트와 데이터 오브를 움직이며 파이널 포털을 여는 로봇 캐릭터",
+        hubArt: "assets/world-03-hub.webp",
+        hubAlt: "데이터 도시의 다섯 분석 구역을 연결하며 대시보드를 조작하는 로봇 캐릭터",
+        stageArts: [
+            "assets/world-03-zone-01.webp",
+            "assets/world-03-zone-02.webp",
+            "assets/world-03-zone-03.webp",
+            "assets/world-03-zone-04.webp",
+            "assets/world-03-zone-05.webp"
+        ],
         headline: "데이터를 움직여 나만의 결과 화면을 만들어요.",
         description: "NumPy, pandas, 시각화와 머신러닝 코드를 입력하고 실제 실행 결과까지 확인해요.",
         cardDescription: "데이터와 차트를 직접 움직이는 파이널 스테이지를 플레이해요.",
@@ -457,6 +490,7 @@ function updateProfileUI() {
     setText("header-coins", profile.coins);
     setWidth("header-xp-fill", levelData.progress);
 
+    setText("operative-art-level", levelData.level);
     setText("hero-level", levelData.level);
     setText("level-title", title);
     setText("hero-current-xp", levelData.withinLevel);
@@ -504,19 +538,32 @@ async function renderWorldCards() {
             card.dataset.action = "select-world";
             card.dataset.difficulty = difficulty;
             card.innerHTML = `
-                <span class="world-card-index">
-                    <span>${escapeHTML(config.code)}</span>
-                    <span>${completed}/${codes.length} 미션</span>
-                </span>
-                <span class="world-card-symbol" aria-hidden="true">${escapeHTML(config.symbol)}</span>
-                <h3>${escapeHTML(config.title)}</h3>
-                <p>${escapeHTML(config.cardDescription)}</p>
-                <span class="world-card-footer">
-                    <span class="world-card-progress">
-                        <span>${percentage}% 완료</span>
-                        <span class="wide-progress"><span style="width:${percentage}%"></span></span>
+                <span class="world-card-art">
+                    <img
+                        src="${escapeHTML(config.art)}"
+                        alt="${escapeHTML(config.artAlt)}"
+  width="1024"
+  height="1024"
+  loading="eager"
+  decoding="async"
+>
+                    <span class="world-card-index">
+                        <span>${escapeHTML(config.code)}</span>
+                        <span>${completed}/${codes.length} 미션</span>
                     </span>
-                    <span class="world-card-arrow" aria-hidden="true">→</span>
+                    <span class="world-card-symbol" aria-hidden="true">${escapeHTML(config.symbol)}</span>
+                </span>
+                <span class="world-card-body">
+                    <span class="world-card-kicker">${escapeHTML(config.kicker)}</span>
+                    <h3>${escapeHTML(config.title)}</h3>
+                    <p>${escapeHTML(config.cardDescription)}</p>
+                    <span class="world-card-footer">
+                        <span class="world-card-progress">
+                            <span>${percentage}% 완료</span>
+                            <span class="wide-progress"><span style="width:${percentage}%"></span></span>
+                        </span>
+                        <span class="world-card-arrow" aria-hidden="true">→</span>
+                    </span>
                 </span>
             `;
             container.appendChild(card);
@@ -587,7 +634,19 @@ async function renderMissionScreen() {
     setText("mission-world-title", config.headline);
     setText("mission-world-description", config.description);
     setText("world-progress-label", `${completedWorld} / ${allWorldCodes.length} 미션`);
+    setText("world-brief-progress-value", `${worldPercentage}%`);
     setWidth("world-progress-fill", worldPercentage);
+
+    const missionScreen = $("#mission-screen");
+    const missionWorldArt = $("#mission-world-art");
+    if (missionScreen) {
+        missionScreen.dataset.world = difficulty;
+        missionScreen.dataset.visualMap = config.stageArts?.length ? "true" : "false";
+    }
+    if (missionWorldArt) {
+        missionWorldArt.src = config.hubArt || config.art;
+        missionWorldArt.alt = config.hubAlt || config.artAlt;
+    }
 
     $$(".mission-mode-tabs button").forEach((button) => {
         button.setAttribute("aria-selected", button.dataset.length === length ? "true" : "false");
@@ -603,7 +662,9 @@ async function renderMissionScreen() {
     const map = $("#stage-map");
     map.innerHTML = "";
 
-    for (const [level, stageCodes] of [...groups.entries()].sort((a, b) => a[0] - b[0])) {
+    const orderedGroups = [...groups.entries()].sort((a, b) => a[0] - b[0]);
+
+    for (const [stageIndex, [level, stageCodes]] of orderedGroups.entries()) {
         const completedCount = stageCodes.filter((code) => AppState.profile.missions[code.id]).length;
         const stageStars = stageCodes.reduce(
             (total, code) => total + (AppState.profile.missions[code.id]?.stars || 0),
@@ -615,10 +676,22 @@ async function renderMissionScreen() {
                 ? "in-progress"
                 : "";
         const enemy = getEnemyName(difficulty, level);
+        const stageArt = config.stageArts?.[stageIndex] || config.hubArt || config.art;
 
         const article = document.createElement("article");
         article.className = `stage-card ${stateClass}`;
         article.innerHTML = `
+            <figure class="stage-zone-art" aria-hidden="true">
+                <img
+                    src="${escapeHTML(stageArt)}"
+                    alt=""
+                    width="720"
+                    height="405"
+                    loading="eager"
+                    decoding="async"
+                >
+                <span>ZONE ${String(level).padStart(2, "0")}</span>
+            </figure>
             <span class="stage-node">${completedCount === stageCodes.length ? "✓" : String(level).padStart(2, "0")}</span>
             <div class="stage-info">
                 <p>스테이지 ${String(level).padStart(2, "0")} · ${escapeHTML(enemy)}</p>
@@ -1199,6 +1272,8 @@ function applyRewards(result) {
     profile.recentRuns.unshift({
         codeId: result.codeId,
         title: result.title,
+        difficulty: result.difficulty,
+        length: result.length,
         score: result.score,
         stars: result.stars,
         accuracy: result.accuracy,
@@ -1524,6 +1599,7 @@ function renderStats() {
     const levelData = getLevelData(profile.xp);
     const summary = getProfileSummary();
 
+    setText("stats-avatar-level", levelData.level);
     setText("stats-level", levelData.level);
     setText("stats-level-title", getLevelTitle(levelData.level));
     setText("stats-xp", profile.xp);
@@ -1535,6 +1611,8 @@ function renderStats() {
     setText("stats-stars", summary.stars);
     setText("stats-perfect", profile.perfectRuns);
     setText("achievement-count", `${profile.achievements.length} / ${ACHIEVEMENTS.length} 획득`);
+
+    renderRecentRuns(profile);
 
     const grid = $("#achievement-grid");
     grid.innerHTML = "";
@@ -1551,6 +1629,85 @@ function renderStats() {
             </div>
         `;
         grid.appendChild(card);
+    });
+}
+
+function formatPlayDate(completedAt) {
+    const date = new Date(completedAt);
+    if (Number.isNaN(date.getTime())) return "최근 플레이";
+
+    const dateKey = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0")
+    ].join("-");
+
+    if (dateKey === localDateKey()) return "오늘";
+
+    return new Intl.DateTimeFormat("ko-KR", {
+        month: "short",
+        day: "numeric"
+    }).format(date);
+}
+
+function renderRecentRuns(profile) {
+    const list = $("#recent-run-list");
+    const recentRuns = profile.recentRuns.slice(0, 3);
+
+    setText("recent-run-count", `최근 ${recentRuns.length}판`);
+    list.innerHTML = "";
+
+    if (recentRuns.length === 0) {
+        const empty = document.createElement("article");
+        empty.className = "recent-run-empty";
+        empty.innerHTML = `
+            <span class="recent-empty-symbol" aria-hidden="true">PLAY</span>
+            <div>
+                <h3>첫 플레이를 기다리고 있어요!</h3>
+                <p>월드를 골라 퀘스트를 완료하면 이곳에 모험 장면과 기록이 쌓여요.</p>
+            </div>
+        `;
+        list.appendChild(empty);
+        return;
+    }
+
+    recentRuns.forEach((run) => {
+        const missionRecord = profile.missions[run.codeId] || {};
+        const difficulty = run.difficulty || missionRecord.difficulty || "beginner";
+        const world = WORLD_CONFIG[difficulty] || WORLD_CONFIG.beginner;
+        const stars = clamp(Number(run.stars) || 0, 0, 3);
+        const card = document.createElement("article");
+
+        card.className = `recent-run-card recent-run-${difficulty}`;
+        card.innerHTML = `
+            <figure class="recent-run-art">
+                <img
+                    src="${escapeHTML(world.art)}"
+                    alt=""
+                    width="1024"
+                    height="1024"
+                    loading="eager"
+                    decoding="async"
+                >
+                <span>${escapeHTML(world.code)}</span>
+            </figure>
+            <div class="recent-run-copy">
+                <div class="recent-run-meta">
+                    <span>${escapeHTML(world.title)}</span>
+                    <time datetime="${escapeHTML(run.completedAt || "")}">${escapeHTML(formatPlayDate(run.completedAt))}</time>
+                </div>
+                <h3>${escapeHTML(run.title || "코드 퀘스트")}</h3>
+                <div class="recent-run-rating">
+                    <span class="recent-run-stars" aria-label="별 ${stars}개">${"★".repeat(stars)}${"☆".repeat(3 - stars)}</span>
+                    <strong>${Number(run.score || 0).toLocaleString("ko-KR")}점</strong>
+                </div>
+                <dl class="recent-run-metrics">
+                    <div><dt>정확도</dt><dd>${Number(run.accuracy || 0)}%</dd></div>
+                    <div><dt>타수</dt><dd>${Number(run.cpm || 0)}</dd></div>
+                </dl>
+            </div>
+        `;
+        list.appendChild(card);
     });
 }
 
