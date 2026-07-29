@@ -22,7 +22,14 @@ const CategoryDescriptions = {
     games: '게임 개발',
     web: '웹 개발',
     data_science: '데이터 사이언스',
-    api: 'API 개발'
+    api: 'API 개발',
+    file_io: '파일 입출력',
+    algorithms: '알고리즘',
+    data_analysis: '데이터 분석',
+    scientific_computing: '과학 계산',
+    machine_learning: '머신러닝',
+    data_cleaning: '데이터 정제',
+    data_visualization: '데이터 시각화'
 };
 
 // 난이도별 설명
@@ -38,9 +45,9 @@ const DifficultyDescriptions = {
         long: '실제 프로젝트에서 사용할 수 있는 시스템'
     },
     advanced: {
-        short: '고급 문법의 핵심 개념',
-        medium: '복잡한 패턴과 디자인 원칙',
-        long: '전문적인 개발 기술과 실무 프로젝트'
+        short: '데이터 도구의 핵심 사용법',
+        medium: '분석과 모델링을 연결한 실전 코드',
+        long: '시각화를 포함한 완성형 데이터 프로젝트'
     }
 };
 
@@ -92,14 +99,8 @@ async function loadMetadata() {
         console.error('❌ 메타데이터 로드 실패:', error);
         console.error('❌ Error stack:', error.stack);
         
-        // 폴백: 빈 구조 반환
-        codesMetadata = {
-            beginner: { short: [], medium: [], long: [] },
-            intermediate: { short: [], medium: [], long: [] },
-            advanced: { short: [], medium: [], long: [] }
-        };
-        console.log('🔄 폴백 구조로 초기화됨');
-        
+        // 실패한 빈 데이터를 캐시하지 않아 다음 요청에서 다시 시도할 수 있게 합니다.
+        codesMetadata = null;
         throw error;
     }
 }
@@ -120,11 +121,12 @@ async function loadCodeFromFile(filePath) {
         }
 
         const code = await response.text();
+        const normalizedCode = code.trim();
         
-        // 캐시에 저장
-        codeCache.set(filePath, code);
+        // 화면 표시와 캐시 반환 결과가 항상 같도록 정규화된 코드를 저장
+        codeCache.set(filePath, normalizedCode);
 
-        return code.trim(); // 앞뒤 공백 제거
+        return normalizedCode;
     } catch (error) {
         console.error(`❌ 코드 파일 로드 실패 (${filePath}):`, error);
         throw error;
@@ -474,4 +476,4 @@ if (document.readyState === 'loading') {
     ensureCodeSystemInitialized();
 }
 
-console.log('📚 Python Type Academy 파일 기반 코드 시스템 v3.0 로드됨'); 
+console.log('📚 Python Type Academy 파일 기반 코드 시스템 v3.0 로드됨');

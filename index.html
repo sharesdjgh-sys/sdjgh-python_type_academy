@@ -3,363 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Type Academy</title>
-    <link rel="icon" type="image/png" href="edit-favicon.jpg">
+    <meta name="description" content="코드를 타이핑하며 콤보와 별을 모으는 파이썬 퀘스트 게임">
+    <meta name="theme-color" content="#fff8f3">
+    <title>Python Quest Academy</title>
+    <link rel="icon" type="image/jpeg" href="edit-favicon.jpg">
+    <link
+        rel="stylesheet"
+        as="style"
+        crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    >
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- 라이브러리 상태 관리 -->
-    <script>
-        window.libraryLoadStatus = {
-            codeEditor: true,  // 기본 에디터는 항상 사용 가능
-            pyodide: false,
-            allLoaded: true
-        };
-        
-        console.log('📚 Python Type Academy HTML 로드됨');
-    </script>
-    
-    <!-- 스크립트 로딩 순서 보장 -->
-    <script src="python-codes.js"></script>
-    <script src="script.js"></script>
-    
-    <!-- Pyodide는 선택사항으로 처리 -->
-    <script>
-        // Pyodide 비동기 로딩
-        const pyodideScript = document.createElement('script');
-        pyodideScript.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
-        pyodideScript.onload = function() {
-            window.libraryLoadStatus.pyodide = true;
-            console.log('✅ Pyodide 로드 완료');
-        };
-        pyodideScript.onerror = function() {
-            console.warn('⚠️ Pyodide 로드 실패 - 코드 실행 기능이 제한됩니다');
-            window.libraryLoadStatus.pyodide = false;
-        };
-        document.head.appendChild(pyodideScript);
-    </script>
+    <link rel="stylesheet" href="light-theme.css">
+    <script defer src="python-codes.js"></script>
+    <script defer src="script.js"></script>
 </head>
 <body>
-    <div id="app">
-        <!-- 배경 애니메이션 -->
-        <div class="bg-animation">
-            <div class="floating-code">print("Hello!")</div>
-            <div class="floating-code">def function():</div>
-            <div class="floating-code">for i in range(10):</div>
-            <div class="floating-code">if x > 0:</div>
-            <div class="floating-code">class MyClass:</div>
-        </div>
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-glow-one" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-glow-two" aria-hidden="true"></div>
 
-        <!-- 메인 메뉴 화면 -->
-        <div id="main-menu" class="screen active">
-            <div class="main-container">
-                <header class="main-header">
-                    <div class="logo">
-                        <i class="fab fa-python"></i>
-                        <h1>Python Type Academy</h1>
-                    </div>
-                    <p class="subtitle">⌨️ 파이썬 마스터가 되는 첫 걸음, 타자연습으로 시작하세요!</p>
-                </header>
+    <div id="app" class="app-shell">
+        <header class="topbar">
+            <button class="brand-button" type="button" data-action="home" aria-label="홈으로 이동">
+                <span class="brand-mark" aria-hidden="true">Py</span>
+                <span class="brand-copy">
+                    <strong>Python Quest</strong>
+                    <small>PLAY · TYPE · LEVEL UP</small>
+                </span>
+            </button>
 
-                <div class="difficulty-cards">
-                    <div class="difficulty-card beginner" onclick="showDifficulty('beginner')">
-                        <div class="card-icon">
-                            <i class="fas fa-seedling"></i>
-                        </div>
-                        <h3>초급 레벨</h3>
-                        <p>기본 문법과 간단한 출력문</p>
-                        <div class="card-stats">
-                            <span class="level-badge">🌱 입문 챌린지</span>
-                        </div>
-                    </div>
-
-                    <div class="difficulty-card intermediate" onclick="showDifficulty('intermediate')">
-                        <div class="card-icon">
-                            <i class="fas fa-fire"></i>
-                        </div>
-                        <h3>중급 레벨</h3>
-                        <p>조건문, 반복문, 함수</p>
-                        <div class="card-stats">
-                            <span class="level-badge">🧩 실전 챌린지</span>
-                        </div>
-                    </div>
-
-                    <div class="difficulty-card advanced" onclick="showDifficulty('advanced')">
-                        <div class="card-icon">
-                            <i class="fas fa-crown"></i>
-                        </div>
-                        <h3>고급 레벨</h3>
-                        <p>데이터 분석 및 시각화</p>
-                        <div class="card-stats">
-                            <span class="level-badge">👑 마스터 챌린지</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="menu-actions">
-                    <button class="action-btn stats-btn" onclick="showStats()">
-                        <i class="fas fa-chart-line"></i>
-                        내 통계
-                    </button>
-                    <button class="action-btn settings-btn" onclick="showSettings()">
-                        <i class="fas fa-cog"></i>
-                        설정
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 난이도별 코드 선택 화면 -->
-        <div id="difficulty-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="showScreen('main-menu')">
-                    <i class="fas fa-arrow-left"></i>
+            <nav class="topbar-nav" aria-label="주요 메뉴">
+                <button class="nav-button" type="button" data-action="show-stats">
+                    <span aria-hidden="true">★</span>
+                    <span>플레이 기록</span>
                 </button>
-                <div class="header-content">
-                    <div class="difficulty-header-info">
-                        <h2 id="difficulty-title">초급 레벨</h2>
-                        <div class="difficulty-description" id="difficulty-description">
-                            파이썬의 기본 문법과 간단한 출력문을 연습합니다
-                        </div>
-                    </div>
-                    <div class="progress-info">
-                        <div class="progress-stats">
-                            <span id="progress-text">0/10 완료</span>
-                            <span id="progress-percentage">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-fill"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="code-list-container">
-                <div class="section-title">
-                    <i class="fas fa-code"></i>
-                    <h3>연습 문항</h3>
-                </div>
-                <div class="code-grid" id="code-list">
-                    <!-- 동적으로 생성됩니다 -->
-                </div>
-            </div>
-        </div>
-
-        <!-- 게임 화면 -->
-        <div id="game-screen" class="screen">
-            <div class="game-header">
-                <button class="back-btn" onclick="exitGame()">
-                    <i class="fas fa-times"></i>
+                <button class="nav-button" type="button" data-action="show-settings">
+                    <span aria-hidden="true">⚙</span>
+                    <span>설정</span>
                 </button>
-                <div class="game-info">
-                    <h3 id="current-level">Level 1</h3>
-                    <span id="current-title">기본 출력문</span>
-                </div>
-                <div class="game-timer">
-                    <i class="fas fa-clock"></i>
-                    <span id="timer">00:00</span>
-                </div>
+            </nav>
+
+            <div class="header-profile" aria-label="플레이어 정보">
+                <span class="header-level">LV.<strong id="header-level">1</strong></span>
+                <span class="header-xp">
+                    <span id="header-xp-fill"></span>
+                </span>
+                <span class="header-coin"><span aria-hidden="true">◆</span> <strong id="header-coins">0</strong></span>
             </div>
+        </header>
 
-            <div class="game-container">
-                <div class="code-display-section">
-                    <h4>📝 따라 치세요:</h4>
-                    <div class="code-editor-container">
-                        <div id="target-code-editor"></div>
+        <main id="main-content">
+            <section id="main-menu" class="screen active" aria-labelledby="home-title">
+                <div class="home-layout">
+                    <article class="command-panel reveal">
+                        <div class="season-label">
+                            <span class="status-dot"></span>
+                            SEASON 01 · PYTHON PLAY
+                        </div>
+                        <div class="hero-main">
+                            <div class="hero-copy">
+                                <p class="eyebrow">오늘의 코딩 퀘스트</p>
+                                <h1 id="home-title">타이핑할수록<br><span>레벨 업!</span></h1>
+                                <p class="hero-description">
+                                    한 줄을 완성하면 콤보가 터지고 별과 코인이 쌓여요.
+                                    짧은 워밍업부터 파이널 스테이지까지, 오늘도 코드 한 판 할까요?
+                                </p>
+
+                                <div class="hero-actions">
+                                    <button id="continue-button" class="button button-primary button-large" type="button" data-action="continue">
+                                        <span>오늘의 퀘스트 GO</span>
+                                        <span aria-hidden="true">→</span>
+                                    </button>
+                                    <button class="button button-ghost button-large" type="button" data-action="scroll-worlds">
+                                        스테이지 고르기
+                                    </button>
+                                </div>
+                            </div>
+
+                            <figure class="hero-mascot" aria-label="책상 앞에서 양손으로 키보드를 누르며 코딩하는 보라색 로봇 마스코트 바이트">
+                                <span class="mascot-note note-combo">TYPING!</span>
+                                <span class="mascot-note note-xp">+120 XP</span>
+                                <span class="mascot-note note-name">BYTE</span>
+                                <img src="assets/robot-mascot-typing.png" alt="" width="1254" height="1254">
+                            </figure>
+                        </div>
+
+                        <div class="daily-quest" aria-labelledby="daily-title">
+                            <div class="daily-icon" aria-hidden="true">✓</div>
+                            <div class="daily-copy">
+                                <span id="daily-title">DAILY QUEST</span>
+                                <strong id="daily-quest-text">오늘 한 판 클리어하기</strong>
+                            </div>
+                            <div class="daily-progress">
+                                <span id="daily-quest-progress">0 / 1</span>
+                                <span class="mini-progress"><span id="daily-quest-fill"></span></span>
+                            </div>
+                        </div>
+                    </article>
+
+                    <aside class="operative-card reveal" aria-labelledby="operative-title">
+                        <div class="operative-header">
+                            <div>
+                                <p class="eyebrow">MY PLAY DATA</p>
+                                <h2 id="operative-title">나의 플레이 로그</h2>
+                            </div>
+                            <span id="streak-badge" class="streak-badge">0일째 출석</span>
+                        </div>
+
+                        <div class="level-orbit">
+                            <div id="level-ring" class="level-ring">
+                                <span>LEVEL</span>
+                                <strong id="hero-level">1</strong>
+                            </div>
+                            <div class="level-copy">
+                                <span id="level-title">새내기 탐험가</span>
+                                <strong><span id="hero-current-xp">0</span> / <span id="hero-next-xp">100</span> XP</strong>
+                                <div class="xp-track"><span id="hero-xp-fill"></span></div>
+                            </div>
+                        </div>
+
+                        <dl class="quick-stats">
+                            <div>
+                                <dt>클리어</dt>
+                                <dd id="hero-completed">0</dd>
+                            </div>
+                            <div>
+                                <dt>최고 속도</dt>
+                                <dd id="hero-best-cpm">0</dd>
+                            </div>
+                            <div>
+                                <dt>모은 별</dt>
+                                <dd id="hero-stars">0</dd>
+                            </div>
+                        </dl>
+
+                        <div class="next-unlock">
+                            <span>NEXT TITLE</span>
+                            <strong id="next-title-text">문법 루키</strong>
+                        </div>
+                    </aside>
+                </div>
+
+                <section id="world-section" class="world-section" aria-labelledby="world-title">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">QUEST PLAYLIST</p>
+                            <h2 id="world-title">오늘은 어떤 스테이지?</h2>
+                        </div>
+                        <p>모든 스테이지는 처음부터 열려 있어요. 가볍게 워밍업하거나, 지금 궁금한 코드부터 골라 플레이해보세요.</p>
+                    </div>
+                    <div id="world-grid" class="world-grid" aria-live="polite"></div>
+                </section>
+            </section>
+
+            <section id="mission-screen" class="screen" aria-labelledby="mission-screen-title" aria-hidden="true">
+                <div class="screen-toolbar">
+                    <button class="icon-button" type="button" data-action="home" aria-label="홈으로 돌아가기">←</button>
+                    <div>
+                        <p id="mission-world-code" class="eyebrow">월드 01</p>
+                        <h1 id="mission-screen-title">문법의 숲</h1>
+                    </div>
+                    <div class="world-progress-summary">
+                        <span id="world-progress-label">0 / 45 미션</span>
+                        <span class="wide-progress"><span id="world-progress-fill"></span></span>
                     </div>
                 </div>
 
-                <div class="input-section">
-                    <h4>✏️ 여기에 입력하세요:</h4>
-                    <div class="code-editor-container">
-                        <div id="user-input-editor"></div>
+                <div class="world-brief">
+                    <div>
+                        <span id="mission-world-symbol" class="world-symbol" aria-hidden="true">PLAY</span>
+                        <div>
+                            <p id="mission-world-kicker">기본 문법 구역</p>
+                            <h2 id="mission-world-title">문법 몬스터의 신호를 추적하세요.</h2>
+                        </div>
                     </div>
-                    <!-- 숨겨진 textarea (호환성을 위해 유지) -->
-                    <textarea 
-                        id="user-input" 
-                        style="display: none;"
-                        spellcheck="false"
-                    ></textarea>
+                    <p id="mission-world-description">출력, 변수, 연산을 익히며 첫 번째 월드를 돌파합니다.</p>
                 </div>
 
-                <div class="stats-panel">
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-tachometer-alt"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="wpm">0</span>
-                            <span class="stat-label">타자/분</span>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="accuracy">100</span>
-                            <span class="stat-label">정확도%</span>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-value" id="errors">0</span>
-                            <span class="stat-label">오타수</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 결과 화면 -->
-        <div id="result-screen" class="screen">
-            <div class="result-container">
-                <div class="result-header">
-                    <div class="result-icon" id="result-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <h2 id="result-title">완벽해요! 🎉</h2>
-                    <p id="result-subtitle">레벨을 클리어했습니다!</p>
+                <div class="mission-mode-tabs" role="tablist" aria-label="미션 모드">
+                    <button type="button" role="tab" data-action="select-length" data-length="short" aria-selected="true">
+                        <span>워밍업</span>
+                        <small>짧고 가볍게 한 판</small>
+                    </button>
+                    <button type="button" role="tab" data-action="select-length" data-length="medium" aria-selected="false">
+                        <span>메인 퀘스트</span>
+                        <small>여러 코드를 이어서</small>
+                    </button>
+                    <button type="button" role="tab" data-action="select-length" data-length="long" aria-selected="false">
+                        <span>파이널 스테이지</span>
+                        <small>프로그램 하나 완성하기</small>
+                    </button>
                 </div>
 
-                <div class="result-stats">
-                    <div class="result-stat">
-                        <div class="stat-circle">
-                            <span id="final-wpm">0</span>
-                        </div>
-                        <p>타자/분</p>
+                <div id="stage-map" class="stage-map" aria-live="polite"></div>
+            </section>
+
+            <section id="game-screen" class="screen game-screen" aria-labelledby="game-mission-title" aria-hidden="true">
+                <div class="game-toolbar">
+                    <button class="icon-button danger" type="button" data-action="exit-game" aria-label="미션 나가기">×</button>
+                    <div class="mission-identity">
+                        <span id="game-mode-label">빠른 전투 · 스테이지 1</span>
+                        <h1 id="game-mission-title">기본 출력문</h1>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-circle">
-                            <span id="final-accuracy">0</span>
-                        </div>
-                        <p>문자 정확도%</p>
-                    </div>
-                    <div class="result-stat">
-                        <div class="stat-circle">
-                            <span id="final-lines">0</span>
-                        </div>
-                        <p>라인 완성도%</p>
-                    </div>
-                    <div class="result-stat">
-                        <div class="stat-circle">
-                            <span id="final-time">0</span>
-                        </div>
-                        <p>소요시간(초)</p>
+                    <div class="mission-clock">
+                        <span>PLAY TIME</span>
+                        <strong id="timer">00:00</strong>
                     </div>
                 </div>
 
-                <!-- 코드 실행 결과 섹션 -->
-                <div class="code-execution-section">
-                    <h3>📝 작성한 코드</h3>
-                    <div class="code-preview" id="code-preview">
-                        <pre><code id="user-code-display"></code></pre>
-                    </div>
-                    
-                    <h3>🚀 실행 결과</h3>
-                    <div class="execution-result" id="execution-result">
-                        <div class="loading-spinner" id="execution-loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span>코드 실행 중...</span>
+                <section class="battle-hud" aria-label="전투 현황">
+                    <div class="fighter player-fighter">
+                        <div class="fighter-avatar" aria-hidden="true">ME</div>
+                        <div class="fighter-status">
+                            <span>MY PLAYER · <strong id="battle-player-level">LV.1</strong></span>
+                            <div class="fighter-bar focus-bar"><span id="focus-bar"></span></div>
+                            <small>리듬 게이지 <strong id="focus-value">100%</strong></small>
                         </div>
-                        <div class="result-output" id="result-output" style="display: none;"></div>
-                        <div class="result-error" id="result-error" style="display: none;"></div>
                     </div>
+
+                    <div id="battle-signal" class="battle-signal" aria-live="polite">
+                        <span>COMBO</span>
+                        <strong>×<span id="combo">0</span></strong>
+                    </div>
+
+                    <div class="fighter enemy-fighter">
+                        <div class="fighter-status">
+                            <span id="enemy-name">출력 젤리</span>
+                            <div class="fighter-bar enemy-bar"><span id="enemy-health-bar"></span></div>
+                            <small>남은 코드 <strong id="enemy-health-value">100%</strong></small>
+                        </div>
+                        <div id="enemy-avatar" class="fighter-avatar enemy-avatar" aria-hidden="true">◈</div>
+                    </div>
+                </section>
+
+                <div class="battle-grid">
+                    <section class="editor-panel target-panel" aria-labelledby="target-code-title">
+                        <header class="panel-header">
+                            <div>
+                                <span class="panel-index">01</span>
+                                <div>
+                                    <p>PREVIEW</p>
+                                    <h2 id="target-code-title">이 코드를 똑같이 입력해요.</h2>
+                                </div>
+                            </div>
+                            <span id="target-line-count" class="panel-meta">0줄</span>
+                        </header>
+                        <div class="code-window" aria-label="목표 파이썬 코드">
+                            <div class="window-bar">
+                                <span class="window-dot"></span>
+                                <span>mission_target.py</span>
+                                <span class="window-status">보고 따라 치기</span>
+                            </div>
+                            <ol id="target-code-lines" class="target-code-lines"></ol>
+                        </div>
+                    </section>
+
+                    <section class="editor-panel input-panel" aria-labelledby="input-code-title">
+                        <header class="panel-header">
+                            <div>
+                                <span class="panel-index">02</span>
+                                <div>
+                                    <p>MY TURN</p>
+                                    <h2 id="input-code-title">이제 내 차례!</h2>
+                                </div>
+                            </div>
+                            <span class="panel-meta live-status"><span></span> 연결됨</span>
+                        </header>
+                        <div class="code-window input-window">
+                            <div class="window-bar">
+                                <span class="window-dot active"></span>
+                                <span>player_input.py</span>
+                                <span class="window-status">직접 입력</span>
+                            </div>
+                            <textarea
+                                id="user-code-input"
+                                class="code-input"
+                                aria-label="파이썬 코드 입력"
+                                placeholder="# 여기서부터 타이핑 START!"
+                                spellcheck="false"
+                                autocomplete="off"
+                                autocorrect="off"
+                                autocapitalize="off"
+                            ></textarea>
+                        </div>
+                    </section>
                 </div>
+
+                <section class="live-metrics" aria-label="실시간 전투 지표">
+                    <div>
+                        <span>SCORE</span>
+                        <strong id="live-score">0</strong>
+                    </div>
+                    <div>
+                        <span>ACCURACY</span>
+                        <strong><span id="accuracy">100</span>%</strong>
+                    </div>
+                    <div>
+                        <span>SPEED</span>
+                        <strong id="cpm">0</strong>
+                    </div>
+                    <div>
+                        <span>RETRY</span>
+                        <strong id="corrections">0</strong>
+                    </div>
+                    <div class="mission-progress-metric">
+                        <span>CLEAR</span>
+                        <strong><span id="completion">0</span>%</strong>
+                        <span class="wide-progress"><span id="game-progress-fill"></span></span>
+                    </div>
+                </section>
+
+                <div id="battle-effect" class="battle-effect" aria-live="polite"></div>
+            </section>
+
+            <section id="result-screen" class="screen result-screen" aria-labelledby="result-title" aria-hidden="true">
+                <div class="result-layout">
+                    <section class="result-hero">
+                        <div id="result-confetti" class="result-confetti" aria-hidden="true"></div>
+                        <p class="eyebrow">QUEST CLEAR!</p>
+                        <div id="result-rank" class="result-rank">A</div>
+                        <div id="result-stars" class="result-stars" aria-label="획득 별 1개">★☆☆</div>
+                        <h1 id="result-title">스테이지 클리어</h1>
+                        <p id="result-message">오늘의 코드 플레이를 멋지게 끝냈어요!</p>
+
+                        <div class="reward-strip" aria-label="획득 보상">
+                            <div>
+                                <span>LEVEL UP</span>
+                                <strong>+<span id="reward-xp">0</span> XP</strong>
+                            </div>
+                            <div>
+                                <span>COIN</span>
+                                <strong>+<span id="reward-coins">0</span> ◆</strong>
+                            </div>
+                            <div>
+                                <span>BEST COMBO</span>
+                                <strong>×<span id="result-combo">0</span></strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="result-report" aria-label="작전 분석">
+                        <div class="report-heading">
+                            <div>
+                                <p class="eyebrow">PLAY REPORT</p>
+                                <h2>이번 판 기록</h2>
+                            </div>
+                            <span id="personal-best-badge" class="personal-best" hidden>개인 최고</span>
+                        </div>
+                        <dl class="result-metrics">
+                            <div>
+                                <dt>최종 점수</dt>
+                                <dd id="result-score">0</dd>
+                            </div>
+                            <div>
+                                <dt>정확도</dt>
+                                <dd><span id="result-accuracy">100</span>%</dd>
+                            </div>
+                            <div>
+                                <dt>타수/분</dt>
+                                <dd id="result-cpm">0</dd>
+                            </div>
+                            <div>
+                                <dt>소요 시간</dt>
+                                <dd id="result-time">0초</dd>
+                            </div>
+                        </dl>
+                        <p id="result-coach-tip" class="coach-tip">다음 판에서도 지금 리듬을 이어가 봐요.</p>
+                    </aside>
+                </div>
+
+                <section id="achievement-unlocks" class="achievement-unlocks" hidden aria-live="polite">
+                    <p class="eyebrow">새 업적 획득</p>
+                    <div id="achievement-unlock-list"></div>
+                </section>
+
+                <section class="execution-console" aria-labelledby="execution-title">
+                    <header>
+                        <div>
+                            <p class="eyebrow">REAL PYTHON RESULT</p>
+                            <h2 id="execution-title">방금 완성한 코드를 실제로 돌려볼게요.</h2>
+                        </div>
+                        <span id="execution-status" class="execution-status">엔진 준비 중</span>
+                    </header>
+                    <div class="execution-grid">
+                        <pre class="result-code"><code id="result-code"></code></pre>
+                        <div class="execution-output">
+                            <div id="execution-loading" class="execution-loading">파이썬 엔진을 불러오고 있습니다…</div>
+                            <pre id="execution-output" hidden></pre>
+                            <pre id="execution-error" class="execution-error" hidden></pre>
+                            <div id="execution-images" class="execution-images"></div>
+                        </div>
+                    </div>
+                </section>
 
                 <div class="result-actions">
-                    <button class="result-btn retry" onclick="retryGame()">
-                        <i class="fas fa-redo"></i>
-                        다시 도전
-                    </button>
-                    <button class="result-btn next" onclick="nextLevel()">
-                        <i class="fas fa-arrow-right"></i>
-                        다음 레벨
-                    </button>
-                    <button class="result-btn home" onclick="showScreen('main-menu')">
-                        <i class="fas fa-home"></i>
-                        홈으로
+                    <button class="button button-ghost" type="button" data-action="retry">한 판 더</button>
+                    <button class="button button-secondary" type="button" data-action="mission-map">스테이지맵</button>
+                    <button class="button button-primary" type="button" data-action="next-mission">
+                        다음 퀘스트 <span aria-hidden="true">→</span>
                     </button>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- 통계 화면 -->
-        <div id="stats-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="showScreen('main-menu')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h2>📊 내 통계</h2>
-            </div>
-            
-            <div class="stats-container">
-                <div class="stats-summary">
-                    <div class="summary-card">
-                        <i class="fas fa-gamepad"></i>
-                        <div>
-                            <h3 id="total-games">0</h3>
-                            <p>총 게임 수</p>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <i class="fas fa-medal"></i>
-                        <div>
-                            <h3 id="best-wpm">0</h3>
-                            <p>최고 타자속도</p>
-                        </div>
-                    </div>
-                    <div class="summary-card">
-                        <i class="fas fa-target"></i>
-                        <div>
-                            <h3 id="avg-accuracy">0%</h3>
-                            <p>평균 정확도</p>
-                        </div>
+            <section id="stats-screen" class="screen sub-screen" aria-labelledby="stats-title" aria-hidden="true">
+                <div class="screen-toolbar">
+                    <button class="icon-button" type="button" data-action="home" aria-label="작전 본부로 돌아가기">←</button>
+                    <div>
+                        <p class="eyebrow">MY PLAY LOG</p>
+                        <h1 id="stats-title">나의 퀘스트 기록</h1>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 설정 화면 -->
-        <div id="settings-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="showScreen('main-menu')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h2>⚙️ 설정</h2>
-            </div>
-            
-            <div class="settings-container">
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>다크 모드</h4>
-                        <p>화면을 어둡게 설정합니다</p>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="dark-mode-toggle">
-                        <span class="slider"></span>
-                    </label>
+                <div class="career-grid">
+                    <article class="career-primary">
+                        <p class="eyebrow">CURRENT LEVEL</p>
+                        <div class="career-level">
+                            <strong id="stats-level">1</strong>
+                            <span id="stats-level-title">새내기 탐험가</span>
+                        </div>
+                        <div class="xp-track"><span id="stats-xp-fill"></span></div>
+                        <p><span id="stats-xp">0</span> XP 획득</p>
+                    </article>
+                    <dl class="career-metrics">
+                        <div><dt>완료한 작전</dt><dd id="stats-runs">0</dd></div>
+                        <div><dt>최고 타수</dt><dd id="stats-best-cpm">0</dd></div>
+                        <div><dt>평균 정확도</dt><dd><span id="stats-accuracy">100</span>%</dd></div>
+                        <div><dt>최고 연속 학습</dt><dd><span id="stats-streak">0</span>일</dd></div>
+                        <div><dt>획득한 별</dt><dd id="stats-stars">0</dd></div>
+                        <div><dt>완벽한 작전</dt><dd id="stats-perfect">0</dd></div>
+                    </dl>
                 </div>
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h4>타자 소리</h4>
-                        <p>타이핑할 때 소리를 재생합니다</p>
+
+                <section class="achievement-section" aria-labelledby="achievements-title">
+                    <div class="section-heading compact">
+                        <div>
+                            <p class="eyebrow">BADGE COLLECTION</p>
+                            <h2 id="achievements-title">내가 모은 배지</h2>
+                        </div>
+                        <p id="achievement-count">0 / 6 획득</p>
                     </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="sound-toggle" checked>
-                        <span class="slider"></span>
-                    </label>
+                    <div id="achievement-grid" class="achievement-grid"></div>
+                </section>
+            </section>
+
+            <section id="settings-screen" class="screen sub-screen" aria-labelledby="settings-title" aria-hidden="true">
+                <div class="screen-toolbar">
+                    <button class="icon-button" type="button" data-action="home" aria-label="작전 본부로 돌아가기">←</button>
+                    <div>
+                        <p class="eyebrow">GAME SETTINGS</p>
+                        <h1 id="settings-title">플레이 설정</h1>
+                    </div>
                 </div>
-            </div>
-        </div>
+
+                <div class="settings-panel">
+                    <label class="setting-row" for="sound-toggle">
+                        <span>
+                            <strong>SOUND ON</strong>
+                            <small>정확한 입력과 콤보 성공을 소리로 알려줘요.</small>
+                        </span>
+                        <span class="toggle">
+                            <input id="sound-toggle" type="checkbox">
+                            <span aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <label class="setting-row" for="motion-toggle">
+                        <span>
+                            <strong>MOTION ON</strong>
+                            <small>콤보, 스티커, 화면 전환 효과를 켜요.</small>
+                        </span>
+                        <span class="toggle">
+                            <input id="motion-toggle" type="checkbox">
+                            <span aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <div class="setting-note">
+                        <span aria-hidden="true">i</span>
+                        <p>학습 기록은 이 브라우저에만 저장됩니다. 다른 기기와 자동으로 동기화되지 않습니다.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- Footer with logo -->
-    <footer class="app-footer">
-        <div class="footer-content">
-            <a href="https://lifeprof-lecture.netlify.app/" target="_blank" rel="noopener noreferrer">
-                <img src="lifeprof-logo.png" alt="LifeProf Logo" class="footer-logo">
-            </a>
-        </div>
-    </footer>
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>
-</html> 
+</html>
