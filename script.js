@@ -648,12 +648,42 @@ function missionStarsMarkup(stars) {
     ).join("");
 }
 
-async function showWorld(difficulty, length = null) {
+function setMissionView(view = "lobby", options = {}) {
+    const missionScreen = $("#mission-screen");
+    const lobby = $("#mode-lobby");
+    const stageRoute = $("#stage-route-view");
+    const showStages = view === "stages";
+
+    if (!missionScreen || !lobby || !stageRoute) return;
+
+    missionScreen.dataset.view = showStages ? "stages" : "lobby";
+    lobby.hidden = showStages;
+    stageRoute.hidden = !showStages;
+    lobby.classList.remove("is-leaving");
+    stageRoute.classList.toggle("is-entering", showStages);
+
+    if (!showStages) {
+        $$(".mission-mode-tabs button").forEach((button) => {
+            button.setAttribute("aria-selected", "false");
+            button.classList.remove("is-launching");
+        });
+    }
+
+    if (options.scroll !== false) {
+        window.scrollTo({
+            top: 0,
+            behavior: AppState.profile.settings.motion ? "smooth" : "auto"
+        });
+    }
+}
+
+async function showWorld(difficulty, length = null, view = "lobby") {
     if (!WORLD_CONFIG[difficulty]) difficulty = "beginner";
     AppState.currentDifficulty = difficulty;
     AppState.currentLength = length || AppState.currentLength || "short";
 
     await renderMissionScreen();
+    setMissionView(view, { scroll: false });
     showScreen("mission-screen");
 }
 
@@ -1853,19 +1883,16 @@ async function handleAction(button) {
         case "select-length":
             if (!LENGTH_CONFIG[button.dataset.length]) break;
             AppState.currentLength = button.dataset.length;
+            button.classList.add("is-launching");
             await renderMissionScreen();
-            {
-                const modeEntry = $("#mode-stage-entry");
-                if (modeEntry) {
-                    modeEntry.classList.remove("is-entering");
-                    void modeEntry.offsetWidth;
-                    modeEntry.classList.add("is-entering");
-                    modeEntry.scrollIntoView({
-                        behavior: AppState.profile.settings.motion ? "smooth" : "auto",
-                        block: "start"
-                    });
-                }
+            $("#mode-lobby")?.classList.add("is-leaving");
+            if (AppState.profile.settings.motion) {
+                await new Promise((resolve) => window.setTimeout(resolve, 220));
             }
+            setMissionView("stages");
+            break;
+        case "choose-mode":
+            setMissionView("lobby");
             break;
         case "start-mission":
             await startGame(
@@ -1876,7 +1903,7 @@ async function handleAction(button) {
             break;
         case "exit-game":
             if (AppState.game) AppState.game.destroy();
-            await showWorld(AppState.currentDifficulty, AppState.currentLength);
+            await showWorld(AppState.currentDifficulty, AppState.currentLength, "stages");
             break;
         case "retry":
             if (AppState.currentCode) {
@@ -1888,7 +1915,7 @@ async function handleAction(button) {
             }
             break;
         case "mission-map":
-            await showWorld(AppState.currentDifficulty, AppState.currentLength);
+            await showWorld(AppState.currentDifficulty, AppState.currentLength, "stages");
             break;
         case "next-mission": {
             button.disabled = true;
@@ -1933,7 +1960,12 @@ function bindEvents() {
 
         if (AppState.currentScreen === "game-screen") {
             if (AppState.game) AppState.game.destroy();
-            showWorld(AppState.currentDifficulty, AppState.currentLength).catch(console.error);
+            showWorld(AppState.currentDifficulty, AppState.currentLength, "stages").catch(console.error);
+        } else if (
+            AppState.currentScreen === "mission-screen"
+            && $("#mission-screen")?.dataset.view === "stages"
+        ) {
+            setMissionView("lobby");
         } else if (AppState.currentScreen !== "main-menu") {
             showHome().catch(console.error);
         }

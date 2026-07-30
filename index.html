@@ -185,6 +185,17 @@
                     </div>
                 </div>
 
+                <section id="mode-lobby" class="mode-lobby" aria-labelledby="mode-lobby-title">
+                    <div class="mode-lobby-heading">
+                        <div>
+                            <p class="eyebrow">CHOOSE YOUR MODE</p>
+                            <h2 id="mode-lobby-title">오늘은 어떤 모드로 플레이할까요?</h2>
+                            <p>카드를 선택하면 해당 모드의 스테이지 맵으로 입장합니다.</p>
+                        </div>
+                        <span class="lobby-status"><i aria-hidden="true"></i> PLAYER READY</span>
+                    </div>
+
+                    <div class="mode-lobby-layout">
                 <div class="world-brief">
                     <figure class="world-brief-art">
                         <img
@@ -224,8 +235,13 @@
                     </div>
                 </div>
 
-                <div class="mission-mode-tabs" role="tablist" aria-label="미션 모드">
-                    <button type="button" role="tab" data-action="select-length" data-length="short" aria-selected="true">
+                <div class="mode-lobby-menu">
+                    <div class="mode-lobby-menu-head">
+                        <span>PLAY MODE</span>
+                        <strong>3개의 모드</strong>
+                    </div>
+                <div class="mission-mode-tabs" role="group" aria-label="미션 모드">
+                    <button type="button" data-action="select-length" data-length="short" aria-selected="false">
                         <span class="mode-card-visual">
                             <img
                                 class="mission-mode-badge"
@@ -248,7 +264,7 @@
                             <span class="mode-card-cta" aria-hidden="true"></span>
                         </span>
                     </button>
-                    <button type="button" role="tab" data-action="select-length" data-length="medium" aria-selected="false">
+                    <button type="button" data-action="select-length" data-length="medium" aria-selected="false">
                         <span class="mode-card-visual">
                             <img
                                 class="mission-mode-badge"
@@ -271,7 +287,7 @@
                             <span class="mode-card-cta" aria-hidden="true"></span>
                         </span>
                     </button>
-                    <button type="button" role="tab" data-action="select-length" data-length="long" aria-selected="false">
+                    <button type="button" data-action="select-length" data-length="long" aria-selected="false">
                         <span class="mode-card-visual">
                             <img
                                 class="mission-mode-badge"
@@ -295,6 +311,20 @@
                         </span>
                     </button>
                 </div>
+                </div>
+                    </div>
+
+                    <p class="mode-lobby-hint"><span aria-hidden="true">◆</span> 플레이할 카드를 눌러 스테이지 맵에 입장하세요.</p>
+                </section>
+
+                <section id="stage-route-view" class="stage-route-view" aria-labelledby="mode-entry-title" hidden>
+                    <div class="stage-route-toolbar">
+                        <button type="button" class="route-back-button" data-action="choose-mode">
+                            <span aria-hidden="true">←</span>
+                            모드 다시 선택
+                        </button>
+                        <span><i aria-hidden="true"></i> STAGE MAP</span>
+                    </div>
 
                 <section id="mode-stage-entry" class="mode-stage-entry" aria-labelledby="mode-entry-title">
                     <div>
@@ -309,6 +339,7 @@
                 </section>
 
                 <div id="stage-map" class="stage-map" aria-live="polite"></div>
+                </section>
             </section>
 
             <section id="game-screen" class="screen game-screen" aria-labelledby="game-mission-title" aria-hidden="true">
