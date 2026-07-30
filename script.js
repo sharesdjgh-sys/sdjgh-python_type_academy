@@ -21,6 +21,7 @@ const WORLD_CONFIG = {
         art: "assets/world-01-grammar.webp",
         artAlt: "키보드 발판을 달리며 문법 게이트로 향하는 로봇 캐릭터",
         hubArt: "assets/world-01-hub.webp",
+        hubVideo: "assets/world-01-hub.mp4",
         hubAlt: "키보드 길을 따라 다섯 문법 스테이지를 탐험하는 로봇 캐릭터",
         stageArts: [
             "assets/world-01-zone-01.webp",
@@ -28,6 +29,13 @@ const WORLD_CONFIG = {
             "assets/world-01-zone-03.webp",
             "assets/world-01-zone-04.webp",
             "assets/world-01-zone-05.webp"
+        ],
+        stageNames: [
+            "첫 출력 신호",
+            "메시지 메이커",
+            "연산 콤보 존",
+            "문자열 보관소",
+            "숫자 변수 연구실"
         ],
         headline: "첫 코드를 모아 플레이룸을 완성해요.",
         description: "출력, 변수, 연산과 자료형을 짧은 퀘스트로 플레이하며 파이썬 감각을 깨워요.",
@@ -51,6 +59,13 @@ const WORLD_CONFIG = {
             "assets/world-02-zone-04.webp",
             "assets/world-02-zone-05.webp"
         ],
+        stageNames: [
+            "조건 분기 게이트",
+            "등급 판정 센터",
+            "문자열 스캐너",
+            "리스트 큐브 랩",
+            "반복문 리액터"
+        ],
         headline: "흩어진 로직 조각으로 콤보를 이어가요.",
         description: "조건문, 반복문, 함수와 자료구조를 연결하며 문제 해결 루틴을 완성해요.",
         cardDescription: "조건과 반복을 연결하고, 한 단계 더 짜릿한 로직 콤보에 도전해요.",
@@ -73,6 +88,13 @@ const WORLD_CONFIG = {
             "assets/world-03-zone-04.webp",
             "assets/world-03-zone-05.webp"
         ],
+        stageNames: [
+            "데이터프레임 보드",
+            "넘파이 배열 플라자",
+            "모델 트레이닝 가든",
+            "결측값 클리닝 랩",
+            "차트 피날레"
+        ],
         headline: "데이터를 움직여 나만의 결과 화면을 만들어요.",
         description: "NumPy, pandas, 시각화와 머신러닝 코드를 입력하고 실제 실행 결과까지 확인해요.",
         cardDescription: "데이터와 차트를 직접 움직이는 파이널 스테이지를 플레이해요.",
@@ -83,25 +105,34 @@ const WORLD_CONFIG = {
 const LENGTH_CONFIG = {
     short: {
         order: 1,
+        code: "MODE 01",
         label: "워밍업",
         shortLabel: "워밍업",
         description: "짧은 코드로 가볍게 한 판",
+        entryTitle: "워밍업 스테이지",
+        entryDescription: "짧은 코드로 파이썬 감각을 빠르게 깨우는 모드예요.",
         reward: 1,
         targetCpm: 150
     },
     medium: {
         order: 2,
+        code: "MODE 02",
         label: "메인 퀘스트",
         shortLabel: "메인 퀘스트",
         description: "여러 코드를 이어서 플레이",
+        entryTitle: "메인 퀘스트 스테이지",
+        entryDescription: "여러 문법을 연결하며 한 단계씩 공략하는 모드예요.",
         reward: 1.25,
         targetCpm: 125
     },
     long: {
         order: 3,
+        code: "MODE 03",
         label: "파이널 스테이지",
         shortLabel: "파이널",
         description: "프로그램 하나를 완성하는 도전",
+        entryTitle: "파이널 스테이지",
+        entryDescription: "긴 프로그램을 완성하며 최종 보상에 도전하는 모드예요.",
         reward: 1.6,
         targetCpm: 105
     }
@@ -445,6 +476,17 @@ function showScreen(screenId, options = {}) {
 
     AppState.currentScreen = screenId;
 
+    const missionWorldVideo = $("#mission-world-video");
+    if (missionWorldVideo) {
+        if (screenId === "mission-screen" && !missionWorldVideo.hidden) {
+            missionWorldVideo.play().catch(() => {
+                // 자동 재생이 차단되면 poster 이미지가 그대로 대체 화면이 됩니다.
+            });
+        } else {
+            missionWorldVideo.pause();
+        }
+    }
+
     if (!options.preserveScroll) {
         // 화면 전환은 항상 맨 위에서 시작해 이전 화면의 스크롤 위치가 비치지 않게 합니다.
         window.scrollTo({ top: 0, behavior: "auto" });
@@ -620,6 +662,7 @@ async function renderMissionScreen() {
     const difficulty = AppState.currentDifficulty;
     const length = AppState.currentLength;
     const config = WORLD_CONFIG[difficulty];
+    const modeConfig = LENGTH_CONFIG[length];
     const codes = metadata[difficulty]?.[length] || [];
     const allWorldCodes = Object.values(metadata[difficulty] || {}).flat();
     const completedWorld = allWorldCodes.filter((code) => AppState.profile.missions[code.id]).length;
@@ -635,17 +678,39 @@ async function renderMissionScreen() {
     setText("mission-world-description", config.description);
     setText("world-progress-label", `${completedWorld} / ${allWorldCodes.length} 미션`);
     setText("world-brief-progress-value", `${worldPercentage}%`);
+    setText("mode-entry-code", modeConfig.code);
+    setText("mode-entry-count", `${codes.length} QUESTS`);
+    setText("mode-entry-title", modeConfig.entryTitle);
+    setText("mode-entry-description", modeConfig.entryDescription);
     setWidth("world-progress-fill", worldPercentage);
 
     const missionScreen = $("#mission-screen");
     const missionWorldArt = $("#mission-world-art");
+    const missionWorldVideo = $("#mission-world-video");
     if (missionScreen) {
         missionScreen.dataset.world = difficulty;
         missionScreen.dataset.visualMap = config.stageArts?.length ? "true" : "false";
+        missionScreen.dataset.heroMedia = config.hubVideo ? "video" : "image";
+        missionScreen.dataset.mode = length;
     }
     if (missionWorldArt) {
         missionWorldArt.src = config.hubArt || config.art;
         missionWorldArt.alt = config.hubAlt || config.artAlt;
+        missionWorldArt.hidden = Boolean(config.hubVideo);
+    }
+    if (missionWorldVideo) {
+        if (config.hubVideo) {
+            if (missionWorldVideo.getAttribute("src") !== config.hubVideo) {
+                missionWorldVideo.src = config.hubVideo;
+                missionWorldVideo.load();
+            }
+            missionWorldVideo.poster = config.hubArt || config.art;
+            missionWorldVideo.setAttribute("aria-label", config.hubAlt || config.artAlt);
+            missionWorldVideo.hidden = false;
+        } else {
+            missionWorldVideo.pause();
+            missionWorldVideo.hidden = true;
+        }
     }
 
     $$(".mission-mode-tabs button").forEach((button) => {
@@ -677,6 +742,11 @@ async function renderMissionScreen() {
                 : "";
         const enemy = getEnemyName(difficulty, level);
         const stageArt = config.stageArts?.[stageIndex] || config.hubArt || config.art;
+        const stageName = config.stageNames?.[stageIndex] || stageCodes[0]?.title || `레벨 ${level}`;
+        const maxStageStars = stageCodes.length * 3;
+        const starPercentage = maxStageStars
+            ? Math.round((stageStars / maxStageStars) * 100)
+            : 0;
 
         const article = document.createElement("article");
         article.className = `stage-card ${stateClass}`;
@@ -690,33 +760,46 @@ async function renderMissionScreen() {
                     loading="eager"
                     decoding="async"
                 >
-                <span>ZONE ${String(level).padStart(2, "0")}</span>
+                <span class="stage-node">
+                    ${completedCount === stageCodes.length ? "✓ CLEAR" : `STAGE ${String(level).padStart(2, "0")}`}
+                </span>
+                <span class="stage-art-label">${escapeHTML(enemy)}</span>
             </figure>
-            <span class="stage-node">${completedCount === stageCodes.length ? "✓" : String(level).padStart(2, "0")}</span>
-            <div class="stage-info">
-                <p>스테이지 ${String(level).padStart(2, "0")} · ${escapeHTML(enemy)}</p>
-                <h3>${escapeHTML(stageCodes[0]?.title || `레벨 ${level}`)}</h3>
-            </div>
-            <div class="stage-missions">
-                ${stageCodes.map((code, index) => {
-                    const record = AppState.profile.missions[code.id];
-                    return `
-                        <button
-                            class="mission-button"
-                            type="button"
-                            data-action="start-mission"
-                            data-code-id="${escapeHTML(code.id)}"
-                            aria-label="${escapeHTML(code.title)} 미션 시작"
-                        >
-                            <strong>${index + 1}. ${escapeHTML(code.title)}</strong>
-                            <span>${missionStarsMarkup(record?.stars || 0)}</span>
-                        </button>
-                    `;
-                }).join("")}
-            </div>
-            <div class="stage-reward">
-                <strong>${stageStars} / ${stageCodes.length * 3} ★</strong>
-                ${completedCount} / ${stageCodes.length} 완료
+            <div class="stage-card-content">
+                <div class="stage-info">
+                    <div>
+                        <p>${escapeHTML(LENGTH_CONFIG[length].shortLabel)} · ${stageCodes.length} QUESTS</p>
+                        <h3>${escapeHTML(stageName)}</h3>
+                    </div>
+                    <span class="stage-clear-badge">${completedCount} / ${stageCodes.length} CLEAR</span>
+                </div>
+                <div class="stage-missions">
+                    ${stageCodes.map((code, index) => {
+                        const record = AppState.profile.missions[code.id];
+                        return `
+                            <button
+                                class="mission-button"
+                                type="button"
+                                data-action="start-mission"
+                                data-code-id="${escapeHTML(code.id)}"
+                                aria-label="${escapeHTML(code.title)} 미션 시작"
+                            >
+                                <span class="mission-step">${String(index + 1).padStart(2, "0")}</span>
+                                <strong>${escapeHTML(code.title)}</strong>
+                                <span class="mission-rating">${missionStarsMarkup(record?.stars || 0)}</span>
+                            </button>
+                        `;
+                    }).join("")}
+                </div>
+                <div class="stage-reward">
+                    <div class="stage-reward-copy">
+                        <span>STAR COLLECTION</span>
+                        <strong>${stageStars} / ${maxStageStars} ★</strong>
+                    </div>
+                    <span class="stage-reward-progress" aria-label="별 수집 ${starPercentage}%">
+                        <span style="width:${starPercentage}%"></span>
+                    </span>
+                </div>
             </div>
         `;
         map.appendChild(article);
@@ -1768,8 +1851,21 @@ async function handleAction(button) {
             await showWorld(button.dataset.difficulty, "short");
             break;
         case "select-length":
+            if (!LENGTH_CONFIG[button.dataset.length]) break;
             AppState.currentLength = button.dataset.length;
             await renderMissionScreen();
+            {
+                const modeEntry = $("#mode-stage-entry");
+                if (modeEntry) {
+                    modeEntry.classList.remove("is-entering");
+                    void modeEntry.offsetWidth;
+                    modeEntry.classList.add("is-entering");
+                    modeEntry.scrollIntoView({
+                        behavior: AppState.profile.settings.motion ? "smooth" : "auto",
+                        block: "start"
+                    });
+                }
+            }
             break;
         case "start-mission":
             await startGame(

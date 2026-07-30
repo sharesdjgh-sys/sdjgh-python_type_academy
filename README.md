@@ -32,7 +32,8 @@ light-theme.css                   밝은 플레이룸 비주얼 테마
 assets/robot-logo.png             마스코트 원본 로고
 assets/robot-mascot-typing.png    키보드로 코딩하는 전신 로봇 마스코트
 assets/world-01-grammar.webp      문법 플레이룸 월드 타일 이미지
-assets/world-01-hub.webp          문법 플레이룸 내부 허브와 스테이지 맵 이미지
+assets/world-01-hub.mp4           문법 플레이룸 내부 허브 배경 영상
+assets/world-01-hub.webp          문법 플레이룸 영상 포스터와 대체 이미지
 assets/world-01-zone-01..05.webp  문법 플레이룸의 다섯 스테이지 구역 이미지
 assets/world-02-logic.webp        로직 아케이드 월드 타일 이미지
 assets/world-02-hub.webp          로직 아케이드 내부 허브와 스테이지 맵 이미지
@@ -40,6 +41,9 @@ assets/world-02-zone-01..05.webp  로직 아케이드의 다섯 스테이지 구
 assets/world-03-data.webp         데이터 스테이지 월드 타일 이미지
 assets/world-03-hub.webp          데이터 스테이지 내부 허브와 스테이지 맵 이미지
 assets/world-03-zone-01..05.webp  데이터 스테이지의 다섯 분석 구역 이미지
+assets/mode-badge-warmup.webp     워밍업 모드 뱃지 이미지
+assets/mode-badge-main-quest.webp 메인 퀘스트 모드 뱃지 이미지
+assets/mode-badge-final-stage.webp 파이널 스테이지 모드 뱃지 이미지
 assets/play-data-dashboard.webp   홈 MY PLAY DATA 카드의 플레이어 이미지
 assets/play-log-champion.webp     플레이 로그의 로봇 트로피 이미지
 script.js                         게임 상태, 점수, 보상, 화면 흐름

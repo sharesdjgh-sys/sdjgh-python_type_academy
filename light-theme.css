@@ -757,7 +757,7 @@ input:focus-visible {
 
 .mission-mode-tabs button {
     border-color: var(--line);
-    border-radius: 15px;
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.84);
     color: var(--text-soft);
     box-shadow: 0 7px 18px rgba(126, 82, 96, 0.05);
@@ -833,7 +833,7 @@ input:focus-visible {
     background: linear-gradient(180deg, transparent, rgba(82, 48, 78, 0.42));
 }
 
-#mission-screen[data-visual-map="true"] .stage-zone-art span {
+#mission-screen[data-visual-map="true"] .stage-art-label {
     border-color: rgba(255, 255, 255, 0.45);
     background: rgba(91, 58, 122, 0.74);
 }
@@ -855,6 +855,30 @@ input:focus-visible {
 #mission-screen[data-visual-map="true"] .stage-reward {
     border-top-color: rgba(108, 74, 86, 0.1);
     background: rgba(255, 248, 245, 0.7);
+}
+
+#mission-screen[data-visual-map="true"] .stage-clear-badge {
+    border-color: rgba(108, 74, 86, 0.1);
+    background: #fffaf8;
+}
+
+#mission-screen[data-visual-map="true"] .stage-card.completed .stage-clear-badge {
+    border-color: rgba(217, 88, 93, 0.24);
+    background: #ffece8;
+    color: var(--accent-strong);
+}
+
+#mission-screen[data-visual-map="true"] .mission-button .mission-step {
+    background: #f3ecef;
+    color: #866f78;
+}
+
+#mission-screen[data-visual-map="true"] .stage-reward-progress {
+    background: rgba(108, 74, 86, 0.1);
+}
+
+#mission-screen[data-visual-map="true"] .stage-reward-progress > span {
+    background: var(--accent);
 }
 
 #mission-screen[data-world="intermediate"] .world-symbol {
@@ -887,6 +911,10 @@ input:focus-visible {
 #mission-screen[data-world="intermediate"] .stage-card.in-progress .stage-node {
     background: #8f6fdb;
     color: #ffffff;
+}
+
+#mission-screen[data-world="intermediate"] .stage-reward-progress > span {
+    background: #8f6fdb;
 }
 
 #mission-screen[data-world="intermediate"] .mission-button:hover {
@@ -926,6 +954,10 @@ input:focus-visible {
     color: #ffffff;
 }
 
+#mission-screen[data-world="advanced"] .stage-reward-progress > span {
+    background: #56a9d4;
+}
+
 #mission-screen[data-world="advanced"] .stage-reward {
     background: rgba(241, 250, 255, 0.82);
 }
@@ -933,6 +965,108 @@ input:focus-visible {
 #mission-screen[data-world="advanced"] .mission-button:hover {
     border-color: rgba(76, 157, 199, 0.3);
     background: #eaf7ff;
+}
+
+.mission-mode-tabs button[data-length="short"] {
+    --mode-accent: #dc666b;
+    --mode-soft: #fff0ec;
+    --mode-shadow: rgba(211, 94, 99, 0.15);
+}
+
+.mission-mode-tabs button[data-length="medium"] {
+    --mode-accent: #8065bd;
+    --mode-soft: #f1ebff;
+    --mode-shadow: rgba(116, 87, 181, 0.15);
+}
+
+.mission-mode-tabs button[data-length="long"] {
+    --mode-accent: #338ebc;
+    --mode-soft: #e8f7ff;
+    --mode-shadow: rgba(51, 142, 188, 0.15);
+}
+
+.mission-mode-tabs button[data-length] {
+    border-color: color-mix(in srgb, var(--mode-accent) 24%, white);
+    background: #ffffff;
+}
+
+.mission-mode-tabs button[data-length]::after {
+    background: var(--mode-accent);
+    color: #ffffff;
+}
+
+.mission-mode-tabs button[data-length] .mode-card-visual {
+    background:
+        radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.94), transparent 56%),
+        var(--mode-soft);
+}
+
+.mission-mode-tabs button[data-length] .mission-mode-badge {
+    border-color: color-mix(in srgb, var(--mode-accent) 28%, white);
+}
+
+.mission-mode-tabs button[data-length] .mode-card-number,
+.mission-mode-tabs button[data-length] .mode-card-kicker,
+.mission-mode-tabs button[data-length] .mode-card-cta {
+    color: var(--mode-accent);
+}
+
+.mission-mode-tabs button[data-length] .mode-card-footer {
+    border-top-color: color-mix(in srgb, var(--mode-accent) 18%, white);
+}
+
+.mission-mode-tabs button[data-length]:hover {
+    border-color: var(--mode-accent);
+    background: linear-gradient(180deg, var(--mode-soft), #ffffff 72%);
+}
+
+#mission-screen .mission-mode-tabs button[data-length][aria-selected="true"] {
+    border: 2px solid var(--mode-accent);
+    background: linear-gradient(180deg, var(--mode-soft), #ffffff 72%);
+    color: var(--mode-accent);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--mode-accent) 14%, transparent),
+        0 18px 35px var(--mode-shadow);
+    transform: translateY(-7px);
+}
+
+#mission-screen .mission-mode-tabs button[data-length][aria-selected="true"] small {
+    color: color-mix(in srgb, var(--mode-accent) 72%, #6c5a62);
+}
+
+#mission-screen .mission-mode-tabs button[data-length][aria-selected="true"] .mission-mode-badge {
+    border-color: var(--mode-accent);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--mode-accent) 16%, transparent),
+        0 10px 22px var(--mode-shadow);
+}
+
+#mission-screen[data-mode="short"] .mode-stage-entry {
+    --entry-accent: #c94f56;
+    --entry-soft: #fff0ec;
+}
+
+#mission-screen[data-mode="medium"] .mode-stage-entry {
+    --entry-accent: #7151b3;
+    --entry-soft: #f1ebff;
+}
+
+#mission-screen[data-mode="long"] .mode-stage-entry {
+    --entry-accent: #277fae;
+    --entry-soft: #e8f7ff;
+}
+
+.mode-stage-entry {
+    border-color: color-mix(in srgb, var(--entry-accent) 24%, white);
+    border-left: 5px solid var(--entry-accent);
+    background: linear-gradient(135deg, var(--entry-soft), #ffffff 70%);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--entry-accent) 10%, transparent);
+}
+
+.mode-stage-entry h2,
+#mode-entry-code,
+.mode-entry-guide {
+    color: var(--entry-accent);
 }
 
 .stage-node {

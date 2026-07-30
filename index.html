@@ -196,6 +196,19 @@
                             loading="eager"
                             decoding="async"
                         >
+                        <video
+                            id="mission-world-video"
+                            aria-label="키보드 길을 따라 다섯 문법 스테이지를 탐험하는 로봇 캐릭터"
+                            width="1440"
+                            height="810"
+                            muted
+                            autoplay
+                            loop
+                            playsinline
+                            preload="metadata"
+                            poster="assets/world-01-hub.webp"
+                            hidden
+                        ></video>
                         <figcaption>
                             <span id="mission-world-symbol" class="world-symbol" aria-hidden="true">01</span>
                             <span class="world-explore-progress">
@@ -213,18 +226,87 @@
 
                 <div class="mission-mode-tabs" role="tablist" aria-label="미션 모드">
                     <button type="button" role="tab" data-action="select-length" data-length="short" aria-selected="true">
-                        <span>워밍업</span>
-                        <small>짧고 가볍게 한 판</small>
+                        <span class="mode-card-visual">
+                            <img
+                                class="mission-mode-badge"
+                                src="assets/mode-badge-warmup.webp"
+                                alt=""
+                                width="256"
+                                height="256"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                            <span class="mode-card-number">MODE 01</span>
+                        </span>
+                        <span class="mode-card-copy">
+                            <span class="mode-card-kicker">QUICK START</span>
+                            <strong>워밍업</strong>
+                            <small>짧은 코드로 가볍게 시작해요.</small>
+                        </span>
+                        <span class="mode-card-footer">
+                            <span>15 QUESTS</span>
+                            <span class="mode-card-cta" aria-hidden="true"></span>
+                        </span>
                     </button>
                     <button type="button" role="tab" data-action="select-length" data-length="medium" aria-selected="false">
-                        <span>메인 퀘스트</span>
-                        <small>여러 코드를 이어서</small>
+                        <span class="mode-card-visual">
+                            <img
+                                class="mission-mode-badge"
+                                src="assets/mode-badge-main-quest.webp"
+                                alt=""
+                                width="256"
+                                height="256"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                            <span class="mode-card-number">MODE 02</span>
+                        </span>
+                        <span class="mode-card-copy">
+                            <span class="mode-card-kicker">ADVENTURE MODE</span>
+                            <strong>메인 퀘스트</strong>
+                            <small>여러 문법을 연결해 공략해요.</small>
+                        </span>
+                        <span class="mode-card-footer">
+                            <span>15 QUESTS</span>
+                            <span class="mode-card-cta" aria-hidden="true"></span>
+                        </span>
                     </button>
                     <button type="button" role="tab" data-action="select-length" data-length="long" aria-selected="false">
-                        <span>파이널 스테이지</span>
-                        <small>프로그램 하나 완성하기</small>
+                        <span class="mode-card-visual">
+                            <img
+                                class="mission-mode-badge"
+                                src="assets/mode-badge-final-stage.webp"
+                                alt=""
+                                width="256"
+                                height="256"
+                                loading="lazy"
+                                decoding="async"
+                            >
+                            <span class="mode-card-number">MODE 03</span>
+                        </span>
+                        <span class="mode-card-copy">
+                            <span class="mode-card-kicker">BOSS CHALLENGE</span>
+                            <strong>파이널 스테이지</strong>
+                            <small>긴 프로그램을 완성해 돌파해요.</small>
+                        </span>
+                        <span class="mode-card-footer">
+                            <span>15 QUESTS</span>
+                            <span class="mode-card-cta" aria-hidden="true"></span>
+                        </span>
                     </button>
                 </div>
+
+                <section id="mode-stage-entry" class="mode-stage-entry" aria-labelledby="mode-entry-title">
+                    <div>
+                        <p>
+                            <span id="mode-entry-code">MODE 01</span>
+                            <span id="mode-entry-count">15 QUESTS</span>
+                        </p>
+                        <h2 id="mode-entry-title">워밍업 스테이지</h2>
+                        <p id="mode-entry-description">짧은 코드로 파이썬 감각을 빠르게 깨우는 모드예요.</p>
+                    </div>
+                    <span class="mode-entry-guide">SELECT A STAGE <span aria-hidden="true">↓</span></span>
+                </section>
 
                 <div id="stage-map" class="stage-map" aria-live="polite"></div>
             </section>
