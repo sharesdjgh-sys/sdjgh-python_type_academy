@@ -566,23 +566,41 @@
                 </div>
 
                 <section class="battle-portal-hero">
-                    <div>
+                    <div class="battle-hero-copy">
+                        <span class="battle-live-pill"><i aria-hidden="true"></i> LIVE MATCH</span>
                         <p class="eyebrow">BATTLE MODE</p>
-                        <h2>같은 코드를 먼저 완성하면 승리!</h2>
-                        <p>방을 만들거나 친구가 보내준 6자리 코드를 입력하세요. 배틀 결과는 학습 XP와 기록에 영향을 주지 않아요.</p>
+                        <h2>코드는 같고,<br><span>승자는 한 명.</span></h2>
+                        <p>친구와 같은 파이썬 코드를 동시에 입력해요. 빠르기만 해서는 부족해요—오타 없이 먼저 완주하면 승리!</p>
+                        <div class="battle-rule-strip" aria-label="배틀 규칙">
+                            <span><strong>01</strong> 같은 미션</span>
+                            <span><strong>02</strong> 3초 카운트</span>
+                            <span><strong>03</strong> 정확한 완주</span>
+                        </div>
                     </div>
-                    <div class="battle-rule-strip" aria-label="배틀 규칙">
-                        <span><strong>01</strong> 같은 미션</span>
-                        <span><strong>02</strong> 3초 카운트</span>
-                        <span><strong>03</strong> 정확한 완주</span>
-                    </div>
+                    <figure class="battle-hero-art">
+                        <img
+                            src="assets/code-race-hero-v2.png"
+                            alt="코럴색 로봇과 라벤더색 로봇이 밝은 교실에서 코드 레이스를 펼치는 모습"
+                            width="1672"
+                            height="941"
+                            loading="eager"
+                            decoding="async"
+                        >
+                        <figcaption>
+                            <span>PYTHON RACE</span>
+                            <strong>1 : 1</strong>
+                        </figcaption>
+                    </figure>
                 </section>
 
                 <div class="battle-entry-grid">
                     <form id="battle-create-form" class="battle-entry-card">
-                        <span class="battle-entry-number">CREATE ROOM</span>
+                        <div class="battle-entry-card-head">
+                            <span class="battle-entry-number">CREATE ROOM</span>
+                            <span class="battle-entry-icon" aria-hidden="true">01</span>
+                        </div>
                         <h2>새 배틀방 만들기</h2>
-                        <p>내가 문제를 고르고 방 코드를 친구에게 알려줘요.</p>
+                        <p>레이스를 만들고 6자리 초대 코드를 친구에게 보내세요.</p>
                         <label>
                             <span>닉네임</span>
                             <input id="battle-host-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
@@ -605,9 +623,12 @@
                     </form>
 
                     <form id="battle-join-form" class="battle-entry-card battle-join-card">
-                        <span class="battle-entry-number">JOIN ROOM</span>
+                        <div class="battle-entry-card-head">
+                            <span class="battle-entry-number">JOIN ROOM</span>
+                            <span class="battle-entry-icon" aria-hidden="true">02</span>
+                        </div>
                         <h2>친구 방에 참가하기</h2>
-                        <p>받은 방 코드와 게임에서 사용할 닉네임을 입력해요.</p>
+                        <p>친구에게 받은 코드를 입력하면 바로 출발선에 합류해요.</p>
                         <label>
                             <span>방 코드</span>
                             <input id="battle-room-code-input" name="roomCode" class="room-code-input" maxlength="6" autocomplete="off" placeholder="ABC234" required>
@@ -617,8 +638,8 @@
                             <input id="battle-guest-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
                         </label>
                         <div class="battle-join-preview" aria-hidden="true">
-                            <span>1 VS 1</span>
-                            <strong>친구가 기다리고 있어요!</strong>
+                            <span>VS</span>
+                            <div><small>QUICK JOIN</small><strong>초대 코드는 여섯 자리예요</strong></div>
                         </div>
                         <button class="button button-primary button-large" type="submit">배틀방 입장 <span aria-hidden="true">→</span></button>
                     </form>
