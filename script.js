@@ -1958,7 +1958,9 @@ function bindEvents() {
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
 
-        if (AppState.currentScreen === "game-screen") {
+        if (window.BattleMode?.isBattleScreen()) {
+            window.BattleMode.handleEscape();
+        } else if (AppState.currentScreen === "game-screen") {
             if (AppState.game) AppState.game.destroy();
             showWorld(AppState.currentDifficulty, AppState.currentLength, "stages").catch(console.error);
         } else if (

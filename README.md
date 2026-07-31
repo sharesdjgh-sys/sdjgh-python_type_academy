@@ -21,7 +21,25 @@
 python -m http.server 8000
 ```
 
-브라우저에서 `http://localhost:8000`으로 접속합니다.
+솔로 모드만 확인할 때는 위 명령을 사용할 수 있습니다. 1대1 실시간 배틀까지 사용하려면 Node.js 서버로 실행합니다.
+
+```powershell
+npm install
+npm start
+```
+
+브라우저에서 `http://localhost:8000`으로 접속합니다. 같은 교실 네트워크의 다른 기기에서는 서버 컴퓨터의 IP 주소와 포트 `8000`으로 접속합니다.
+
+## 1대1 실시간 배틀
+
+- 회원가입 없이 닉네임과 6자리 방 코드로 참가
+- 방장이 기존 월드·모드·미션을 선택
+- 두 명이 준비하면 3초 카운트다운 후 동일 코드로 레이스
+- 진행률, 정확도, 타수/분을 실시간으로 상대와 공유
+- 경기 중 연결이 끊기면 15초 동안 재접속 대기
+- 배틀 결과는 XP, 코인, 개인 학습 기록과 분리
+
+배틀방과 닉네임은 서버 메모리에만 임시 저장되며 서버를 재시작하면 삭제됩니다.
 
 ## 파일 구조
 
@@ -47,6 +65,9 @@ assets/mode-badge-final-stage.webp 파이널 스테이지 모드 뱃지 이미�
 assets/play-data-dashboard.webp   홈 MY PLAY DATA 카드의 플레이어 이미지
 assets/play-log-champion.webp     플레이 로그의 로봇 트로피 이미지
 script.js                         게임 상태, 점수, 보상, 화면 흐름
+battle.js                         배틀 로비, 대기실, 레이스와 실시간 클라이언트
+server.js                         정적 파일 제공과 Socket.IO 배틀 서버
+package.json                      Node.js 실행 및 테스트 설정
 python-codes.js                   미션 데이터 로더
 python-codes/codes-metadata.json  135개 미션 메타데이터
 python-codes/**/*.py              실제 타이핑·실행용 Python 코드
@@ -54,7 +75,7 @@ python-codes/**/*.py              실제 타이핑·실행용 Python 코드
 
 ## 데이터 저장
 
-플레이 기록은 브라우저의 `localStorage`에 `pythonQuestProfileV2` 키로 저장됩니다. 서버나 계정 간 동기화는 제공하지 않습니다.
+플레이 기록은 브라우저의 `localStorage`에 `pythonQuestProfileV2` 키로 저장됩니다. 서버나 계정 간 동기화는 제공하지 않습니다. 배틀 결과는 이 기록에 저장되지 않습니다.
 
 ## 외부 연결
 

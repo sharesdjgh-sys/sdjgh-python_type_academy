@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="light-theme.css">
     <script defer src="python-codes.js"></script>
     <script defer src="script.js"></script>
+    <script defer src="/socket.io/socket.io.js"></script>
+    <script defer src="battle.js"></script>
 </head>
 <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -77,6 +79,10 @@
                                     </button>
                                     <button class="button button-ghost button-large" type="button" data-action="scroll-worlds">
                                         스테이지 고르기
+                                    </button>
+                                    <button class="button button-battle button-large" type="button" data-battle-action="open">
+                                        <span aria-hidden="true">VS</span>
+                                        친구와 배틀
                                     </button>
                                 </div>
                             </div>
@@ -252,9 +258,9 @@
                                 loading="lazy"
                                 decoding="async"
                             >
-                            <span class="mode-card-number">MODE 01</span>
                         </span>
                         <span class="mode-card-copy">
+                            <span class="mode-card-number">MODE 01</span>
                             <span class="mode-card-kicker">QUICK START</span>
                             <strong>워밍업</strong>
                             <small>짧은 코드로 가볍게 시작해요.</small>
@@ -275,9 +281,9 @@
                                 loading="lazy"
                                 decoding="async"
                             >
-                            <span class="mode-card-number">MODE 02</span>
                         </span>
                         <span class="mode-card-copy">
+                            <span class="mode-card-number">MODE 02</span>
                             <span class="mode-card-kicker">ADVENTURE MODE</span>
                             <strong>메인 퀘스트</strong>
                             <small>여러 문법을 연결해 공략해요.</small>
@@ -298,9 +304,9 @@
                                 loading="lazy"
                                 decoding="async"
                             >
-                            <span class="mode-card-number">MODE 03</span>
                         </span>
                         <span class="mode-card-copy">
+                            <span class="mode-card-number">MODE 03</span>
                             <span class="mode-card-kicker">BOSS CHALLENGE</span>
                             <strong>파이널 스테이지</strong>
                             <small>긴 프로그램을 완성해 돌파해요.</small>
@@ -546,6 +552,183 @@
                     <button class="button button-primary" type="button" data-action="next-mission">
                         다음 퀘스트 <span aria-hidden="true">→</span>
                     </button>
+                </div>
+            </section>
+
+            <section id="battle-portal-screen" class="screen battle-screen" aria-labelledby="battle-portal-title" aria-hidden="true">
+                <div class="screen-toolbar">
+                    <button class="icon-button" type="button" data-battle-action="home" aria-label="홈으로 돌아가기">←</button>
+                    <div>
+                        <p class="eyebrow">REALTIME 1 VS 1</p>
+                        <h1 id="battle-portal-title">친구와 코드 레이스</h1>
+                    </div>
+                    <span id="battle-server-status" class="battle-connection-status"><i aria-hidden="true"></i> 서버 연결 중</span>
+                </div>
+
+                <section class="battle-portal-hero">
+                    <div>
+                        <p class="eyebrow">BATTLE MODE</p>
+                        <h2>같은 코드를 먼저 완성하면 승리!</h2>
+                        <p>방을 만들거나 친구가 보내준 6자리 코드를 입력하세요. 배틀 결과는 학습 XP와 기록에 영향을 주지 않아요.</p>
+                    </div>
+                    <div class="battle-rule-strip" aria-label="배틀 규칙">
+                        <span><strong>01</strong> 같은 미션</span>
+                        <span><strong>02</strong> 3초 카운트</span>
+                        <span><strong>03</strong> 정확한 완주</span>
+                    </div>
+                </section>
+
+                <div class="battle-entry-grid">
+                    <form id="battle-create-form" class="battle-entry-card">
+                        <span class="battle-entry-number">CREATE ROOM</span>
+                        <h2>새 배틀방 만들기</h2>
+                        <p>내가 문제를 고르고 방 코드를 친구에게 알려줘요.</p>
+                        <label>
+                            <span>닉네임</span>
+                            <input id="battle-host-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
+                        </label>
+                        <div class="battle-select-row">
+                            <label>
+                                <span>월드</span>
+                                <select id="battle-difficulty" name="difficulty"></select>
+                            </label>
+                            <label>
+                                <span>모드</span>
+                                <select id="battle-length" name="length"></select>
+                            </label>
+                        </div>
+                        <label>
+                            <span>배틀 미션</span>
+                            <select id="battle-mission" name="missionId"></select>
+                        </label>
+                        <button class="button button-battle button-large" type="submit">방 코드 만들기 <span aria-hidden="true">→</span></button>
+                    </form>
+
+                    <form id="battle-join-form" class="battle-entry-card battle-join-card">
+                        <span class="battle-entry-number">JOIN ROOM</span>
+                        <h2>친구 방에 참가하기</h2>
+                        <p>받은 방 코드와 게임에서 사용할 닉네임을 입력해요.</p>
+                        <label>
+                            <span>방 코드</span>
+                            <input id="battle-room-code-input" name="roomCode" class="room-code-input" maxlength="6" autocomplete="off" placeholder="ABC234" required>
+                        </label>
+                        <label>
+                            <span>닉네임</span>
+                            <input id="battle-guest-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
+                        </label>
+                        <div class="battle-join-preview" aria-hidden="true">
+                            <span>1 VS 1</span>
+                            <strong>친구가 기다리고 있어요!</strong>
+                        </div>
+                        <button class="button button-primary button-large" type="submit">배틀방 입장 <span aria-hidden="true">→</span></button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="battle-room-screen" class="screen battle-screen" aria-labelledby="battle-room-title" aria-hidden="true">
+                <div class="screen-toolbar">
+                    <button class="icon-button danger" type="button" data-battle-action="leave" aria-label="배틀방 나가기">×</button>
+                    <div>
+                        <p class="eyebrow">WAITING ROOM</p>
+                        <h1 id="battle-room-title">배틀 준비실</h1>
+                    </div>
+                    <button id="battle-copy-code" class="battle-room-code" type="button" data-battle-action="copy-code">
+                        ROOM <strong id="battle-room-code">------</strong>
+                        <span>복사</span>
+                    </button>
+                </div>
+
+                <div class="battle-waiting-layout">
+                    <section class="battle-mission-card">
+                        <span id="battle-room-world">월드 01 · 워밍업</span>
+                        <h2 id="battle-room-mission">기본 출력문</h2>
+                        <p id="battle-room-description">선택한 코드를 친구와 동시에 입력합니다.</p>
+                        <div class="battle-ready-guide">
+                            두 플레이어가 모두 준비하면 3초 뒤 자동으로 시작해요.
+                        </div>
+                    </section>
+
+                    <section class="battle-player-versus" aria-label="참가 플레이어">
+                        <article id="battle-player-one" class="battle-player-slot">
+                            <span class="player-slot-avatar">P1</span>
+                            <div><small>HOST</small><strong>기다리는 중</strong><span>연결 대기</span></div>
+                        </article>
+                        <div class="battle-versus-mark">VS</div>
+                        <article id="battle-player-two" class="battle-player-slot">
+                            <span class="player-slot-avatar">P2</span>
+                            <div><small>CHALLENGER</small><strong>기다리는 중</strong><span>연결 대기</span></div>
+                        </article>
+                    </section>
+                </div>
+
+                <div class="battle-ready-actions">
+                    <p id="battle-room-message">친구가 참가할 때까지 기다려 주세요.</p>
+                    <button id="battle-ready-button" class="button button-battle button-large" type="button" data-battle-action="toggle-ready" disabled>
+                        준비 완료
+                    </button>
+                </div>
+            </section>
+
+            <section id="battle-race-screen" class="screen battle-screen battle-race-screen" aria-labelledby="battle-race-title" aria-hidden="true">
+                <div class="game-toolbar">
+                    <button class="icon-button danger" type="button" data-battle-action="leave" aria-label="배틀 나가기">×</button>
+                    <div class="mission-identity">
+                        <span id="battle-race-mode">REALTIME CODE RACE</span>
+                        <h1 id="battle-race-title">배틀 미션</h1>
+                    </div>
+                    <div class="mission-clock">
+                        <span>RACE TIME</span>
+                        <strong id="battle-race-timer">00:00</strong>
+                    </div>
+                </div>
+
+                <section class="race-versus-hud" aria-label="실시간 레이스 현황">
+                    <article class="race-player-card is-me">
+                        <div><span>ME</span><strong id="race-my-name">PLAYER 1</strong></div>
+                        <span class="race-progress"><span id="race-my-progress"></span></span>
+                        <p><strong id="race-my-percent">0%</strong><span id="race-my-cpm">0 CPM</span></p>
+                    </article>
+                    <div class="race-vs">VS</div>
+                    <article class="race-player-card">
+                        <div><span>RIVAL</span><strong id="race-rival-name">PLAYER 2</strong></div>
+                        <span class="race-progress"><span id="race-rival-progress"></span></span>
+                        <p><strong id="race-rival-percent">0%</strong><span id="race-rival-cpm">0 CPM</span></p>
+                    </article>
+                </section>
+
+                <div class="battle-grid">
+                    <section class="editor-panel target-panel">
+                        <header class="panel-header"><div><span class="panel-index">01</span><div><p>MISSION</p><h2>같은 코드를 정확히 입력하세요.</h2></div></div></header>
+                        <div class="code-window">
+                            <div class="window-bar"><span class="window-dot"></span><span>battle_target.py</span><span class="window-status">공통 문제</span></div>
+                            <ol id="battle-target-lines" class="target-code-lines"></ol>
+                        </div>
+                    </section>
+                    <section class="editor-panel input-panel">
+                        <header class="panel-header"><div><span class="panel-index">02</span><div><p>MY CODE</p><h2>카운트다운 후 입력!</h2></div></div><span id="battle-input-status" class="panel-meta">대기 중</span></header>
+                        <div class="code-window input-window">
+                            <div class="window-bar"><span class="window-dot active"></span><span>race_input.py</span><span class="window-status">붙여넣기 금지</span></div>
+                            <textarea id="battle-code-input" class="code-input" aria-label="배틀 파이썬 코드 입력" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="battle-countdown" class="battle-countdown" aria-live="assertive" hidden><strong>3</strong><span>GET READY</span></div>
+                <p id="battle-race-notice" class="battle-race-notice" aria-live="polite">상대와 연결 중입니다.</p>
+            </section>
+
+            <section id="battle-result-screen" class="screen battle-screen battle-result-screen" aria-labelledby="battle-result-title" aria-hidden="true">
+                <section class="battle-result-hero">
+                    <p class="eyebrow">BATTLE RESULT</p>
+                    <div id="battle-result-emblem" class="battle-result-emblem">WIN</div>
+                    <h1 id="battle-result-title">승리!</h1>
+                    <p id="battle-result-message">정확한 타이핑으로 코드 레이스를 먼저 완주했어요.</p>
+                </section>
+                <div id="battle-result-players" class="battle-result-players"></div>
+                <p class="battle-no-reward-note">배틀 결과는 학습 XP·코인·개인 기록에 반영되지 않습니다.</p>
+                <div class="result-actions">
+                    <button class="button button-ghost" type="button" data-battle-action="home">홈으로</button>
+                    <button class="button button-battle" type="button" data-battle-action="new-room">새 배틀 시작</button>
                 </div>
             </section>
 

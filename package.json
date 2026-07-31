@@ -1,0 +1,18 @@
+{
+  "name": "python-quest-academy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "파이썬 타이핑 학습 게임과 1대1 실시간 코드 레이스",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}
