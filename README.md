@@ -48,7 +48,7 @@ index.html                         화면 구조
 style.css                         게임 UI와 반응형 기본 스타일
 light-theme.css                   밝은 플레이룸 비주얼 테마
 assets/robot-logo.png             마스코트 원본 로고
-assets/robot-mascot-typing.png    키보드로 코딩하는 전신 로봇 마스코트
+assets/robot-mascot-typing.mp4    키보드로 코딩하는 로봇 마스코트 영상
 assets/world-01-grammar.webp      문법 플레이룸 월드 타일 이미지
 assets/world-01-hub.mp4           문법 플레이룸 내부 허브 배경 영상
 assets/world-01-hub.webp          문법 플레이룸 영상 포스터와 대체 이미지
