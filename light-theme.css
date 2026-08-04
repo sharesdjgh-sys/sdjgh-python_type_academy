@@ -5,19 +5,35 @@
  */
 
 @font-face {
-    font-family: "TMoneyDungunbaram";
-    src: url("assets/fonts/TmoneyRoundWindRegular.woff") format("woff");
+    font-family: "NexonCartGothic";
+    src: url("assets/fonts/KartriderExtraBold.woff2") format("woff2");
+    font-display: swap;
+    font-style: normal;
+    font-weight: 800;
+}
+
+@font-face {
+    font-family: "Paperozi";
+    src: url("assets/fonts/Paperlogy-4Regular.woff2") format("woff2");
     font-display: swap;
     font-style: normal;
     font-weight: 400;
 }
 
 @font-face {
-    font-family: "TMoneyDungunbaram";
-    src: url("assets/fonts/TmoneyRoundWindExtraBold.woff") format("woff");
+    font-family: "Paperozi";
+    src: url("assets/fonts/Paperlogy-5Medium.woff2") format("woff2");
     font-display: swap;
     font-style: normal;
-    font-weight: 800;
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: "Paperozi";
+    src: url("assets/fonts/Paperlogy-7Bold.woff2") format("woff2");
+    font-display: swap;
+    font-style: normal;
+    font-weight: 700;
 }
 
 :root {
@@ -45,7 +61,9 @@
     --radius-sm: 12px;
     --radius: 18px;
     --radius-lg: 28px;
-    --font-play: "TMoneyDungunbaram", "Pretendard Variable", Pretendard, sans-serif;
+    --font-sans: "Paperozi", "Pretendard Variable", Pretendard, sans-serif;
+    --font-play: "Paperozi", "Pretendard Variable", Pretendard, sans-serif;
+    --font-title: "NexonCartGothic", "Paperozi", sans-serif;
 }
 
 /* Code race — focused competitive art direction */
@@ -196,12 +214,18 @@
     pointer-events: none;
 }
 
-.battle-hero-art img {
+.battle-hero-art img,
+.battle-hero-art video {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: 54% center;
     filter: saturate(0.9) contrast(1.05);
+}
+
+.battle-hero-art video {
+    pointer-events: none;
 }
 
 .battle-hero-art figcaption {
@@ -2370,11 +2394,20 @@ input:focus-visible {
     color: var(--text-soft);
 }
 
+#battle-portal-screen .battle-win-condition {
+    display: block;
+    margin-top: 7px;
+    color: #d9585d;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
 #battle-portal-screen .battle-hero-art::after {
     background: linear-gradient(90deg, #fffdfb, rgba(255, 253, 251, 0.12) 28%, transparent 54%);
 }
 
-#battle-portal-screen .battle-hero-art img {
+#battle-portal-screen .battle-hero-art img,
+#battle-portal-screen .battle-hero-art video {
     filter: saturate(0.88) contrast(0.98);
 }
 
@@ -2488,25 +2521,56 @@ input:focus-visible {
 #battle-room-screen .button,
 #battle-result-screen .button {
     font-family: var(--font-play);
-    font-weight: 800;
+    font-weight: 700;
 }
 
 #battle-portal-screen .screen-toolbar h1,
-#battle-room-screen .screen-toolbar h1 {
-    letter-spacing: -0.025em;
+#battle-portal-screen .battle-portal-hero h2 {
+    font-family: var(--font-title);
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 1.03;
 }
 
 #battle-portal-screen .battle-portal-hero h2 {
-    font-weight: 800;
-    line-height: 1.02;
-    letter-spacing: -0.045em;
+    width: 94.5%;
+    line-height: 0.97;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    transform: scaleX(1.055);
+    transform-origin: left center;
 }
 
 #battle-portal-screen .battle-entry-card h2,
 #battle-room-screen .battle-mission-card h2,
 #battle-result-screen .battle-result-player h2 {
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.015em;
+}
+
+.hero-description,
+.world-card-body > p,
+.world-brief-copy > p,
+.mode-lobby-heading p,
+#battle-portal-screen .battle-hero-copy > p:last-of-type,
+#battle-portal-screen .battle-entry-card > p,
+#battle-room-screen .battle-mission-card > p,
+#battle-result-screen .battle-result-hero > p:last-child {
+    font-weight: 500;
+    line-height: 1.65;
+}
+
+.topbar-nav,
+.nav-button,
+.mission-mode-tabs button,
+.lobby-status,
+.panel-meta,
+#battle-portal-screen .battle-live-pill,
+#battle-portal-screen .battle-connection-status,
+#battle-portal-screen .battle-rule-strip span,
+#battle-portal-screen .battle-entry-number {
+    font-family: var(--font-sans);
+    font-weight: 700;
 }
 
 #battle-portal-screen .button,

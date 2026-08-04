@@ -51,6 +51,7 @@ const WORLD_CONFIG = {
         art: "assets/world-02-logic.webp",
         artAlt: "퍼즐 큐브를 연결해 로직 트랙을 완성하는 로봇 캐릭터",
         hubArt: "assets/world-02-hub.webp",
+        hubVideo: "assets/world-02-hub.mp4",
         hubAlt: "빛나는 레일을 따라 다섯 로직 퍼즐 구역을 탐험하는 로봇 캐릭터",
         stageArts: [
             "assets/world-02-zone-01.webp",
@@ -80,6 +81,7 @@ const WORLD_CONFIG = {
         art: "assets/world-03-data.webp",
         artAlt: "차트와 데이터 오브를 움직이며 파이널 포털을 여는 로봇 캐릭터",
         hubArt: "assets/world-03-hub.webp",
+        hubVideo: "assets/world-03-hub.mp4",
         hubAlt: "데이터 도시의 다섯 분석 구역을 연결하며 대시보드를 조작하는 로봇 캐릭터",
         stageArts: [
             "assets/world-03-zone-01.webp",
@@ -475,6 +477,17 @@ function showScreen(screenId, options = {}) {
     });
 
     AppState.currentScreen = screenId;
+
+    $$('video[data-screen-video]').forEach((video) => {
+        const isActive = video.closest('.screen') === target;
+        if (isActive) {
+            video.play().catch(() => {
+                // 자동 재생이 차단되면 poster 이미지가 대체 화면으로 유지됩니다.
+            });
+        } else {
+            video.pause();
+        }
+    });
 
     const missionWorldVideo = $("#mission-world-video");
     if (missionWorldVideo) {

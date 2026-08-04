@@ -570,7 +570,10 @@
                         <span class="battle-live-pill"><i aria-hidden="true"></i> LIVE MATCH</span>
                         <p class="eyebrow">BATTLE MODE</p>
                         <h2>코드는 같고,<br><span>승자는 한 명.</span></h2>
-                        <p>친구와 같은 파이썬 코드를 동시에 입력해요. 빠르기만 해서는 부족해요—오타 없이 먼저 완주하면 승리!</p>
+                        <p>
+                            친구와 같은 파이썬 코드를 동시에 입력해요. 빠르기만 해서는 부족해요.
+                            <strong class="battle-win-condition">오타 없이 먼저 완주하면 승리!</strong>
+                        </p>
                         <div class="battle-rule-strip" aria-label="배틀 규칙">
                             <span><strong>01</strong> 같은 미션</span>
                             <span><strong>02</strong> 3초 카운트</span>
@@ -578,14 +581,20 @@
                         </div>
                     </div>
                     <figure class="battle-hero-art">
-                        <img
-                            src="assets/code-race-hero-v2.png"
-                            alt="코럴색 로봇과 라벤더색 로봇이 밝은 교실에서 코드 레이스를 펼치는 모습"
-                            width="1672"
-                            height="941"
-                            loading="eager"
-                            decoding="async"
+                        <video
+                            data-screen-video
+                            aria-label="코럴색 로봇과 라벤더색 로봇이 밝은 교실에서 코드 레이스를 펼치는 모습"
+                            width="1280"
+                            height="720"
+                            muted
+                            autoplay
+                            loop
+                            playsinline
+                            preload="metadata"
+                            poster="assets/code-race-hero-v2.png"
                         >
+                            <source src="assets/code-race-hero.mp4" type="video/mp4">
+                        </video>
                         <figcaption>
                             <span>PYTHON RACE</span>
                             <strong>1 : 1</strong>
