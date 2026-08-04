@@ -533,9 +533,9 @@ input:focus-visible {
 
 .topbar {
     min-height: 78px;
-    border-bottom-color: rgba(114, 77, 91, 0.11);
+    border-color: rgba(114, 77, 91, 0.11);
     background: rgba(255, 250, 246, 0.86);
-    box-shadow: 0 8px 24px rgba(130, 84, 99, 0.04);
+    box-shadow: 0 10px 30px rgba(130, 84, 99, 0.08);
 }
 
 .brand-mark {
