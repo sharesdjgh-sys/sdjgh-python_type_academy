@@ -446,7 +446,13 @@
                                     <h2 id="input-code-title">이제 내 차례!</h2>
                                 </div>
                             </div>
-                            <span class="panel-meta live-status"><span></span> 연결됨</span>
+                            <div class="panel-header-status">
+                                <span id="input-language-status" class="input-language-status" data-language="unknown">
+                                    <i aria-hidden="true"></i>
+                                    <span>입력 언어가 A인지 확인하세요</span>
+                                </span>
+                                <span class="panel-meta live-status"><span></span> 연결됨</span>
+                            </div>
                         </header>
                         <div class="code-window input-window">
                             <div class="window-bar">
@@ -519,32 +525,84 @@
                                 <strong>×<span id="result-combo">0</span></strong>
                             </div>
                         </div>
+
+                        <div class="result-finish-scene" aria-hidden="true">
+                            <span class="finish-sparkle finish-sparkle-one">★</span>
+                            <span class="finish-sparkle finish-sparkle-two">✦</span>
+                            <span class="finish-sparkle finish-sparkle-three">★</span>
+                            <img class="result-finish-kart" src="assets/python-kart-racer.png" alt="" width="512" height="512">
+                        </div>
                     </section>
 
                     <aside class="result-report" aria-label="작전 분석">
                         <div class="report-heading">
                             <div>
                                 <p class="eyebrow">PLAY REPORT</p>
-                                <h2>이번 판 기록</h2>
+                                <h2>이번 판 퍼포먼스</h2>
                             </div>
                             <span id="personal-best-badge" class="personal-best" hidden>개인 최고</span>
                         </div>
+
+                        <section class="score-dashboard" aria-labelledby="score-breakdown-title">
+                            <div
+                                id="result-score-ring"
+                                class="score-ring"
+                                role="progressbar"
+                                aria-label="최종 점수"
+                                aria-valuemin="0"
+                                aria-valuemax="1000"
+                                aria-valuenow="0"
+                            >
+                                <div class="score-ring-core">
+                                    <span>TOTAL SCORE</span>
+                                    <strong id="result-score">0</strong>
+                                    <small>/ 1,000 PTS</small>
+                                </div>
+                            </div>
+
+                            <div class="score-breakdown">
+                                <div class="score-breakdown-heading">
+                                    <div>
+                                        <span>SCORE BREAKDOWN</span>
+                                        <h3 id="score-breakdown-title">1,000점 만점 플레이 분석</h3>
+                                    </div>
+                                    <span class="score-max-badge">MAX 1,000</span>
+                                </div>
+                                <div class="score-part">
+                                    <div><span>정확도</span><strong><span id="result-accuracy-score">0</span> / 600</strong></div>
+                                    <span class="score-part-track"><span id="result-accuracy-score-fill"></span></span>
+                                </div>
+                                <div class="score-part">
+                                    <div><span>레이스 속도</span><strong><span id="result-speed-score">0</span> / 250</strong></div>
+                                    <span class="score-part-track"><span id="result-speed-score-fill"></span></span>
+                                </div>
+                                <div class="score-part">
+                                    <div><span>콤보 유지</span><strong><span id="result-combo-score">0</span> / 150</strong></div>
+                                    <span class="score-part-track"><span id="result-combo-score-fill"></span></span>
+                                </div>
+                            </div>
+                        </section>
+
                         <dl class="result-metrics">
                             <div>
-                                <dt>최종 점수</dt>
-                                <dd id="result-score">0</dd>
+                                <dt><span>ACC</span> 입력 정확도</dt>
+                                <dd><span id="result-accuracy">100</span><small>%</small></dd>
+                                <p>확정된 입력 기준</p>
                             </div>
                             <div>
-                                <dt>정확도</dt>
-                                <dd><span id="result-accuracy">100</span>%</dd>
-                            </div>
-                            <div>
-                                <dt>타수/분</dt>
+                                <dt><span>CPM</span> 타수/분</dt>
                                 <dd id="result-cpm">0</dd>
+                                <p>목표 <span id="result-target-cpm">0</span> CPM</p>
                             </div>
                             <div>
-                                <dt>소요 시간</dt>
+                                <dt><span>TIME</span> 완주 시간</dt>
                                 <dd id="result-time">0초</dd>
+                                <p>첫 입력부터 측정</p>
+                            </div>
+                            <div>
+                                <dt><span>EDIT</span> 수정 횟수</dt>
+                                <dd><span id="result-corrections">0</span><small>회</small></dd>
+                                <p>삭제·교체 동작 기준</p>
                             </div>
                         </dl>
                         <p id="result-coach-tip" class="coach-tip">다음 판에서도 지금 리듬을 이어가 봐요.</p>

@@ -924,6 +924,8 @@ class TypingBattle {
         this.timerId = null;
         this.completed = false;
         this.completing = false;
+        this.isComposing = false;
+        this.compositionBaseValue = "";
         this.attackedLines = new Set();
         this.metrics = {
             attempts: 0,
@@ -935,7 +937,10 @@ class TypingBattle {
         };
 
         this.input = $("#user-code-input");
+        this.languageStatus = $("#input-language-status");
         this.boundInput = (event) => this.handleInput(event);
+        this.boundCompositionStart = () => this.handleCompositionStart();
+        this.boundCompositionEnd = () => this.handleCompositionEnd();
         this.boundKeydown = (event) => this.handleKeydown(event);
         this.boundPaste = (event) => this.blockPaste(event);
         this.boundCursor = () => this.updateLineStates(this.input.value);
@@ -957,7 +962,10 @@ class TypingBattle {
         this.renderTargetCode();
         this.input.value = "";
         this.input.scrollTop = 0;
+        this.setInputLanguage("unknown");
         this.input.addEventListener("input", this.boundInput);
+        this.input.addEventListener("compositionstart", this.boundCompositionStart);
+        this.input.addEventListener("compositionend", this.boundCompositionEnd);
         this.input.addEventListener("keydown", this.boundKeydown);
         this.input.addEventListener("paste", this.boundPaste);
         this.input.addEventListener("drop", this.boundPaste);
@@ -982,6 +990,15 @@ class TypingBattle {
     }
 
     handleKeydown(event) {
+        if (event.key === "HangulMode" || event.code === "Lang1") {
+            const currentLanguage = this.languageStatus?.dataset.language;
+            if (currentLanguage === "english") this.setInputLanguage("korean");
+            else if (currentLanguage === "korean") this.setInputLanguage("english");
+            else this.setInputLanguage("unknown");
+        } else if (!event.ctrlKey && !event.metaKey && event.key.length === 1 && /^[\x20-\x7E]$/.test(event.key)) {
+            this.setInputLanguage("english");
+        }
+
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
             event.preventDefault();
             showToast("이 미션은 직접 입력해야 공격할 수 있어요.", "info");
@@ -1038,11 +1055,60 @@ class TypingBattle {
         };
     }
 
-    handleInput() {
+    handleCompositionStart() {
+        if (this.completed || this.completing) return;
+
+        this.isComposing = true;
+        this.compositionBaseValue = this.previousValue;
+        this.setInputLanguage("korean");
+    }
+
+    handleCompositionEnd() {
+        if (this.completed || this.completing) return;
+
+        this.isComposing = false;
+        const currentValue = normalizeCode(this.input.value);
+        this.commitInput(this.compositionBaseValue, currentValue);
+        this.compositionBaseValue = currentValue;
+    }
+
+    setInputLanguage(language) {
+        if (!this.languageStatus) return;
+
+        const labels = {
+            english: "A · 영문 입력 중",
+            korean: "가 · 한글 입력 중",
+            unknown: "입력 언어가 A인지 확인하세요"
+        };
+        const label = labels[language] || labels.unknown;
+        const text = this.languageStatus.querySelector("span");
+
+        this.languageStatus.dataset.language = language;
+        this.languageStatus.title = language === "unknown"
+            ? "한 글자를 입력하면 현재 입력 언어를 표시합니다."
+            : `현재 감지된 입력 언어: ${label}`;
+        if (text) text.textContent = label;
+    }
+
+    handleInput(event) {
         if (this.completed || this.completing) return;
 
         const currentValue = normalizeCode(this.input.value);
-        const change = this.diffText(this.previousValue, currentValue);
+
+        if (this.isComposing || event?.isComposing) {
+            this.updateBattleView(currentValue);
+            return;
+        }
+
+        if (event?.data && /^[\x20-\x7E]+$/.test(event.data)) {
+            this.setInputLanguage("english");
+        }
+
+        this.commitInput(this.previousValue, currentValue);
+    }
+
+    commitInput(previousValue, currentValue) {
+        const change = this.diffText(previousValue, currentValue);
 
         if (!this.startTime && (change.inserted.length > 0 || change.removed.length > 0)) {
             this.startTimer();
@@ -1071,7 +1137,7 @@ class TypingBattle {
         }
 
         if (change.removed.length > 0) {
-            this.metrics.corrections += change.removed.length;
+            this.metrics.corrections += 1;
         }
 
         this.previousValue = currentValue;
@@ -1308,11 +1374,21 @@ class TypingBattle {
         if (accuracy >= 95) stars += 1;
         if (accuracy >= 98 && cpm >= targetCpm) stars += 1;
 
-        const score = Math.round(
-            accuracy * 6 +
-            Math.min(250, speedRatio * 180) +
-            Math.min(150, (this.metrics.maxCombo / Math.max(1, this.targetText.length)) * 180)
+        const accuracyScore = accuracy * 6;
+        const speedScore = Math.min(250, speedRatio * 180);
+        const comboScore = Math.min(
+            150,
+            (this.metrics.maxCombo / Math.max(1, this.targetText.length)) * 180
         );
+        const score = Math.round(accuracyScore + speedScore + comboScore);
+        const roundedAccuracyScore = Math.round(accuracyScore);
+        let roundedSpeedScore = Math.round(speedScore);
+        let roundedComboScore = score - roundedAccuracyScore - roundedSpeedScore;
+
+        if (roundedComboScore < 0) {
+            roundedSpeedScore += roundedComboScore;
+            roundedComboScore = 0;
+        }
 
         let rank = "C";
         if (accuracy >= 99 && speedRatio >= 1.15) rank = "S";
@@ -1342,6 +1418,12 @@ class TypingBattle {
             correctAttempts: this.metrics.correctAttempts,
             errors: this.metrics.errors,
             corrections: this.metrics.corrections,
+            targetCpm,
+            scoreBreakdown: {
+                accuracy: roundedAccuracyScore,
+                speed: roundedSpeedScore,
+                combo: roundedComboScore
+            },
             code: this.targetText,
             completedAt: new Date().toISOString()
         };
@@ -1381,6 +1463,8 @@ class TypingBattle {
 
         if (!this.input) return;
         this.input.removeEventListener("input", this.boundInput);
+        this.input.removeEventListener("compositionstart", this.boundCompositionStart);
+        this.input.removeEventListener("compositionend", this.boundCompositionEnd);
         this.input.removeEventListener("keydown", this.boundKeydown);
         this.input.removeEventListener("paste", this.boundPaste);
         this.input.removeEventListener("drop", this.boundPaste);
@@ -1520,6 +1604,15 @@ function launchResultConfetti() {
 }
 
 function renderResult(result) {
+    const targetCpm = result.targetCpm || LENGTH_CONFIG[result.length]?.targetCpm || 1;
+    const fallbackAccuracyScore = Math.round(result.accuracy * 6);
+    const fallbackSpeedScore = Math.round(Math.min(250, (result.cpm / targetCpm) * 180));
+    const scoreBreakdown = result.scoreBreakdown || {
+        accuracy: fallbackAccuracyScore,
+        speed: fallbackSpeedScore,
+        combo: result.score - fallbackAccuracyScore - fallbackSpeedScore
+    };
+
     setText("result-rank", result.rank);
     setText("result-stars", "★".repeat(result.stars) + "☆".repeat(3 - result.stars));
     setText("result-title", `${result.title} 클리어`);
@@ -1531,8 +1624,31 @@ function renderResult(result) {
     setText("result-accuracy", result.accuracy);
     setText("result-cpm", result.cpm);
     setText("result-time", `${result.durationSeconds}초`);
+    setText("result-corrections", result.corrections);
+    setText("result-target-cpm", targetCpm);
+    setText("result-accuracy-score", scoreBreakdown.accuracy);
+    setText("result-speed-score", scoreBreakdown.speed);
+    setText("result-combo-score", scoreBreakdown.combo);
     setText("result-coach-tip", coachTip(result));
     setText("result-code", result.code);
+
+    const scoreRing = $("#result-score-ring");
+    if (scoreRing) {
+        scoreRing.setAttribute("aria-valuenow", String(result.score));
+        scoreRing.style.setProperty("--score-progress", "0%");
+    }
+
+    const scoreFills = [
+        ["result-accuracy-score-fill", (scoreBreakdown.accuracy / 600) * 100],
+        ["result-speed-score-fill", (scoreBreakdown.speed / 250) * 100],
+        ["result-combo-score-fill", (scoreBreakdown.combo / 150) * 100]
+    ];
+
+    scoreFills.forEach(([id]) => setWidth(id, 0));
+    window.requestAnimationFrame(() => {
+        if (scoreRing) scoreRing.style.setProperty("--score-progress", `${clamp(result.score / 10, 0, 100)}%`);
+        scoreFills.forEach(([id, value]) => setWidth(id, clamp(value, 0, 100)));
+    });
 
     const bestBadge = $("#personal-best-badge");
     if (bestBadge) bestBadge.hidden = !result.isPersonalBest;
