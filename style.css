@@ -2260,7 +2260,7 @@ main {
 
 .race-track {
     position: relative;
-    height: 72px;
+    height: 92px;
     overflow: hidden;
     border: 1px solid var(--line-strong);
     border-radius: 16px;
@@ -2268,6 +2268,15 @@ main {
         linear-gradient(180deg, transparent 0 47%, rgba(255, 255, 255, 0.3) 47% 53%, transparent 53%),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 32px, transparent 32px 64px),
         var(--surface-raised);
+    background-position: 0 0, 0 0, 0 0;
+}
+
+.race-hud.racing .race-track {
+    animation: race-road-scroll 0.55s linear infinite;
+}
+
+.race-hud.finishing .race-track {
+    animation-duration: 0.24s;
 }
 
 .race-track::before,
@@ -2281,7 +2290,7 @@ main {
 }
 
 .race-track::before {
-    left: 0;
+    left: clamp(80px, 13%, 148px);
 }
 
 .race-track::after {
@@ -2311,42 +2320,90 @@ main {
 .race-kart {
     position: absolute;
     top: 50%;
-    left: 8%;
+    left: 7%;
     z-index: 4;
     display: block;
-    width: 58px;
-    height: 32px;
-    border: 2px solid var(--accent);
-    border-radius: 16px 18px 10px 10px;
-    background: var(--accent-soft);
-    color: var(--accent);
-    box-shadow: 0 0 18px rgba(184, 237, 90, 0.2);
+    width: 122px;
+    height: 90px;
     transform: translate(-50%, -50%);
     transition: left 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.race-kart b {
-    display: grid;
-    height: 100%;
-    place-items: center;
-    font-family: var(--font-code);
-    font-size: 0.72rem;
-}
-
-.race-kart i {
+.race-kart::before,
+.race-kart::after {
     position: absolute;
-    bottom: -5px;
-    width: 11px;
-    height: 8px;
-    border-radius: 5px;
-    background: var(--text);
+    top: 56%;
+    right: 72%;
+    z-index: 0;
+    pointer-events: none;
+    content: "";
+    opacity: 0;
+    transform: translateY(-50%);
 }
 
-.race-kart i:first-of-type { left: 8px; }
-.race-kart i:last-of-type { right: 8px; }
+.race-kart::before {
+    width: 52px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, transparent, rgba(77, 219, 255, 0.2) 28%, rgba(117, 233, 255, 0.9));
+    filter: blur(2px);
+}
+
+.race-kart::after {
+    width: 68px;
+    height: 28px;
+    background: repeating-linear-gradient(180deg, transparent 0 5px, rgba(255, 255, 255, 0.62) 5px 7px, transparent 7px 12px);
+    filter: blur(0.4px);
+}
+
+.race-hud.racing .race-kart::before {
+    opacity: 0.9;
+    animation: race-boost-trail 0.38s ease-in-out infinite alternate;
+}
+
+.race-hud.racing .race-kart::after {
+    opacity: 0.48;
+    animation: race-speed-lines 0.32s linear infinite;
+}
+
+.race-kart img {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 7px 8px rgba(21, 14, 28, 0.28));
+    pointer-events: none;
+}
+
+.race-hud.racing .race-kart img {
+    animation: race-kart-drive 0.28s ease-in-out infinite alternate;
+}
 
 .race-kart.boost {
     animation: race-boost 0.45s ease-out;
+}
+
+.race-kart.boost::before {
+    width: 76px;
+    opacity: 1;
+    filter: blur(3px) brightness(1.35);
+}
+
+.race-hud.finishing .race-kart {
+    transition-duration: 0.85s;
+    transition-timing-function: cubic-bezier(0.18, 0.72, 0.2, 1);
+}
+
+.race-hud.finishing .race-kart::before {
+    width: 92px;
+    opacity: 1;
+    filter: blur(3px) brightness(1.45);
+}
+
+.race-hud.finishing .race-finish-flag {
+    animation: race-finish-flag 0.7s ease-out both;
 }
 
 .race-kart.skid {
@@ -2358,7 +2415,7 @@ main {
     top: 50%;
     right: 13px;
     z-index: 3;
-    font-size: 1.4rem;
+    font-size: 1.65rem;
     filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.25));
     transform: translateY(-50%);
 }
@@ -2403,6 +2460,32 @@ main {
     100% { filter: brightness(1); transform: translate(-50%, -50%) scale(1); }
 }
 
+@keyframes race-road-scroll {
+    from { background-position: 0 0, 0 0, 0 0; }
+    to { background-position: 0 0, -64px 0, 0 0; }
+}
+
+@keyframes race-kart-drive {
+    from { transform: translateY(0) rotate(-0.6deg); }
+    to { transform: translateY(-2px) rotate(0.7deg); }
+}
+
+@keyframes race-boost-trail {
+    from { width: 40px; opacity: 0.55; }
+    to { width: 58px; opacity: 1; }
+}
+
+@keyframes race-speed-lines {
+    from { transform: translate(8px, -50%); }
+    to { transform: translate(-8px, -50%); }
+}
+
+@keyframes race-finish-flag {
+    0% { transform: translateY(-50%) rotate(0) scale(1); }
+    40% { transform: translateY(-54%) rotate(-12deg) scale(1.2); }
+    100% { transform: translateY(-50%) rotate(0) scale(1); }
+}
+
 @keyframes race-skid {
     0%, 100% { transform: translate(-50%, -50%) rotate(0); }
     30% { transform: translate(-54%, -50%) rotate(-5deg); }
@@ -2422,6 +2505,11 @@ main {
         width: 48px;
         height: 48px;
         border-radius: 15px 15px 15px 5px;
+    }
+
+    .race-kart {
+        width: 104px;
+        height: 78px;
     }
 }
 

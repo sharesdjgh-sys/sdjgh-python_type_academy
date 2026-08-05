@@ -1197,7 +1197,7 @@ class TypingBattle {
         setWidth("game-progress-fill", completion);
 
         const kart = $("#race-kart");
-        if (kart) kart.style.left = `${8 + completion * 0.84}%`;
+        if (kart) kart.style.left = `${7 + completion * 0.89}%`;
 
         const hud = $("#race-hud");
         if (hud) hud.classList.toggle("racing", Boolean(this.startTime));
@@ -1237,6 +1237,30 @@ class TypingBattle {
         kart.classList.remove("skid");
         void kart.offsetWidth;
         kart.classList.add("skid");
+    }
+
+    triggerFinish() {
+        const hud = $("#race-hud");
+        const kart = $("#race-kart");
+        const effect = $("#battle-effect");
+
+        if (hud) hud.classList.add("finishing");
+
+        if (kart) {
+            kart.classList.remove("boost", "skid");
+            void kart.offsetWidth;
+            kart.style.left = "112%";
+        }
+
+        setText("race-status", "FINISH!");
+        setText("race-distance", "100%");
+
+        if (effect) {
+            effect.textContent = "FINISH! · QUEST CLEAR";
+            effect.classList.remove("show");
+            void effect.offsetWidth;
+            effect.classList.add("show");
+        }
     }
 
     playTypingSound(correct) {
@@ -1330,6 +1354,12 @@ class TypingBattle {
         this.destroy();
 
         const result = this.calculateResult();
+        this.triggerFinish();
+        this.playTone(660, 0.1);
+
+        const finishDelay = AppState.profile.settings.motion ? 850 : 80;
+        await new Promise((resolve) => window.setTimeout(resolve, finishDelay));
+
         const rewardState = applyRewards(result);
 
         result.isPersonalBest = rewardState.isPersonalBest;
@@ -1339,7 +1369,6 @@ class TypingBattle {
         renderResult(result);
         updateProfileUI();
         showScreen("result-screen");
-        this.playTone(660, 0.1);
 
         executeAndRenderCode(result.code);
     }

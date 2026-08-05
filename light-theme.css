@@ -1693,14 +1693,7 @@ input:focus-visible {
 }
 
 .race-kart {
-    border-color: #d9585d;
-    background: linear-gradient(145deg, #f47f7e, #df5d64);
-    color: #ffffff;
-    box-shadow: 0 8px 16px rgba(126, 65, 85, 0.24);
-}
-
-.race-kart i {
-    background: #493b50;
+    filter: saturate(1.03);
 }
 
 .race-combo strong {
