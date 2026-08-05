@@ -364,7 +364,7 @@
                 <div class="game-toolbar">
                     <button class="icon-button danger" type="button" data-action="exit-game" aria-label="미션 나가기">×</button>
                     <div class="mission-identity">
-                        <span id="game-mode-label">빠른 전투 · 스테이지 1</span>
+                        <span id="game-mode-label">코딩 레이스 · 스테이지 1</span>
                         <h1 id="game-mission-title">기본 출력문</h1>
                     </div>
                     <div class="mission-clock">
@@ -373,28 +373,43 @@
                     </div>
                 </div>
 
-                <section class="battle-hud" aria-label="전투 현황">
-                    <div class="fighter player-fighter">
-                        <div class="fighter-avatar" aria-hidden="true">ME</div>
-                        <div class="fighter-status">
-                            <span>MY PLAYER · <strong id="battle-player-level">LV.1</strong></span>
-                            <div class="fighter-bar focus-bar"><span id="focus-bar"></span></div>
-                            <small>리듬 게이지 <strong id="focus-value">100%</strong></small>
+                <section id="race-hud" class="race-hud" aria-label="코딩 레이스 진행 상황">
+                    <div class="race-driver">
+                        <div class="race-driver-avatar" aria-hidden="true">
+                            <strong>Py</strong>
+                            <small>RACER</small>
+                        </div>
+                        <div class="race-driver-status">
+                            <span>MY KART · <strong id="battle-player-level">LV.1</strong></span>
+                            <div class="race-focus-bar"><span id="focus-bar"></span></div>
+                            <small>주행 안정도 <strong id="focus-value">100%</strong></small>
                         </div>
                     </div>
 
-                    <div id="battle-signal" class="battle-signal" aria-live="polite">
-                        <span>COMBO</span>
-                        <strong>×<span id="combo">0</span></strong>
-                    </div>
-
-                    <div class="fighter enemy-fighter">
-                        <div class="fighter-status">
-                            <span id="enemy-name">출력 젤리</span>
-                            <div class="fighter-bar enemy-bar"><span id="enemy-health-bar"></span></div>
-                            <small>남은 코드 <strong id="enemy-health-value">100%</strong></small>
+                    <div class="race-course">
+                        <header class="race-course-head">
+                            <span>START</span>
+                            <strong id="race-stage-name">PYTHON COURSE</strong>
+                            <span>FINISH</span>
+                        </header>
+                        <div class="race-track" aria-hidden="true">
+                            <span id="race-progress-fill" class="race-progress-fill"></span>
+                            <i class="race-checkpoint checkpoint-one"></i>
+                            <i class="race-checkpoint checkpoint-two"></i>
+                            <i class="race-checkpoint checkpoint-three"></i>
+                            <span id="race-kart" class="race-kart"><b>Py</b><i></i><i></i></span>
+                            <span class="race-finish-flag">🏁</span>
                         </div>
-                        <div id="enemy-avatar" class="fighter-avatar enemy-avatar" aria-hidden="true">◈</div>
+                        <footer class="race-course-footer">
+                            <div id="battle-signal" class="race-combo" aria-live="polite">
+                                <span>COMBO</span>
+                                <strong>×<span id="combo">0</span></strong>
+                            </div>
+                            <div class="race-distance">
+                                <span id="race-status">READY</span>
+                                <strong id="race-distance">0%</strong>
+                            </div>
+                        </footer>
                     </div>
                 </section>
 

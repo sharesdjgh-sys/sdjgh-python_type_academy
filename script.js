@@ -943,13 +943,14 @@ class TypingBattle {
 
     start() {
         const levelGroup = Number(this.code.levelGroup) || 1;
-        const enemy = getEnemyName(this.difficulty, levelGroup);
         const level = getLevelData(AppState.profile.xp).level;
 
         setText("game-mode-label", `${LENGTH_CONFIG[this.length].label} · 스테이지 ${levelGroup}`);
         setText("game-mission-title", this.code.title);
         setText("battle-player-level", `LV.${level}`);
-        setText("enemy-name", enemy);
+        setText("race-stage-name", `${this.code.title} COURSE`);
+        setText("race-status", "READY");
+        setText("race-distance", "0%");
         setText("target-line-count", `${this.targetLines.length}줄`);
         setText("timer", "00:00");
 
@@ -1077,6 +1078,10 @@ class TypingBattle {
         this.playTypingSound(correctInChange > 0 && incorrectInChange === 0);
         this.updateBattleView(currentValue);
 
+        if (incorrectInChange > 0) {
+            this.triggerSkid();
+        }
+
         if (currentValue === this.targetText) {
             this.complete();
         }
@@ -1155,7 +1160,7 @@ class TypingBattle {
                 element.classList.add("correct");
                 if (targetLine.length > 0 && !this.attackedLines.has(index)) {
                     this.attackedLines.add(index);
-                    this.triggerAttack(index);
+                    this.triggerCheckpoint(index);
                 }
             } else if (index === currentLine && isPrefix) {
                 element.classList.add("current");
@@ -1172,32 +1177,42 @@ class TypingBattle {
         const completion = this.targetText.length
             ? (correctPositions / this.targetText.length) * 100
             : 0;
-        const enemyHealth = 100 - completion;
+        const roundedCompletion = Math.round(completion);
 
         setText("combo", this.metrics.combo);
         setText("accuracy", Math.round(accuracy));
         setText("cpm", cpm);
         setText("corrections", this.metrics.corrections);
-        setText("completion", Math.round(completion));
+        setText("completion", roundedCompletion);
         setText("live-score", this.getLiveScore(value));
         setText("focus-value", `${Math.round(accuracy)}%`);
-        setText("enemy-health-value", `${Math.round(enemyHealth)}%`);
+        setText("race-distance", `${roundedCompletion}%`);
+        setText(
+            "race-status",
+            completion >= 100 ? "FINISH!" : this.startTime ? (this.metrics.combo >= 20 ? "BOOST!" : "RACING") : "READY"
+        );
 
         setWidth("focus-bar", accuracy);
-        setWidth("enemy-health-bar", enemyHealth);
+        setWidth("race-progress-fill", completion);
         setWidth("game-progress-fill", completion);
+
+        const kart = $("#race-kart");
+        if (kart) kart.style.left = `${8 + completion * 0.84}%`;
+
+        const hud = $("#race-hud");
+        if (hud) hud.classList.toggle("racing", Boolean(this.startTime));
     }
 
-    triggerAttack(lineIndex) {
-        const enemyAvatar = $("#enemy-avatar");
+    triggerCheckpoint(lineIndex) {
+        const kart = $("#race-kart");
         const signal = $("#battle-signal");
         const effect = $("#battle-effect");
-        const damage = 12 + Math.min(30, Math.floor(this.metrics.combo / 8));
+        const boost = 12 + Math.min(30, Math.floor(this.metrics.combo / 8));
 
-        if (enemyAvatar) {
-            enemyAvatar.classList.remove("hit");
-            void enemyAvatar.offsetWidth;
-            enemyAvatar.classList.add("hit");
+        if (kart) {
+            kart.classList.remove("boost");
+            void kart.offsetWidth;
+            kart.classList.add("boost");
         }
 
         if (signal) {
@@ -1207,13 +1222,21 @@ class TypingBattle {
         }
 
         if (effect) {
-            effect.textContent = `LINE ${lineIndex + 1} CLEAR!  +${damage} BEAT`;
+            effect.textContent = `CHECKPOINT ${lineIndex + 1} · BOOST +${boost}`;
             effect.classList.remove("show");
             void effect.offsetWidth;
             effect.classList.add("show");
         }
 
         this.playTone(520, 0.045);
+    }
+
+    triggerSkid() {
+        const kart = $("#race-kart");
+        if (!kart) return;
+        kart.classList.remove("skid");
+        void kart.offsetWidth;
+        kart.classList.add("skid");
     }
 
     playTypingSound(correct) {
