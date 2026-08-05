@@ -1981,11 +1981,31 @@ input:focus-visible {
     color: var(--muted);
 }
 
+.execution-pane {
+    border-color: rgba(105, 75, 86, 0.14);
+    background: #fffdfc;
+    color: #463c42;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.execution-pane-bar {
+    border-bottom-color: rgba(105, 75, 86, 0.11);
+    background: #f2eaee;
+    color: #8b747e;
+}
+
+.source-pane .execution-pane-bar {
+    background: #eaf5fb;
+    color: #5684a0;
+}
+
+.execution-pane-bar strong {
+    color: #5a4850;
+}
+
 .result-code,
 .execution-output {
-    border-color: rgba(105, 75, 86, 0.14);
-    background: #f8f3f5;
-    color: #51454b;
+    color: #3f353b;
 }
 
 .execution-output pre {

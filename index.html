@@ -565,13 +565,25 @@
                         <span id="execution-status" class="execution-status">엔진 준비 중</span>
                     </header>
                     <div class="execution-grid">
-                        <pre class="result-code"><code id="result-code"></code></pre>
-                        <div class="execution-output">
-                            <div id="execution-loading" class="execution-loading">파이썬 엔진을 불러오고 있습니다…</div>
-                            <pre id="execution-output" hidden></pre>
-                            <pre id="execution-error" class="execution-error" hidden></pre>
-                            <div id="execution-images" class="execution-images"></div>
-                        </div>
+                        <section class="execution-pane source-pane" aria-label="완성한 파이썬 코드">
+                            <header class="execution-pane-bar">
+                                <span>SOURCE CODE</span>
+                                <strong>main.py</strong>
+                            </header>
+                            <pre class="result-code"><code id="result-code"></code></pre>
+                        </section>
+                        <section class="execution-pane output-pane" aria-label="파이썬 실행 결과">
+                            <header class="execution-pane-bar">
+                                <span>OUTPUT</span>
+                                <strong>Python 3</strong>
+                            </header>
+                            <div class="execution-output">
+                                <div id="execution-loading" class="execution-loading">파이썬 엔진을 불러오고 있습니다…</div>
+                                <pre id="execution-output" hidden></pre>
+                                <pre id="execution-error" class="execution-error" hidden></pre>
+                                <div id="execution-images" class="execution-images"></div>
+                            </div>
+                        </section>
                     </div>
                 </section>
 

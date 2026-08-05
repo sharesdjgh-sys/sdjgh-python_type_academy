@@ -1,3 +1,11 @@
+@font-face {
+    font-family: "PTA JetBrains Mono";
+    src: url("assets/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
 :root {
     color-scheme: dark;
     --bg: #07110e;
@@ -2996,36 +3004,89 @@ main {
     min-width: 0;
 }
 
-.result-code,
-.execution-output {
+.execution-pane {
     min-width: 0;
     min-height: 180px;
     max-height: 480px;
-    margin: 0;
     overflow: auto;
     border: 1px solid var(--line);
-    border-radius: 9px;
+    border-radius: 11px;
     background: #050d0a;
     color: var(--text-soft);
-    font-family: var(--font-code);
-    font-size: 0.72rem;
-    line-height: 1.65;
-    white-space: pre;
+    font-family: Consolas, "PTA JetBrains Mono", "Malgun Gothic", monospace;
     scrollbar-color: var(--line-strong) transparent;
 }
 
+.execution-pane-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 38px;
+    padding: 0 15px;
+    border-bottom: 1px solid var(--line);
+    background: #0c1713;
+    color: var(--muted);
+    font-family: Consolas, "PTA JetBrains Mono", "Malgun Gothic", monospace;
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+}
+
+.execution-pane-bar strong {
+    color: var(--text-soft);
+    font-family: inherit;
+    font-size: 0.63rem;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.result-code,
+.execution-output {
+    min-width: 0;
+    margin: 0;
+    color: var(--text-soft);
+    font-family: Consolas, "PTA JetBrains Mono", "Malgun Gothic", monospace;
+    font-size: clamp(0.8rem, 1vw, 0.88rem);
+    font-weight: 400;
+    font-variant-ligatures: contextual;
+    line-height: 1.75;
+    text-align: left;
+    tab-size: 4;
+}
+
 .result-code {
-    padding: 15px;
+    min-height: 140px;
+    padding: 18px 20px 22px;
+    overflow: visible;
+    white-space: pre;
 }
 
 .execution-output {
-    padding: 15px;
+    min-height: 140px;
+    padding: 18px 20px 22px;
+}
+
+.output-pane,
+.output-pane .execution-pane-bar,
+.output-pane .execution-output {
+    font-family: "PTA JetBrains Mono", "Malgun Gothic", Consolas, monospace;
+}
+
+.result-code code,
+.execution-output pre,
+.execution-loading {
+    font-family: inherit;
 }
 
 .execution-output pre {
     margin: 0;
     color: var(--success);
     font: inherit;
+    text-align: left;
     white-space: pre-wrap;
 }
 
@@ -3036,10 +3097,11 @@ main {
 .execution-loading {
     display: flex;
     align-items: center;
-    min-height: 145px;
-    justify-content: center;
+    min-height: 0;
+    justify-content: flex-start;
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.76rem;
+    text-align: left;
 }
 
 .execution-loading::before {
