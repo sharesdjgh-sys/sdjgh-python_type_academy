@@ -134,16 +134,19 @@
     }
 
     function playerSlotMarkup(player, index) {
+        const kartAsset = index === 0
+            ? "assets/python-kart-battle-coral.png"
+            : "assets/python-kart-battle-lavender.png";
         if (!player) {
             return `
-                <span class="player-slot-avatar">P${index + 1}</span>
+                <span class="player-slot-avatar" aria-hidden="true"><img src="${kartAsset}" alt=""></span>
                 <div><small>${index === 0 ? "HOST" : "CHALLENGER"}</small>
                 <strong>기다리는 중</strong><span>연결 대기</span></div>
             `;
         }
         const readyText = player.ready ? "READY!" : player.connected ? "준비 중" : "재접속 대기";
         return `
-            <span class="player-slot-avatar">${player.isHost ? "H" : "P"}</span>
+            <span class="player-slot-avatar" aria-hidden="true"><img src="${kartAsset}" alt=""></span>
             <div><small>${player.isHost ? "HOST" : "CHALLENGER"}</small>
             <strong>${escapeHTML(player.nickname)}${player.id === state.session?.playerId ? " · 나" : ""}</strong>
             <span>${readyText}</span></div>
@@ -220,10 +223,43 @@
         setText("race-rival-cpm", `${Math.round(rival?.cpm || 0)} CPM`);
         setWidth("race-my-progress", me?.progress || 0);
         setWidth("race-rival-progress", rival?.progress || 0);
+        setBattleKartIdentity("battle-my-kart", me);
+        setBattleKartIdentity("battle-rival-kart", rival);
+        setBattleKartPosition("battle-my-kart", me?.progress || 0);
+        setBattleKartPosition("battle-rival-kart", rival?.progress || 0);
         const notice = rival && !rival.connected
             ? "상대의 연결이 끊겼습니다. 15초 동안 재접속을 기다립니다."
             : "먼저 정확하게 완성하면 승리합니다.";
         setText("battle-race-notice", notice);
+    }
+
+    function setBattleKartIdentity(id, player) {
+        const kart = document.getElementById(id);
+        if (!kart || !player) return;
+
+        const isHost = Boolean(player.isHost);
+        const image = kart.querySelector("img");
+        const lane = kart.closest(".battle-kart-lane");
+        if (image) {
+            image.src = isHost
+                ? "assets/python-kart-battle-coral.png"
+                : "assets/python-kart-battle-lavender.png";
+            image.alt = isHost ? "HOST 코럴 카트" : "CHALLENGER 라벤더 카트";
+        }
+        if (lane) {
+            lane.classList.toggle("kart-coral", isHost);
+            lane.classList.toggle("kart-lavender", !isHost);
+        }
+    }
+
+    function setBattleKartPosition(id, progress) {
+        const kart = document.getElementById(id);
+        if (!kart) return;
+
+        const normalizedProgress = Math.min(100, Math.max(0, Number(progress) || 0));
+        kart.style.left = `${8 + normalizedProgress * 0.82}%`;
+        kart.classList.toggle("is-moving", normalizedProgress > 0 && normalizedProgress < 100);
+        kart.classList.toggle("is-finished", normalizedProgress >= 100);
     }
 
     function startRaceTimer() {

@@ -779,12 +779,12 @@
 
                     <section class="battle-player-versus" aria-label="참가 플레이어">
                         <article id="battle-player-one" class="battle-player-slot">
-                            <span class="player-slot-avatar">P1</span>
+                            <span class="player-slot-avatar" aria-hidden="true"><img src="assets/python-kart-battle-coral.png" alt=""></span>
                             <div><small>HOST</small><strong>기다리는 중</strong><span>연결 대기</span></div>
                         </article>
                         <div class="battle-versus-mark">VS</div>
                         <article id="battle-player-two" class="battle-player-slot">
-                            <span class="player-slot-avatar">P2</span>
+                            <span class="player-slot-avatar" aria-hidden="true"><img src="assets/python-kart-battle-lavender.png" alt=""></span>
                             <div><small>CHALLENGER</small><strong>기다리는 중</strong><span>연결 대기</span></div>
                         </article>
                     </section>
@@ -823,6 +823,26 @@
                         <span class="race-progress"><span id="race-rival-progress"></span></span>
                         <p><strong id="race-rival-percent">0%</strong><span id="race-rival-cpm">0 CPM</span></p>
                     </article>
+                </section>
+
+                <section class="battle-kart-arena" aria-label="실시간 카트 레이스 진행 상황">
+                    <header>
+                        <div><span>DUAL KART TRACK</span><strong>코드를 완성해 먼저 결승선을 통과하세요.</strong></div>
+                        <span class="battle-track-live"><i aria-hidden="true"></i> LIVE</span>
+                    </header>
+                    <div class="battle-kart-lane kart-coral">
+                        <span class="battle-lane-label">ME</span>
+                        <span id="battle-my-kart" class="battle-kart" style="left: 8%;">
+                            <img src="assets/python-kart-battle-coral.png" alt="내 코럴 카트" width="1254" height="1254">
+                        </span>
+                    </div>
+                    <div class="battle-kart-lane kart-lavender">
+                        <span class="battle-lane-label">RIVAL</span>
+                        <span id="battle-rival-kart" class="battle-kart" style="left: 8%;">
+                            <img src="assets/python-kart-battle-lavender.png" alt="상대 라벤더 카트" width="1254" height="1254">
+                        </span>
+                    </div>
+                    <span class="battle-finish-gate" aria-hidden="true"><strong>FINISH</strong></span>
                 </section>
 
                 <div class="battle-grid">

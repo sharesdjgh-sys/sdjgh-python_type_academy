@@ -5251,8 +5251,8 @@ body[data-motion="off"] *::after {
 
 .player-slot-avatar {
     display: grid;
-    width: 54px;
-    height: 54px;
+    width: 72px;
+    height: 72px;
     flex: 0 0 auto;
     place-items: center;
     border-radius: 16px;
@@ -5260,6 +5260,14 @@ body[data-motion="off"] *::after {
     color: #ca555b;
     font-family: var(--font-code);
     font-weight: 900;
+}
+
+.player-slot-avatar img {
+    display: block;
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
+    filter: drop-shadow(0 9px 10px rgba(107, 67, 86, 0.16));
 }
 
 #battle-player-two .player-slot-avatar {
@@ -5393,6 +5401,193 @@ body[data-motion="off"] *::after {
 .race-player-card > p strong {
     color: var(--text);
     font-family: var(--font-code);
+}
+
+.battle-kart-arena {
+    position: relative;
+    margin-bottom: 18px;
+    padding: 15px 18px 18px;
+    overflow: hidden;
+    border: 1px solid rgba(128, 101, 189, 0.18);
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 16% 0, rgba(220, 102, 107, 0.1), transparent 24rem),
+        radial-gradient(circle at 84% 100%, rgba(128, 101, 189, 0.11), transparent 24rem),
+        #fffdfc;
+    box-shadow: 0 15px 34px rgba(103, 69, 84, 0.07);
+}
+
+.battle-kart-arena > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 11px;
+}
+
+.battle-kart-arena > header > div {
+    display: grid;
+    gap: 3px;
+}
+
+.battle-kart-arena > header span {
+    color: #8065bd;
+    font-family: var(--font-code);
+    font-size: 0.52rem;
+    font-weight: 900;
+    letter-spacing: 0.11em;
+}
+
+.battle-kart-arena > header strong {
+    color: #51454b;
+    font-size: 0.71rem;
+}
+
+.battle-track-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(220, 102, 107, 0.18);
+    border-radius: 999px;
+    background: #fff2ef;
+    color: #c65359 !important;
+}
+
+.battle-track-live i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #dc666b;
+    box-shadow: 0 0 0 4px rgba(220, 102, 107, 0.1);
+    animation: battle-live-pulse 1.5s ease-in-out infinite;
+}
+
+.battle-kart-lane {
+    position: relative;
+    height: 94px;
+    overflow: hidden;
+    border: 1px solid rgba(105, 75, 86, 0.11);
+    border-radius: 14px;
+    background:
+        linear-gradient(90deg, transparent 0 8%, rgba(255, 255, 255, 0.56) 8% 8.3%, transparent 8.3% 90%, rgba(255, 255, 255, 0.72) 90% 90.4%, transparent 90.4%),
+        repeating-linear-gradient(90deg, transparent 0 34px, rgba(255, 255, 255, 0.48) 34px 48px, transparent 48px 73px),
+        #efe9e8;
+    background-position: 0 0, 0 72px, 0 0;
+    background-size: auto, auto 4px, auto;
+    background-repeat: no-repeat, repeat-x, no-repeat;
+}
+
+.battle-kart-lane + .battle-kart-lane {
+    margin-top: 8px;
+}
+
+.battle-kart-lane.kart-coral {
+    box-shadow: inset 4px 0 #dc666b;
+}
+
+.battle-kart-lane.kart-lavender {
+    background-color: #ebe9f4;
+    box-shadow: inset 4px 0 #8065bd;
+}
+
+.battle-lane-label {
+    position: absolute;
+    top: 8px;
+    left: 11px;
+    z-index: 4;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.84);
+    color: #c65359;
+    font-family: var(--font-code);
+    font-size: 0.48rem;
+    font-weight: 950;
+    box-shadow: 0 4px 10px rgba(103, 69, 84, 0.08);
+}
+
+.kart-lavender .battle-lane-label {
+    color: #7151b3;
+}
+
+.battle-kart {
+    position: absolute;
+    bottom: -14px;
+    z-index: 3;
+    display: block;
+    width: 116px;
+    height: 116px;
+    transform: translateX(-50%);
+    transition: left 180ms linear, filter 220ms ease, transform 220ms ease;
+    will-change: left;
+}
+
+.battle-kart::before {
+    position: absolute;
+    top: 57px;
+    right: 78%;
+    width: 66px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, transparent, rgba(220, 102, 107, 0.38));
+    content: "";
+    opacity: 0;
+    filter: blur(5px);
+    transition: opacity 160ms ease;
+}
+
+.kart-lavender .battle-kart::before {
+    background: linear-gradient(90deg, transparent, rgba(153, 112, 218, 0.42));
+}
+
+.battle-kart.is-moving::before {
+    opacity: 1;
+}
+
+.battle-kart img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 9px 8px rgba(62, 43, 57, 0.2));
+}
+
+.battle-kart.is-moving img {
+    animation: battle-kart-bob 0.26s ease-in-out infinite alternate;
+}
+
+.battle-kart.is-finished {
+    filter: drop-shadow(0 0 13px rgba(239, 175, 61, 0.44));
+    transform: translateX(-50%) scale(1.08);
+}
+
+.battle-finish-gate {
+    position: absolute;
+    top: 54px;
+    right: calc(10% - 17px);
+    bottom: 18px;
+    z-index: 2;
+    width: 34px;
+    border-right: 3px solid #584a50;
+    border-left: 3px solid #584a50;
+    background:
+        conic-gradient(from 90deg, #fff 25%, #40363a 0 50%, #fff 0 75%, #40363a 0)
+        0 0 / 16px 16px;
+    box-shadow: 0 8px 16px rgba(70, 51, 60, 0.12);
+}
+
+.battle-finish-gate strong {
+    position: absolute;
+    top: -17px;
+    left: 50%;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #40363a;
+    color: #ffffff;
+    font-family: var(--font-code);
+    font-size: 0.42rem;
+    letter-spacing: 0.08em;
+    transform: translateX(-50%);
 }
 
 .battle-race-screen {
@@ -5565,6 +5760,11 @@ body[data-motion="off"] *::after {
     }
 }
 
+@keyframes battle-kart-bob {
+    from { transform: translateY(0) rotate(-0.4deg); }
+    to { transform: translateY(-2px) rotate(0.4deg); }
+}
+
 @media (max-width: 860px) {
     .battle-portal-hero,
     .battle-entry-grid,
@@ -5629,6 +5829,33 @@ body[data-motion="off"] *::after {
 
     .race-vs {
         display: none;
+    }
+
+    .battle-kart-arena {
+        padding: 13px 11px 12px;
+        border-radius: 16px;
+    }
+
+    .battle-kart-arena > header strong {
+        max-width: 230px;
+        font-size: 0.63rem;
+    }
+
+    .battle-kart-lane {
+        height: 80px;
+    }
+
+    .battle-kart {
+        bottom: -13px;
+        width: 98px;
+        height: 98px;
+    }
+
+    .battle-finish-gate {
+        top: 50px;
+        right: calc(10% - 15px);
+        bottom: 12px;
+        width: 30px;
     }
 
     .battle-result-player dl {
