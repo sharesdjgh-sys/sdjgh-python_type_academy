@@ -54,11 +54,11 @@ const WORLD_CONFIG = {
         hubVideo: "assets/world-02-hub.mp4",
         hubAlt: "빛나는 레일을 따라 다섯 로직 퍼즐 구역을 탐험하는 로봇 캐릭터",
         stageArts: [
-            "assets/world-02-zone-01.webp",
-            "assets/world-02-zone-02.webp",
-            "assets/world-02-zone-03.webp",
-            "assets/world-02-zone-04.webp",
-            "assets/world-02-zone-05.webp"
+            "assets/world-02-zone-01-v2.webp",
+            "assets/world-02-zone-02-v2.webp",
+            "assets/world-02-zone-03-v2.webp",
+            "assets/world-02-zone-04-v2.webp",
+            "assets/world-02-zone-05-v2.webp"
         ],
         stageNames: [
             "조건 분기 게이트",
@@ -70,7 +70,7 @@ const WORLD_CONFIG = {
         headline: "흩어진 로직 조각으로 콤보를 이어가요.",
         description: "조건문, 반복문, 함수와 자료구조를 연결하며 문제 해결 루틴을 완성해요.",
         cardDescription: "조건과 반복을 연결하고, 한 단계 더 짜릿한 로직 콤보에 도전해요.",
-        enemies: ["조건문 블록", "루프 스피너", "함수 캡슐", "자료구조 큐브", "정렬 비트"]
+        enemies: ["분기 스위치", "판정 스캐너", "문자열 시그널", "리스트 큐브", "루프 리액터"]
     },
     advanced: {
         order: 3,
@@ -84,11 +84,11 @@ const WORLD_CONFIG = {
         hubVideo: "assets/world-03-hub.mp4",
         hubAlt: "데이터 도시의 다섯 분석 구역을 연결하며 대시보드를 조작하는 로봇 캐릭터",
         stageArts: [
-            "assets/world-03-zone-01.webp",
-            "assets/world-03-zone-02.webp",
-            "assets/world-03-zone-03.webp",
-            "assets/world-03-zone-04.webp",
-            "assets/world-03-zone-05.webp"
+            "assets/world-03-zone-01-v2.webp",
+            "assets/world-03-zone-02-v2.webp",
+            "assets/world-03-zone-03-v2.webp",
+            "assets/world-03-zone-04-v2.webp",
+            "assets/world-03-zone-05-v2.webp"
         ],
         stageNames: [
             "데이터프레임 보드",
@@ -100,7 +100,7 @@ const WORLD_CONFIG = {
         headline: "데이터를 움직여 나만의 결과 화면을 만들어요.",
         description: "NumPy, pandas, 시각화와 머신러닝 코드를 입력하고 실제 실행 결과까지 확인해요.",
         cardDescription: "데이터와 차트를 직접 움직이는 파이널 스테이지를 플레이해요.",
-        enemies: ["데이터 비트", "배열 웨이브", "모델 픽셀", "결측치 고스트", "차트 스타"]
+        enemies: ["데이터 보드", "배열 매트릭스", "모델 가든", "결측치 고스트", "차트 스타"]
     }
 };
 
