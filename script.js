@@ -24,11 +24,11 @@ const WORLD_CONFIG = {
         hubVideo: "assets/world-01-hub.mp4",
         hubAlt: "키보드 길을 따라 다섯 문법 스테이지를 탐험하는 로봇 캐릭터",
         stageArts: [
-            "assets/world-01-zone-01.webp",
-            "assets/world-01-zone-02.webp",
-            "assets/world-01-zone-03.webp",
-            "assets/world-01-zone-04.webp",
-            "assets/world-01-zone-05.webp"
+            "assets/world-01-zone-01-v2.webp",
+            "assets/world-01-zone-02-v2.webp",
+            "assets/world-01-zone-03-v2.webp",
+            "assets/world-01-zone-04-v2.webp",
+            "assets/world-01-zone-05-v2.webp"
         ],
         stageNames: [
             "첫 출력 신호",
@@ -40,7 +40,7 @@ const WORLD_CONFIG = {
         headline: "첫 코드를 모아 플레이룸을 완성해요.",
         description: "출력, 변수, 연산과 자료형을 짧은 퀘스트로 플레이하며 파이썬 감각을 깨워요.",
         cardDescription: "처음이어도 괜찮아요. 짧은 코드부터 리듬을 타듯 시작해요.",
-        enemies: ["출력 젤리", "연산 폭스", "리스트 큐브", "문자열 고스트", "루프 베어"]
+        enemies: ["출력 비콘", "메시지 팩토리", "연산 콤보", "문자열 캡슐", "숫자 에너지"]
     },
     intermediate: {
         order: 2,
