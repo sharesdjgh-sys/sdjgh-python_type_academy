@@ -868,16 +868,38 @@
 
             <section id="battle-result-screen" class="screen battle-screen battle-result-screen" aria-labelledby="battle-result-title" aria-hidden="true">
                 <section class="battle-result-hero">
-                    <p class="eyebrow">BATTLE RESULT</p>
-                    <div id="battle-result-emblem" class="battle-result-emblem">WIN</div>
+                    <div id="battle-result-confetti" class="battle-result-confetti" aria-hidden="true"></div>
+                    <div class="battle-result-grid" aria-hidden="true"></div>
+                    <p class="battle-result-kicker"><span></span> MATCH COMPLETE <span></span></p>
+                    <div class="battle-result-emblem-wrap">
+                        <span class="battle-result-orbit orbit-one"></span>
+                        <span class="battle-result-orbit orbit-two"></span>
+                        <div id="battle-result-emblem" class="battle-result-emblem">WIN</div>
+                    </div>
+                    <p id="battle-result-overline" class="battle-result-overline">QUEST CLEAR!</p>
                     <h1 id="battle-result-title">승리!</h1>
                     <p id="battle-result-message">정확한 타이핑으로 코드 레이스를 먼저 완주했어요.</p>
+                    <div id="battle-result-highlight" class="battle-result-highlight">
+                        <span>결정적 한 수</span>
+                        <strong>기록을 집계하고 있어요</strong>
+                    </div>
                 </section>
-                <div id="battle-result-players" class="battle-result-players"></div>
-                <p class="battle-no-reward-note">배틀 결과는 학습 XP·코인·개인 기록에 반영되지 않습니다.</p>
+
+                <section class="battle-match-report" aria-labelledby="battle-report-title">
+                    <header class="battle-report-heading">
+                        <div>
+                            <p class="eyebrow">MATCH REPORT</p>
+                            <h2 id="battle-report-title">승부 기록</h2>
+                        </div>
+                        <span class="battle-report-status">FINAL</span>
+                    </header>
+                    <div id="battle-result-players" class="battle-result-players"></div>
+                </section>
+
+                <p class="battle-no-reward-note"><span aria-hidden="true">ⓘ</span> 친선 배틀은 학습 XP·코인·개인 기록에 반영되지 않아요.</p>
                 <div class="result-actions">
                     <button class="button button-ghost" type="button" data-battle-action="home">홈으로</button>
-                    <button class="button button-battle" type="button" data-battle-action="new-room">새 배틀 시작</button>
+                    <button class="button button-battle battle-rematch-button" type="button" data-battle-action="new-room">다시 승부하기 <span aria-hidden="true">→</span></button>
                 </div>
             </section>
 

@@ -348,22 +348,57 @@
         }, 100);
     }
 
-    function resultPlayerMarkup(player, winnerId, tie) {
+    function resultPlayerMarkup(player, winnerId, tie, index) {
         const won = !tie && player.id === winnerId;
+        const isMe = player.id === state.session?.playerId;
         const duration = Number.isFinite(player.durationMs)
             ? `${(player.durationMs / 1000).toFixed(1)}초`
             : "미완주";
+        const accuracy = Math.round(player.accuracy || 0);
+        const cpm = Math.round(player.cpm || 0);
+        const kartAsset = index === 0
+            ? "assets/python-kart-battle-coral.png"
+            : "assets/python-kart-battle-lavender.png";
+        const resultLabel = won ? "1ST · WINNER" : tie ? "DRAW" : "2ND · FINISH";
         return `
-            <article class="battle-result-player ${won ? "is-winner" : ""}">
-                <span>${won ? "WINNER" : tie ? "DRAW" : "PLAYER"}</span>
-                <h2>${escapeHTML(player.nickname)}</h2>
-                <dl>
-                    <div><dt>완주</dt><dd>${duration}</dd></div>
-                    <div><dt>정확도</dt><dd>${Math.round(player.accuracy || 0)}%</dd></div>
-                    <div><dt>CPM</dt><dd>${Math.round(player.cpm || 0)}</dd></div>
+            <article class="battle-result-player ${won ? "is-winner" : ""} ${isMe ? "is-me" : ""}">
+                <div class="battle-player-rank">
+                    <span>${resultLabel}</span>
+                    ${isMe ? '<small>YOU</small>' : '<small>RIVAL</small>'}
+                </div>
+                <div class="battle-player-identity">
+                    <span class="battle-result-kart"><img src="${kartAsset}" alt="" width="512" height="512"></span>
+                    <div><h3>${escapeHTML(player.nickname)}</h3><p>${won ? "오늘의 코드 레이서" : tie ? "막상막하의 레이서" : "끝까지 완주한 레이서"}</p></div>
+                    ${won ? '<span class="battle-winner-crown" aria-label="승자">♛</span>' : ''}
+                </div>
+                <dl class="battle-result-stats">
+                    <div><dt>FINISH</dt><dd>${duration}</dd></div>
+                    <div><dt>ACCURACY</dt><dd>${accuracy}<small>%</small></dd></div>
+                    <div><dt>SPEED</dt><dd>${cpm}<small> CPM</small></dd></div>
                 </dl>
+                <div class="battle-performance-bars" aria-hidden="true">
+                    <span style="--value:${accuracy}%"><i></i></span>
+                    <span style="--value:${Math.min(100, Math.round(cpm / 4))}%"><i></i></span>
+                </div>
             </article>
         `;
+    }
+
+    function resultHighlight(result, meWon) {
+        if (result.reason === "forfeit") {
+            return meWon ? "상대의 기권으로 승부가 결정됐어요" : "연결 종료로 승부가 마무리됐어요";
+        }
+        if (result.tie) return "0.1초도 양보하지 않은 완벽한 접전";
+
+        const finishers = result.players.filter((player) => Number.isFinite(player.durationMs));
+        if (finishers.length === 2) {
+            const gap = Math.abs(finishers[0].durationMs - finishers[1].durationMs) / 1000;
+            if (gap < 1) return `단 ${gap.toFixed(1)}초가 승부를 갈랐어요`;
+            return `${gap.toFixed(1)}초 차이로 결승선을 통과했어요`;
+        }
+
+        const winner = result.players.find((player) => player.id === result.winnerId);
+        return winner ? `${Math.round(winner.accuracy || 0)}% 정확도로 완주한 승부` : "끝까지 팽팽했던 코드 레이스";
     }
 
     function renderResult(result) {
@@ -387,12 +422,17 @@
                     : "기록을 확인하고 다음 레이스에서 다시 도전해 보세요.";
 
         setText("battle-result-emblem", emblem);
+        setText("battle-result-overline", result.tie ? "EVEN MATCH" : meWon ? "QUEST CLEAR!" : "NEXT CHALLENGE");
         setText("battle-result-title", title);
         setText("battle-result-message", message);
+        const highlight = document.getElementById("battle-result-highlight");
+        if (highlight) {
+            highlight.innerHTML = `<span>${result.tie ? "승부의 순간" : "결정적 한 수"}</span><strong>${resultHighlight(result, meWon)}</strong>`;
+        }
         const container = document.getElementById("battle-result-players");
         if (container) {
             container.innerHTML = result.players
-                .map((player) => resultPlayerMarkup(player, result.winnerId, result.tie))
+                .map((player, index) => resultPlayerMarkup(player, result.winnerId, result.tie, index))
                 .join("");
         }
         document.getElementById("battle-result-screen")?.setAttribute("data-result", emblem.toLowerCase());
