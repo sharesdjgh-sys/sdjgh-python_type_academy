@@ -701,8 +701,27 @@
                     </figure>
                 </section>
 
-                <div class="battle-entry-grid">
-                    <form id="battle-create-form" class="battle-entry-card">
+                <section class="battle-entry-chooser" aria-labelledby="battle-entry-title">
+                    <div class="battle-entry-chooser-heading">
+                        <p class="eyebrow">CHOOSE YOUR LANE</p>
+                        <h2 id="battle-entry-title">어떻게 배틀을 시작할까요?</h2>
+                    </div>
+                    <div class="battle-entry-actions">
+                        <button class="battle-entry-action is-create" type="button" data-battle-action="show-create" aria-controls="battle-create-form" aria-expanded="false">
+                            <span class="battle-entry-action-icon" aria-hidden="true">＋</span>
+                            <span><small>CREATE ROOM</small><strong>새 배틀방 만들기</strong><em>미션을 고르고 초대 코드를 만들어요.</em></span>
+                            <b aria-hidden="true">→</b>
+                        </button>
+                        <button class="battle-entry-action is-join" type="button" data-battle-action="show-join" aria-controls="battle-join-form" aria-expanded="false">
+                            <span class="battle-entry-action-icon" aria-hidden="true">VS</span>
+                            <span><small>JOIN ROOM</small><strong>친구방에 참여하기</strong><em>받은 방 코드로 바로 합류해요.</em></span>
+                            <b aria-hidden="true">→</b>
+                        </button>
+                    </div>
+                </section>
+
+                <div id="battle-entry-grid" class="battle-entry-grid" aria-live="polite">
+                    <form id="battle-create-form" class="battle-entry-card" hidden>
                         <div class="battle-entry-card-head">
                             <span class="battle-entry-number">CREATE ROOM</span>
                             <span class="battle-entry-icon" aria-hidden="true">01</span>
@@ -713,24 +732,79 @@
                             <span>닉네임</span>
                             <input id="battle-host-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
                         </label>
-                        <div class="battle-select-row">
-                            <label>
-                                <span>월드</span>
-                                <select id="battle-difficulty" name="difficulty"></select>
-                            </label>
-                            <label>
-                                <span>모드</span>
-                                <select id="battle-length" name="length"></select>
-                            </label>
-                        </div>
+                        <fieldset class="battle-config-section">
+                            <legend><span>01</span> 월드 선택</legend>
+                            <div class="battle-world-options" aria-label="배틀 월드">
+                                <button type="button" data-battle-difficulty-option="beginner" aria-pressed="true">
+                                    <span class="battle-world-thumb">
+                                        <img src="assets/world-01-hub.webp" alt="" loading="lazy">
+                                        <span class="battle-world-copy"><small>WORLD 01</small><strong>문법 플레이룸</strong></span>
+                                    </span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-battle-difficulty-option="intermediate" aria-pressed="false">
+                                    <span class="battle-world-thumb">
+                                        <img src="assets/world-02-hub.webp" alt="" loading="lazy">
+                                        <span class="battle-world-copy"><small>WORLD 02</small><strong>로직 아케이드</strong></span>
+                                    </span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-battle-difficulty-option="advanced" aria-pressed="false">
+                                    <span class="battle-world-thumb">
+                                        <img src="assets/world-03-hub.webp" alt="" loading="lazy">
+                                        <span class="battle-world-copy"><small>WORLD 03</small><strong>데이터 스테이지</strong></span>
+                                    </span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </fieldset>
+                        <select id="battle-difficulty" name="difficulty" hidden aria-hidden="true" tabindex="-1"></select>
+
+                        <fieldset class="battle-config-section">
+                            <legend><span>02</span> 플레이 모드</legend>
+                            <div class="battle-mode-options" aria-label="배틀 플레이 모드">
+                                <button type="button" data-battle-length-option="short" aria-pressed="true">
+                                    <img src="assets/mode-badge-warmup.webp" alt="" width="256" height="256" loading="lazy">
+                                    <span><small>MODE 01</small><strong>워밍업</strong></span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-battle-length-option="medium" aria-pressed="false">
+                                    <img src="assets/mode-badge-main-quest.webp" alt="" width="256" height="256" loading="lazy">
+                                    <span><small>MODE 02</small><strong>메인 퀘스트</strong></span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                                <button type="button" data-battle-length-option="long" aria-pressed="false">
+                                    <img src="assets/mode-badge-final-stage.webp" alt="" width="256" height="256" loading="lazy">
+                                    <span><small>MODE 03</small><strong>파이널</strong></span>
+                                    <i aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </fieldset>
+                        <select id="battle-length" name="length" hidden aria-hidden="true" tabindex="-1"></select>
                         <label>
-                            <span>배틀 미션</span>
+                            <span class="battle-mission-label"><b>03</b> 배틀 미션</span>
                             <select id="battle-mission" name="missionId"></select>
                         </label>
                         <button class="button button-battle button-large" type="submit">방 코드 만들기 <span aria-hidden="true">→</span></button>
                     </form>
 
-                    <form id="battle-join-form" class="battle-entry-card battle-join-card">
+                    <section id="battle-mission-preview" class="battle-mission-preview" aria-labelledby="battle-mission-preview-title" hidden>
+                        <header>
+                            <div>
+                                <small>MATCH CODE</small>
+                                <h3 id="battle-mission-preview-title">경기 코드 미리보기</h3>
+                            </div>
+                            <span id="battle-mission-code-lines">— LINES</span>
+                        </header>
+                        <p id="battle-mission-preview-description">미션을 선택하면 두 플레이어가 입력할 실제 코드가 표시됩니다.</p>
+                        <pre><code id="battle-mission-code" aria-live="polite">코드를 불러오는 중...</code></pre>
+                        <footer>
+                            <span aria-hidden="true">⌨</span>
+                            <p><strong>두 플레이어가 같은 코드로 경기해요.</strong> 선택한 미션의 코드는 방을 만들기 전에 언제든 바꿀 수 있습니다.</p>
+                        </footer>
+                    </section>
+
+                    <form id="battle-join-form" class="battle-entry-card battle-join-card" hidden>
                         <div class="battle-entry-card-head">
                             <span class="battle-entry-number">JOIN ROOM</span>
                             <span class="battle-entry-icon" aria-hidden="true">02</span>
@@ -751,6 +825,29 @@
                         </div>
                         <button class="button button-primary button-large" type="submit">배틀방 입장 <span aria-hidden="true">→</span></button>
                     </form>
+
+                    <section id="battle-join-room-preview" class="battle-mission-preview battle-join-room-preview" aria-labelledby="battle-join-preview-title" data-state="idle" hidden>
+                        <header>
+                            <div>
+                                <small>ROOM MAP &amp; CODE</small>
+                                <h3 id="battle-join-preview-title">참가할 방 미리보기</h3>
+                            </div>
+                            <span id="battle-join-preview-lines">— LINES</span>
+                        </header>
+                        <figure class="battle-join-map">
+                            <img id="battle-join-world-art" src="assets/world-01-hub.webp" alt="" width="1440" height="810">
+                            <figcaption>
+                                <small id="battle-join-world">ROOM CODE를 입력하세요</small>
+                                <strong id="battle-join-mission">경기 맵을 확인할 수 있어요</strong>
+                            </figcaption>
+                        </figure>
+                        <p id="battle-join-description">6자리 방 코드가 완성되면 참가할 월드와 실제 경기 코드를 불러옵니다.</p>
+                        <pre><code id="battle-join-code" aria-live="polite">ABC234</code></pre>
+                        <footer>
+                            <span aria-hidden="true">⌕</span>
+                            <p><strong id="battle-join-preview-status">방 코드를 기다리는 중</strong><span id="battle-join-host">친구에게 받은 초대 코드를 입력해 주세요.</span></p>
+                        </footer>
+                    </section>
                 </div>
             </section>
 

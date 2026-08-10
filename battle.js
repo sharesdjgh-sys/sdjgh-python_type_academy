@@ -22,6 +22,10 @@
         pendingInput: "",
         inputSequence: 0,
         ready: false,
+        entryMode: null,
+        previewRequestId: 0,
+        joinPreviewTimer: null,
+        joinPreviewRequestId: 0,
         initialized: false,
         finishing: false
     };
@@ -35,6 +39,13 @@
         short: "워밍업",
         medium: "메인 퀘스트",
         long: "파이널 스테이지"
+    };
+    const stageMarkers = {
+        1: "🟢",
+        2: "🔵",
+        3: "🟣",
+        4: "🟠",
+        5: "🔴"
     };
 
     function loadSession() {
@@ -105,7 +116,28 @@
         lengthSelect.innerHTML = Object.keys(lengthLabels)
             .map((length) => `<option value="${length}">${lengthLabels[length]}</option>`)
             .join("");
+        syncVisualSelectors();
         refreshMissionOptions();
+    }
+
+    function syncVisualSelectors() {
+        const difficulty = document.getElementById("battle-difficulty")?.value || "beginner";
+        const length = document.getElementById("battle-length")?.value || "short";
+        document.querySelectorAll("[data-battle-difficulty-option]").forEach((button) => {
+            button.setAttribute("aria-pressed", String(button.dataset.battleDifficultyOption === difficulty));
+        });
+        document.querySelectorAll("[data-battle-length-option]").forEach((button) => {
+            button.setAttribute("aria-pressed", String(button.dataset.battleLengthOption === length));
+        });
+    }
+
+    async function selectBattleConfig(type, value) {
+        const selectId = type === "difficulty" ? "battle-difficulty" : "battle-length";
+        const select = document.getElementById(selectId);
+        if (!select || !Array.from(select.options).some((option) => option.value === value)) return;
+        select.value = value;
+        syncVisualSelectors();
+        await refreshMissionOptions();
     }
 
     async function refreshMissionOptions() {
@@ -114,17 +146,171 @@
         const length = document.getElementById("battle-length")?.value || "short";
         const missionSelect = document.getElementById("battle-mission");
         if (!missionSelect) return;
-        missionSelect.innerHTML = (metadata[difficulty]?.[length] || [])
-            .map((mission) => (
-                `<option value="${escapeHTML(mission.id)}">`
-                + `스테이지 ${mission.levelGroup} · ${escapeHTML(mission.title)}</option>`
-            ))
+        const missions = metadata[difficulty]?.[length] || [];
+        const stageGroups = missions.reduce((groups, mission) => {
+            const stage = Number(mission.levelGroup) || 1;
+            if (!groups.has(stage)) groups.set(stage, []);
+            groups.get(stage).push(mission);
+            return groups;
+        }, new Map());
+        missionSelect.innerHTML = Array.from(stageGroups.entries())
+            .map(([stage, stageMissions]) => {
+                const marker = stageMarkers[stage] || "⚪";
+                const options = stageMissions.map((mission) => (
+                    `<option class="stage-${stage}" data-stage="${stage}" value="${escapeHTML(mission.id)}">`
+                    + `${marker} ${escapeHTML(mission.title)}</option>`
+                )).join("");
+                return `<optgroup label="${marker} STAGE ${stage}">${options}</optgroup>`;
+            })
             .join("");
+        await renderMissionPreview();
+    }
+
+    async function renderMissionPreview() {
+        const metadata = await getMetadata();
+        const difficulty = document.getElementById("battle-difficulty")?.value || "beginner";
+        const length = document.getElementById("battle-length")?.value || "short";
+        const missionId = document.getElementById("battle-mission")?.value;
+        const mission = (metadata[difficulty]?.[length] || [])
+            .find((item) => item.id === missionId);
+        const codeElement = document.getElementById("battle-mission-code");
+        const description = document.getElementById("battle-mission-preview-description");
+        const lineCount = document.getElementById("battle-mission-code-lines");
+        if (!codeElement || !mission) return;
+
+        const stage = String(Number(mission.levelGroup) || 1);
+        const missionSelect = document.getElementById("battle-mission");
+        if (missionSelect) {
+            missionSelect.dataset.stage = stage;
+            missionSelect.setAttribute("aria-label", `배틀 미션, 스테이지 ${stage} 선택됨`);
+        }
+
+        const requestId = ++state.previewRequestId;
+        codeElement.textContent = "코드를 불러오는 중...";
+        setText("battle-mission-preview-title", mission.title);
+        if (description) description.textContent = mission.description || "선택한 코드를 친구와 동시에 입력합니다.";
+        if (lineCount) lineCount.textContent = "— LINES";
+
+        try {
+            const code = await window.loadCodeFromFile(mission.file);
+            if (requestId !== state.previewRequestId) return;
+            const normalizedCode = normalizeCode(code);
+            codeElement.textContent = normalizedCode;
+            if (lineCount) {
+                const lines = normalizedCode ? normalizedCode.split("\n").length : 0;
+                lineCount.textContent = `${lines} ${lines === 1 ? "LINE" : "LINES"}`;
+            }
+        } catch {
+            if (requestId !== state.previewRequestId) return;
+            codeElement.textContent = "코드 미리보기를 불러오지 못했습니다.";
+        }
+    }
+
+    function setEntryMode(mode = null) {
+        state.entryMode = mode;
+        const createForm = document.getElementById("battle-create-form");
+        const joinForm = document.getElementById("battle-join-form");
+        const missionPreview = document.getElementById("battle-mission-preview");
+        const joinRoomPreview = document.getElementById("battle-join-room-preview");
+        const createButton = document.querySelector('[data-battle-action="show-create"]');
+        const joinButton = document.querySelector('[data-battle-action="show-join"]');
+        const isCreate = mode === "create";
+        const isJoin = mode === "join";
+
+        if (createForm) createForm.hidden = !isCreate;
+        if (missionPreview) missionPreview.hidden = !isCreate;
+        if (joinForm) joinForm.hidden = !isJoin;
+        if (joinRoomPreview) joinRoomPreview.hidden = !isJoin;
+        createButton?.classList.toggle("is-active", isCreate);
+        joinButton?.classList.toggle("is-active", isJoin);
+        createButton?.setAttribute("aria-expanded", String(isCreate));
+        joinButton?.setAttribute("aria-expanded", String(isJoin));
+
+        if (state.joinPreviewTimer) clearTimeout(state.joinPreviewTimer);
+        state.joinPreviewTimer = null;
+        if (isJoin) scheduleJoinRoomPreview(document.getElementById("battle-room-code-input")?.value || "");
+
+        const activeForm = isCreate ? createForm : isJoin ? joinForm : null;
+        if (activeForm) {
+            requestAnimationFrame(() => {
+                activeForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                activeForm.querySelector("input, select")?.focus({ preventScroll: true });
+            });
+        }
+    }
+
+    const worldPreviewArts = {
+        beginner: "assets/world-01-hub.webp",
+        intermediate: "assets/world-02-hub.webp",
+        advanced: "assets/world-03-hub.webp"
+    };
+
+    function setJoinPreviewState(status, message) {
+        const preview = document.getElementById("battle-join-room-preview");
+        if (preview) preview.dataset.state = status;
+        setText("battle-join-preview-status", message);
+    }
+
+    function resetJoinRoomPreview(message = "방 코드를 기다리는 중") {
+        state.joinPreviewRequestId += 1;
+        setJoinPreviewState("idle", message);
+        setText("battle-join-preview-title", "참가할 방 미리보기");
+        setText("battle-join-preview-lines", "— LINES");
+        setText("battle-join-world", "ROOM CODE를 입력하세요");
+        setText("battle-join-mission", "경기 맵을 확인할 수 있어요");
+        setText("battle-join-description", "6자리 방 코드가 완성되면 참가할 월드와 실제 경기 코드를 불러옵니다.");
+        setText("battle-join-code", "ABC234");
+        setText("battle-join-host", "친구에게 받은 초대 코드를 입력해 주세요.");
+        const art = document.getElementById("battle-join-world-art");
+        if (art) art.src = worldPreviewArts.beginner;
+    }
+
+    function scheduleJoinRoomPreview(rawRoomCode) {
+        if (state.joinPreviewTimer) clearTimeout(state.joinPreviewTimer);
+        state.joinPreviewTimer = null;
+        const roomCode = String(rawRoomCode || "").toUpperCase();
+        if (roomCode.length !== 6) {
+            resetJoinRoomPreview(roomCode ? `${6 - roomCode.length}자리 더 입력해 주세요` : "방 코드를 기다리는 중");
+            return;
+        }
+        setJoinPreviewState("loading", "배틀방을 확인하는 중...");
+        state.joinPreviewTimer = setTimeout(() => {
+            state.joinPreviewTimer = null;
+            loadJoinRoomPreview(roomCode);
+        }, 220);
+    }
+
+    async function loadJoinRoomPreview(roomCode) {
+        const requestId = ++state.joinPreviewRequestId;
+        try {
+            const response = await emitWithAck("battle:preview", { roomCode });
+            const currentCode = document.getElementById("battle-room-code-input")?.value || "";
+            if (requestId !== state.joinPreviewRequestId || currentCode !== roomCode) return;
+            const mission = response.room.mission;
+            const code = normalizeCode(response.targetText || "");
+            const lines = code ? code.split("\n").length : 0;
+            setText("battle-join-preview-title", mission.title);
+            setText("battle-join-preview-lines", `${lines} ${lines === 1 ? "LINE" : "LINES"}`);
+            setText("battle-join-world", `${worldLabels[mission.difficulty]} · ${lengthLabels[mission.length]}`);
+            setText("battle-join-mission", `STAGE ${mission.levelGroup} · ${mission.title}`);
+            setText("battle-join-description", mission.description || "친구와 같은 코드를 입력하는 배틀입니다.");
+            setText("battle-join-code", code);
+            setText("battle-join-host", `${response.room.hostNickname} 님이 기다리고 있어요.`);
+            const art = document.getElementById("battle-join-world-art");
+            if (art) art.src = worldPreviewArts[mission.difficulty] || worldPreviewArts.beginner;
+            setJoinPreviewState("ready", "참가 가능한 배틀방입니다");
+        } catch (error) {
+            if (requestId !== state.joinPreviewRequestId) return;
+            resetJoinRoomPreview(error.message);
+            setJoinPreviewState("error", error.message);
+            setText("battle-join-host", "방 코드를 확인하고 다시 입력해 주세요.");
+        }
     }
 
     async function openPortal() {
         stopRaceTimers();
         await populateMissionSelectors();
+        setEntryMode();
         showScreen("battle-portal-screen");
         setServerStatus(Boolean(state.socket?.connected));
     }
@@ -567,6 +753,8 @@
             if (!button || button.disabled) return;
             const action = button.dataset.battleAction;
             if (action === "open" || action === "new-room") openPortal();
+            else if (action === "show-create") setEntryMode("create");
+            else if (action === "show-join") setEntryMode("join");
             else if (action === "home") leaveRoom("home");
             else if (action === "leave") leaveRoom("portal");
             else if (action === "toggle-ready") toggleReady();
@@ -583,8 +771,22 @@
         });
         document.getElementById("battle-difficulty")?.addEventListener("change", refreshMissionOptions);
         document.getElementById("battle-length")?.addEventListener("change", refreshMissionOptions);
+        document.getElementById("battle-mission")?.addEventListener("change", renderMissionPreview);
+        document.querySelectorAll("[data-battle-difficulty-option]").forEach((button) => {
+            button.addEventListener("click", () => {
+                selectBattleConfig("difficulty", button.dataset.battleDifficultyOption)
+                    .catch((error) => showToast(error.message, "error"));
+            });
+        });
+        document.querySelectorAll("[data-battle-length-option]").forEach((button) => {
+            button.addEventListener("click", () => {
+                selectBattleConfig("length", button.dataset.battleLengthOption)
+                    .catch((error) => showToast(error.message, "error"));
+            });
+        });
         document.getElementById("battle-room-code-input")?.addEventListener("input", (event) => {
             event.target.value = event.target.value.toUpperCase().replace(/[^A-Z2-9]/g, "");
+            scheduleJoinRoomPreview(event.target.value);
         });
 
         const input = document.getElementById("battle-code-input");

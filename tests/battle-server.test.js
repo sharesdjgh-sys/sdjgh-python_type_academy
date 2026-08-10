@@ -95,6 +95,14 @@ describe("배틀방 프로토콜", () => {
         assert.equal(created.ok, true);
         assert.match(created.room.roomCode, /^[A-Z2-9]{6}$/);
 
+        const preview = await emitAck(guest, "battle:preview", {
+            roomCode: created.room.roomCode
+        });
+        assert.equal(preview.ok, true);
+        assert.equal(preview.room.mission.id, "test_1");
+        assert.equal(preview.room.hostNickname, "하늘");
+        assert.equal(preview.targetText, "print('hi')");
+
         const joined = await emitAck(guest, "battle:join", {
             nickname: "소윤",
             roomCode: created.room.roomCode

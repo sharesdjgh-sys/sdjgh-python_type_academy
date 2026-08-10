@@ -392,6 +392,34 @@ function createBattleServer(options = {}) {
             broadcastRoom(room);
         });
 
+        socket.on("battle:preview", (payload = {}, acknowledge = () => {}) => {
+            const roomCode = String(payload.roomCode || "").trim().toUpperCase();
+            const room = rooms.get(roomCode);
+            if (!room) {
+                acknowledge(errorPayload("ROOM_NOT_FOUND", "방 코드를 다시 확인해 주세요."));
+                return;
+            }
+            if (room.phase !== "waiting") {
+                acknowledge(errorPayload("ALREADY_STARTED", "이미 시작된 배틀방입니다."));
+                return;
+            }
+            if (room.players.size >= 2) {
+                acknowledge(errorPayload("ROOM_FULL", "이미 두 명이 참가한 배틀방입니다."));
+                return;
+            }
+
+            const host = room.players.get(room.hostId);
+            acknowledge({
+                ok: true,
+                room: {
+                    roomCode: room.code,
+                    mission: missionPublic(room.mission),
+                    hostNickname: host?.nickname || "HOST"
+                },
+                targetText: room.mission.targetText
+            });
+        });
+
         socket.on("battle:join", (payload = {}, acknowledge = () => {}) => {
             const roomCode = String(payload.roomCode || "").trim().toUpperCase();
             const nickname = sanitizeNickname(payload.nickname);
