@@ -27,7 +27,7 @@ function emitAck(socket, eventName, payload) {
     });
 }
 
-async function createHarness() {
+async function createHarness(options = {}) {
     const missions = new Map([[
         "test_1",
         {
@@ -42,7 +42,7 @@ async function createHarness() {
             targetText: "print('hi')"
         }
     ]]);
-    const battleServer = createBattleServer({ missions });
+    const battleServer = createBattleServer({ missions, retireWindowMs: 250, ...options });
     await new Promise((resolve) => battleServer.server.listen(0, "127.0.0.1", resolve));
     openServers.push(battleServer);
     const address = battleServer.server.address();
@@ -79,6 +79,22 @@ describe("RaceTracker", () => {
         assert.equal(result.errors, 1);
         assert.equal(result.corrections, 1);
         assert.ok(result.accuracy < 100);
+    });
+
+    test("완벽한 줄은 LINE COMBO가 되고 정확한 과정이 더 높은 점수를 만든다", () => {
+        const accurate = new RaceTracker("ab\ncd", 1000, 105);
+        const rushed = new RaceTracker("ab\ncd", 1000, 105);
+
+        const accurateResult = accurate.apply("ab\ncd", 3000);
+        rushed.apply("ax\ncd", 1400);
+        const rushedResult = rushed.apply("ab\ncd", 1600);
+
+        assert.equal(accurateResult.perfectLines, 2);
+        assert.equal(accurateResult.maxLineCombo, 2);
+        assert.equal(rushedResult.perfectLines, 1);
+        assert.ok(accurateResult.score > rushedResult.score);
+        assert.equal(accurateResult.score, 1000);
+        assert.deepEqual(Object.keys(accurateResult.scoreBreakdown).sort(), ["accuracy", "combo", "speed"]);
     });
 });
 
@@ -132,6 +148,7 @@ describe("배틀방 프로토콜", () => {
         await emitAck(guest, "battle:ready", { ready: true });
         const countdown = await countdownPromise;
         assert.equal(countdown.targetText, "print('hi')");
+        assert.equal(countdown.countdownMs, 3000);
         await once(host, "battle:start", 5000);
 
         guest.disconnect();
@@ -144,16 +161,20 @@ describe("배틀방 프로토콜", () => {
         assert.equal(resumed.ok, true);
         assert.equal(resumed.room.phase, "racing");
         assert.equal(resumed.targetText, "print('hi')");
+        assert.ok(resumed.elapsedMs >= 0);
 
+        const retirePromise = once(host, "battle:retire");
         const resultPromise = once(host, "battle:result");
         const inputResponse = await emitAck(host, "battle:input", {
             sequence: 1,
             value: "print('hi')"
         });
         assert.equal(inputResponse.ok, true);
+        const retire = await retirePromise;
+        assert.equal(retire.durationMs, 250);
         const result = await resultPromise;
         assert.equal(result.winnerId, created.playerId);
-        assert.equal(result.reason, "finished");
+        assert.equal(result.reason, "retired");
         assert.equal(result.players.find((player) => player.id === created.playerId).progress, 100);
         assert.notEqual(result.winnerId, joined.playerId);
 
@@ -168,6 +189,37 @@ describe("배틀방 프로토콜", () => {
         assert.equal(remainingRoom.phase, "finished");
         assert.equal(remainingRoom.players.length, 1);
         assert.equal(roomClosed, false);
+    });
+
+    test("먼저 끝내지 않아도 정확도와 콤보 점수가 높으면 승리한다", async () => {
+        const { url } = await createHarness();
+        const host = await connect(url);
+        const guest = await connect(url);
+        const created = await emitAck(host, "battle:create", {
+            nickname: "빠름",
+            missionId: "test_1"
+        });
+        const joined = await emitAck(guest, "battle:join", {
+            nickname: "정확",
+            roomCode: created.room.roomCode
+        });
+
+        await emitAck(host, "battle:ready", { ready: true });
+        await emitAck(guest, "battle:ready", { ready: true });
+        await once(host, "battle:start", 5000);
+
+        await emitAck(host, "battle:input", { sequence: 1, value: "print('hx')" });
+        await emitAck(host, "battle:input", { sequence: 2, value: "print('hi')" });
+        const resultPromise = once(host, "battle:result");
+        await emitAck(guest, "battle:input", { sequence: 1, value: "print('hi')" });
+        const result = await resultPromise;
+
+        const hostResult = result.players.find((player) => player.id === created.playerId);
+        const guestResult = result.players.find((player) => player.id === joined.playerId);
+        assert.ok(hostResult.finishedAt < guestResult.finishedAt);
+        assert.ok(guestResult.score > hostResult.score);
+        assert.equal(result.winnerId, joined.playerId);
+        assert.equal(result.reason, "scored");
     });
 
     test("중복 닉네임과 세 번째 참가자를 거부한다", async () => {

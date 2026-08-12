@@ -5887,6 +5887,34 @@ body[data-motion="off"] *::after {
     font-family: var(--font-code);
 }
 
+.race-player-card > .race-player-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 9px;
+}
+
+.race-player-card > .race-player-metrics span {
+    padding: 5px 4px;
+    border-radius: 7px;
+    background: #f7f2f2;
+    color: #7b6870;
+    font-family: var(--font-code);
+    font-size: 0.48rem;
+    font-weight: 950;
+    text-align: center;
+}
+
+.race-player-card.is-me > .race-player-metrics span:first-child {
+    background: #fff0ec;
+    color: #c65359;
+}
+
+.race-player-card:not(.is-me) > .race-player-metrics span:first-child {
+    background: #f3effc;
+    color: #7151b3;
+}
+
 .battle-kart-arena {
     position: relative;
     margin-bottom: 18px;
@@ -5899,6 +5927,33 @@ body[data-motion="off"] *::after {
         radial-gradient(circle at 84% 100%, rgba(128, 101, 189, 0.11), transparent 24rem),
         #fffdfc;
     box-shadow: 0 15px 34px rgba(103, 69, 84, 0.07);
+}
+
+.battle-combo-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 8;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #dc666b, #8065bd);
+    color: #fff;
+    font-family: var(--font-code);
+    font-size: 0.6rem;
+    font-weight: 950;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -35%) scale(0.72);
+}
+
+.battle-combo-effect.show {
+    animation: battle-line-combo 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-kart-arena.is-boosting {
+    animation: battle-arena-boost 0.5s ease-out;
 }
 
 .battle-kart-arena > header {
@@ -6095,7 +6150,10 @@ body[data-motion="off"] *::after {
     font-size: clamp(5rem, 18vw, 10rem);
     line-height: 1;
     text-shadow: 0 15px 35px rgba(113, 81, 179, 0.2);
-    animation: countdown-pop 0.65s ease-out infinite;
+}
+
+.battle-countdown strong.is-pulsing {
+    animation: countdown-pop 0.65s ease-out both;
 }
 
 .battle-countdown span {
@@ -6464,11 +6522,13 @@ body[data-motion="off"] *::after {
 .battle-player-identity p { margin: 3px 0 0; color: var(--muted); font-size: 0.58rem; }
 .battle-winner-crown { color: var(--result-accent); font-size: 1.25rem; filter: drop-shadow(0 5px 9px var(--result-glow)); }
 
-.battle-result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 0; }
+.battle-result-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 0; }
 .battle-result-stats div { display: grid; gap: 4px; }
 .battle-result-stats dt { color: var(--muted); font-family: var(--font-code); font-size: 0.48rem; font-weight: 800; }
 .battle-result-stats dd { margin: 0; font-family: var(--font-code); font-size: 0.72rem; font-weight: 950; }
 .battle-result-stats dd small { color: var(--muted); font-size: 0.48rem; }
+.battle-score-breakdown { display: flex; justify-content: space-between; gap: 8px; margin: 10px 0 0; color: var(--muted); font-family: var(--font-code); font-size: 0.47rem; line-height: 1.6; }
+.battle-score-breakdown span { flex: none; color: var(--result-deep); font-weight: 950; }
 
 .battle-performance-bars { display: grid; gap: 4px; margin-top: 12px; }
 .battle-performance-bars > span { display: block; height: 3px; overflow: hidden; border-radius: 999px; background: #eae6ec; }
@@ -6501,6 +6561,17 @@ body[data-motion="off"] *::after {
 @keyframes battle-kart-bob {
     from { transform: translateY(0) rotate(-0.4deg); }
     to { transform: translateY(-2px) rotate(0.4deg); }
+}
+
+@keyframes battle-line-combo {
+    0% { opacity: 0; transform: translate(-50%, -20%) scale(0.72); }
+    18%, 68% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -90%) scale(0.96); }
+}
+
+@keyframes battle-arena-boost {
+    0%, 100% { box-shadow: 0 15px 34px rgba(103, 69, 84, 0.07); }
+    45% { box-shadow: 0 0 0 4px rgba(220, 102, 107, 0.12), 0 18px 42px rgba(128, 101, 189, 0.2); }
 }
 
 @media (max-width: 860px) {

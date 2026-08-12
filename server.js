@@ -13,8 +13,9 @@ const ROOM_IDLE_MS = 10 * 60 * 1000;
 const FINISHED_ROOM_MS = 5 * 60 * 1000;
 const RECONNECT_GRACE_MS = 15 * 1000;
 const COUNTDOWN_MS = 3000;
-const FINISH_WINDOW_MS = 180;
+const RETIRE_WINDOW_MS = 15 * 1000;
 const MAX_INPUT_EVENTS_PER_SECOND = 20;
+const TARGET_CPM = { short: 150, medium: 125, long: 105 };
 
 function normalizeCode(code) {
     return String(code || "")
@@ -70,9 +71,16 @@ function loadMissions() {
 }
 
 class RaceTracker {
-    constructor(targetText, startsAt) {
+    constructor(targetText, startsAt, targetCpm = TARGET_CPM.short) {
         this.targetText = targetText;
         this.startsAt = startsAt;
+        this.targetCpm = targetCpm;
+        this.targetLines = targetText.split("\n");
+        this.lineStarts = [];
+        this.targetLines.reduce((offset, line) => {
+            this.lineStarts.push(offset);
+            return offset + line.length + 1;
+        }, 0);
         this.previousValue = "";
         this.attempts = 0;
         this.correctAttempts = 0;
@@ -80,7 +88,34 @@ class RaceTracker {
         this.corrections = 0;
         this.combo = 0;
         this.maxCombo = 0;
+        this.lineCombo = 0;
+        this.maxLineCombo = 0;
+        this.perfectLines = 0;
+        this.completedLines = new Set();
+        this.lineErrors = new Set();
         this.finishedAt = null;
+    }
+
+    lineIndexAt(characterIndex) {
+        for (let index = this.lineStarts.length - 1; index >= 0; index -= 1) {
+            if (characterIndex >= this.lineStarts[index]) return index;
+        }
+        return 0;
+    }
+
+    updateLineCombos(value) {
+        const userLines = value.split("\n");
+        this.targetLines.forEach((targetLine, index) => {
+            if (!targetLine || this.completedLines.has(index) || userLines[index] !== targetLine) return;
+            this.completedLines.add(index);
+            if (this.lineErrors.has(index)) {
+                this.lineCombo = 0;
+                return;
+            }
+            this.perfectLines += 1;
+            this.lineCombo += 1;
+            this.maxLineCombo = Math.max(this.maxLineCombo, this.lineCombo);
+        });
     }
 
     diffText(previous, current) {
@@ -128,10 +163,12 @@ class RaceTracker {
             } else {
                 this.errors += 1;
                 this.combo = 0;
+                this.lineErrors.add(this.lineIndexAt(targetIndex));
             }
         }
         this.corrections += change.removed.length;
         this.previousValue = value;
+        this.updateLineCombos(value);
 
         if (value === this.targetText && !this.finishedAt) this.finishedAt = now;
         return this.snapshot(now);
@@ -139,18 +176,38 @@ class RaceTracker {
 
     snapshot(now = Date.now()) {
         const correct = this.countCorrectPositions(this.previousValue);
-        const elapsed = Math.max(1, now - this.startsAt);
+        const elapsed = Math.max(1, (this.finishedAt || now) - this.startsAt);
         const accuracy = this.attempts
             ? (this.correctAttempts / this.attempts) * 100
             : 100;
+        const progress = this.targetText.length ? (correct / this.targetText.length) * 100 : 0;
+        const cpm = Math.round((correct * 60000) / elapsed);
+        const scorableLines = Math.max(1, this.targetLines.filter(Boolean).length);
+        const accuracyScore = accuracy * 5.5;
+        const speedScore = Math.min(150, (cpm / this.targetCpm) * 120);
+        const characterComboScore = (this.maxCombo / Math.max(1, this.targetText.length)) * 180;
+        const perfectLineScore = (this.perfectLines / scorableLines) * 120;
+        const comboScore = Math.min(300, characterComboScore + perfectLineScore);
+        const scoreBreakdown = {
+            accuracy: Math.round(accuracyScore),
+            combo: Math.round(comboScore),
+            speed: Math.round(speedScore)
+        };
+        const score = Object.values(scoreBreakdown).reduce((total, part) => total + part, 0);
         return {
-            progress: this.targetText.length ? (correct / this.targetText.length) * 100 : 0,
+            progress,
             accuracy,
-            cpm: Math.round((correct * 60000) / elapsed),
+            cpm,
             combo: this.combo,
             maxCombo: this.maxCombo,
+            lineCombo: this.lineCombo,
+            maxLineCombo: this.maxLineCombo,
+            perfectLines: this.perfectLines,
+            totalLines: scorableLines,
             errors: this.errors,
             corrections: this.corrections,
+            score,
+            scoreBreakdown,
             finishedAt: this.finishedAt,
             durationMs: this.finishedAt ? this.finishedAt - this.startsAt : null
         };
@@ -165,6 +222,7 @@ function createBattleServer(options = {}) {
         maxHttpBufferSize: 64 * 1024
     });
     const missions = options.missions || loadMissions();
+    const retireWindowMs = options.retireWindowMs ?? RETIRE_WINDOW_MS;
     const rooms = new Map();
 
     app.use((request, response, next) => {
@@ -186,6 +244,8 @@ function createBattleServer(options = {}) {
             roomCode: room.code,
             phase: room.phase,
             startsAt: room.startsAt,
+            retireAt: room.retireAt,
+            retireRemainingMs: room.retireAt ? Math.max(0, room.retireAt - Date.now()) : null,
             hostId: room.hostId,
             mission: missionPublic(room.mission),
             players: [...room.players.values()].map((player) => ({
@@ -199,6 +259,10 @@ function createBattleServer(options = {}) {
                     accuracy: 100,
                     cpm: 0,
                     combo: 0,
+                    lineCombo: 0,
+                    maxLineCombo: 0,
+                    perfectLines: 0,
+                    score: 0,
                     finishedAt: null,
                     durationMs: null
                 })
@@ -255,22 +319,26 @@ function createBattleServer(options = {}) {
         let tie = false;
 
         if (!winnerId) {
-            const finished = players.filter((player) => player.tracker?.finishedAt);
-            if (finished.length === 1) {
-                winnerId = finished[0].id;
-            } else if (finished.length === 2) {
-                finished.sort((a, b) => a.tracker.finishedAt - b.tracker.finishedAt);
-                const timeDifference = Math.abs(
-                    finished[0].tracker.finishedAt - finished[1].tracker.finishedAt
+            const finishedPlayers = players.filter((player) => player.tracker?.finishedAt);
+            if (finishedPlayers.length === 1) {
+                winnerId = finishedPlayers[0].id;
+            } else {
+                const ranked = finishedPlayers
+                .map((player) => ({ player, stats: player.tracker?.snapshot() || {} }))
+                .sort((a, b) =>
+                    (b.stats.score || 0) - (a.stats.score || 0)
+                    || (b.stats.accuracy || 0) - (a.stats.accuracy || 0)
+                    || (b.stats.perfectLines || 0) - (a.stats.perfectLines || 0)
+                    || (a.stats.finishedAt || Number.POSITIVE_INFINITY)
+                        - (b.stats.finishedAt || Number.POSITIVE_INFINITY)
                 );
-                if (timeDifference <= 150) {
-                    const firstAccuracy = finished[0].tracker.snapshot().accuracy;
-                    const secondAccuracy = finished[1].tracker.snapshot().accuracy;
-                    if (Math.abs(firstAccuracy - secondAccuracy) < 0.05) tie = true;
-                    else winnerId = firstAccuracy > secondAccuracy ? finished[0].id : finished[1].id;
-                } else {
-                    winnerId = finished[0].id;
-                }
+                const first = ranked[0];
+                const second = ranked[1];
+                tie = Boolean(second)
+                    && (first.stats.score || 0) === (second.stats.score || 0)
+                    && Math.abs((first.stats.accuracy || 0) - (second.stats.accuracy || 0)) < 0.05
+                    && (first.stats.perfectLines || 0) === (second.stats.perfectLines || 0);
+                winnerId = tie ? null : first?.player.id || null;
             }
         }
 
@@ -290,6 +358,9 @@ function createBattleServer(options = {}) {
 
     function finishRace(room, reason = "finished", forcedWinnerId = null) {
         if (room.phase === "finished") return;
+        if (room.finishTimer) clearTimeout(room.finishTimer);
+        room.finishTimer = null;
+        room.retireAt = null;
         room.phase = "finished";
         room.finishedAt = Date.now();
         touch(room);
@@ -299,7 +370,13 @@ function createBattleServer(options = {}) {
 
     function scheduleFinish(room) {
         if (room.finishTimer || room.phase !== "racing") return;
-        room.finishTimer = setTimeout(() => finishRace(room), FINISH_WINDOW_MS);
+        room.retireAt = Date.now() + retireWindowMs;
+        io.to(room.code).emit("battle:retire", {
+            retireAt: room.retireAt,
+            durationMs: retireWindowMs
+        });
+        broadcastRoom(room);
+        room.finishTimer = setTimeout(() => finishRace(room, "retired"), retireWindowMs);
     }
 
     function cancelCountdown(room) {
@@ -307,6 +384,7 @@ function createBattleServer(options = {}) {
         room.countdownTimer = null;
         room.phase = "waiting";
         room.startsAt = null;
+        room.retireAt = null;
         for (const player of room.players.values()) {
             player.ready = false;
             player.tracker = null;
@@ -327,6 +405,7 @@ function createBattleServer(options = {}) {
         touch(room);
         io.to(room.code).emit("battle:countdown", {
             startsAt: room.startsAt,
+            countdownMs: COUNTDOWN_MS,
             targetText: room.mission.targetText
         });
         broadcastRoom(room);
@@ -335,7 +414,11 @@ function createBattleServer(options = {}) {
             if (room.phase !== "countdown") return;
             room.phase = "racing";
             for (const player of room.players.values()) {
-                player.tracker = new RaceTracker(room.mission.targetText, room.startsAt);
+                player.tracker = new RaceTracker(
+                    room.mission.targetText,
+                    room.startsAt,
+                    TARGET_CPM[room.mission.length] || TARGET_CPM.short
+                );
             }
             touch(room);
             io.to(room.code).emit("battle:start", { startsAt: room.startsAt });
@@ -376,6 +459,7 @@ function createBattleServer(options = {}) {
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 startsAt: null,
+                retireAt: null,
                 finishedAt: null,
                 countdownTimer: null,
                 finishTimer: null
@@ -482,7 +566,8 @@ function createBattleServer(options = {}) {
                 playerId: player.id,
                 resumeToken: player.resumeToken,
                 room: roomSnapshot(room),
-                targetText: room.phase === "waiting" ? null : room.mission.targetText
+                targetText: room.phase === "waiting" ? null : room.mission.targetText,
+                elapsedMs: room.phase === "racing" ? Math.max(0, Date.now() - room.startsAt) : 0
             });
             broadcastRoom(room);
         });
@@ -510,6 +595,10 @@ function createBattleServer(options = {}) {
                 acknowledge(errorPayload("NOT_RACING", "아직 레이스가 시작되지 않았습니다."));
                 return;
             }
+            if (player.tracker.finishedAt) {
+                acknowledge({ ok: true });
+                return;
+            }
 
             const now = Date.now();
             player.inputWindow = player.inputWindow.filter((time) => now - time < 1000);
@@ -528,7 +617,12 @@ function createBattleServer(options = {}) {
             touch(room);
             acknowledge({ ok: true });
             io.to(room.code).emit("battle:state", roomSnapshot(room));
-            if (player.tracker.finishedAt) scheduleFinish(room);
+            if (player.tracker.finishedAt) {
+                const everyoneFinished = [...room.players.values()]
+                    .every((item) => Boolean(item.tracker?.finishedAt));
+                if (everyoneFinished) finishRace(room, "scored");
+                else scheduleFinish(room);
+            }
         });
 
         socket.on("battle:leave", () => {

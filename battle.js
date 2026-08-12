@@ -3,6 +3,7 @@
 // 1대1 실시간 코드 레이스 클라이언트
 (() => {
     const SESSION_KEY = "pythonQuestBattleSessionV1";
+    const COUNTDOWN_DURATION_MS = 3000;
     const battleScreens = new Set([
         "battle-portal-screen",
         "battle-room-screen",
@@ -18,6 +19,8 @@
         raceStartsAt: null,
         raceTimer: null,
         countdownTimer: null,
+        retireTimer: null,
+        retireEndsAt: null,
         inputTimer: null,
         pendingInput: "",
         inputSequence: 0,
@@ -27,7 +30,9 @@
         joinPreviewTimer: null,
         joinPreviewRequestId: 0,
         initialized: false,
-        finishing: false
+        finishing: false,
+        completedLineIndexes: new Set(),
+        lineErrorIndexes: new Set()
     };
 
     const worldLabels = {
@@ -388,6 +393,8 @@
         const list = document.getElementById("battle-target-lines");
         if (!list) return;
         list.innerHTML = "";
+        state.completedLineIndexes.clear();
+        state.lineErrorIndexes.clear();
         targetText.split("\n").forEach((line) => {
             const item = document.createElement("li");
             const code = document.createElement("span");
@@ -407,16 +414,75 @@
         setText("race-rival-percent", `${Math.round(rival?.progress || 0)}%`);
         setText("race-my-cpm", `${Math.round(me?.cpm || 0)} CPM`);
         setText("race-rival-cpm", `${Math.round(rival?.cpm || 0)} CPM`);
+        setText("race-my-score", `${Math.round(me?.score || 0)} PTS`);
+        setText("race-rival-score", `${Math.round(rival?.score || 0)} PTS`);
+        setText("race-my-accuracy", `${Math.round(me?.accuracy ?? 100)}% ACC`);
+        setText("race-rival-accuracy", `${Math.round(rival?.accuracy ?? 100)}% ACC`);
+        setText("race-my-line-combo", `×${Math.round(me?.lineCombo || 0)} LINE`);
+        setText("race-rival-line-combo", `×${Math.round(rival?.lineCombo || 0)} LINE`);
         setWidth("race-my-progress", me?.progress || 0);
         setWidth("race-rival-progress", rival?.progress || 0);
         setBattleKartIdentity("battle-my-kart", me);
         setBattleKartIdentity("battle-rival-kart", rival);
         setBattleKartPosition("battle-my-kart", me?.progress || 0);
         setBattleKartPosition("battle-rival-kart", rival?.progress || 0);
+        const input = document.getElementById("battle-code-input");
+        if (input && me?.finishedAt) {
+            input.disabled = true;
+            setText("battle-input-status", "완주 · 점수 확정");
+        }
         const notice = rival && !rival.connected
             ? "상대의 연결이 끊겼습니다. 15초 동안 재접속을 기다립니다."
-            : "먼저 정확하게 완성하면 승리합니다.";
-        setText("battle-race-notice", notice);
+            : me?.finishedAt
+                ? "완주했습니다! 상대의 리타이어 기록까지 함께 집계합니다."
+                : rival?.finishedAt
+                    ? "상대가 완주했습니다. 남은 시간 동안 정확하게 끝까지 입력하세요!"
+                    : "속도보다 정확도와 LINE COMBO가 더 큰 점수를 만듭니다.";
+        if (!state.retireEndsAt) setText("battle-race-notice", notice);
+    }
+
+    function triggerBattleLineCombo(lineIndex) {
+        const effect = document.getElementById("battle-combo-effect");
+        const arena = document.querySelector(".battle-kart-arena");
+        if (effect) {
+            effect.textContent = `LINE ${lineIndex + 1} PERFECT · COMBO UP!`;
+            effect.classList.remove("show");
+            void effect.offsetWidth;
+            effect.classList.add("show");
+        }
+        if (arena) {
+            arena.classList.remove("is-boosting");
+            void arena.offsetWidth;
+            arena.classList.add("is-boosting");
+        }
+    }
+
+    function updateBattleLineStates(value) {
+        const userLines = value.split("\n");
+        const input = document.getElementById("battle-code-input");
+        const cursorPosition = input?.selectionStart || 0;
+        const currentLine = value.slice(0, cursorPosition).split("\n").length - 1;
+        const targetLines = state.targetText.split("\n");
+        document.querySelectorAll("#battle-target-lines li").forEach((element, index) => {
+            const targetLine = targetLines[index] || "";
+            const hasUserLine = index < userLines.length;
+            const userLine = hasUserLine ? userLines[index] : null;
+            const exact = hasUserLine && userLine === targetLine;
+            const isPrefix = hasUserLine && targetLine.startsWith(userLine);
+            element.classList.remove("correct", "current", "error");
+            if (exact) {
+                element.classList.add("correct");
+                if (targetLine && !state.completedLineIndexes.has(index)) {
+                    state.completedLineIndexes.add(index);
+                    if (!state.lineErrorIndexes.has(index)) triggerBattleLineCombo(index);
+                }
+            } else if (index === currentLine && isPrefix) {
+                element.classList.add("current");
+            } else if (hasUserLine && (!isPrefix || index < currentLine)) {
+                element.classList.add("error");
+                state.lineErrorIndexes.add(index);
+            }
+        });
     }
 
     function setBattleKartIdentity(id, player) {
@@ -450,27 +516,63 @@
 
     function startRaceTimer() {
         if (state.raceTimer) clearInterval(state.raceTimer);
-        state.raceTimer = setInterval(() => {
+        const renderElapsedTime = () => {
             if (!state.raceStartsAt) return;
             const seconds = Math.max(0, (Date.now() - state.raceStartsAt) / 1000);
             setText("battle-race-timer", formatTime(seconds));
-        }, 250);
+        };
+        renderElapsedTime();
+        state.raceTimer = setInterval(renderElapsedTime, 250);
     }
 
     function stopRaceTimers() {
         if (state.raceTimer) clearInterval(state.raceTimer);
         if (state.countdownTimer) clearInterval(state.countdownTimer);
+        if (state.retireTimer) clearInterval(state.retireTimer);
         if (state.inputTimer) clearTimeout(state.inputTimer);
         state.raceTimer = null;
         state.countdownTimer = null;
+        state.retireTimer = null;
+        state.retireEndsAt = null;
         state.inputTimer = null;
     }
 
-    function showCountdown(startsAt, targetText) {
+    function startRetirePeriod(durationMs) {
+        if (state.retireTimer) clearInterval(state.retireTimer);
+        state.retireEndsAt = Date.now() + Math.max(0, Number(durationMs) || 0);
+        const renderRetireTime = () => {
+            const remaining = Math.max(0, state.retireEndsAt - Date.now());
+            const seconds = Math.ceil(remaining / 1000);
+            setText(
+                "battle-race-notice",
+                remaining > 0
+                    ? `RETIRE TIME ${seconds}초 · 끝까지 입력하면 점수로 승부할 수 있어요!`
+                    : "입력 종료 · 최종 점수를 집계하고 있습니다."
+            );
+            if (remaining <= 0) {
+                clearInterval(state.retireTimer);
+                state.retireTimer = null;
+            }
+        };
+        renderRetireTime();
+        state.retireTimer = setInterval(renderRetireTime, 100);
+    }
+
+    function setCountdownValue(overlay, value) {
+        const strong = overlay?.querySelector("strong");
+        if (!strong || strong.textContent === String(value)) return;
+        strong.textContent = value;
+        strong.classList.remove("is-pulsing");
+        void strong.offsetWidth;
+        strong.classList.add("is-pulsing");
+    }
+
+    function showCountdown(startsAt, targetText, countdownMs = COUNTDOWN_DURATION_MS) {
         state.targetText = normalizeCode(targetText);
-        state.raceStartsAt = startsAt;
+        state.raceStartsAt = null;
         state.inputSequence = 0;
         state.finishing = false;
+        state.retireEndsAt = null;
         renderTargetLines(state.targetText);
         setText("battle-race-title", state.room?.mission?.title || "배틀 미션");
         setText("battle-race-mode", formatRoomMission(state.room?.mission));
@@ -481,16 +583,28 @@
             input.disabled = true;
         }
         const overlay = document.getElementById("battle-countdown");
-        if (overlay) overlay.hidden = false;
+        if (overlay) {
+            overlay.hidden = false;
+            overlay.classList.remove("is-go");
+            const label = overlay.querySelector("span");
+            if (label) label.textContent = "GET READY";
+        }
+        setText("battle-race-timer", "00:00");
         showScreen("battle-race-screen");
         updateRacePlayers(state.room);
 
+        // The server and players' device clocks can differ. Drive the visual
+        // countdown from a local duration instead of comparing epoch times.
+        const requestedCountdownMs = Number(countdownMs);
+        const localCountdownMs = Number.isFinite(requestedCountdownMs)
+            ? Math.max(0, requestedCountdownMs)
+            : COUNTDOWN_DURATION_MS;
+        const countdownEndsAt = Date.now() + localCountdownMs;
+        setCountdownValue(overlay, Math.max(1, Math.ceil(localCountdownMs / 1000)));
         if (state.countdownTimer) clearInterval(state.countdownTimer);
         state.countdownTimer = setInterval(() => {
-            const remaining = Math.max(0, startsAt - Date.now());
-            const number = Math.max(1, Math.ceil(remaining / 1000));
-            const strong = overlay?.querySelector("strong");
-            if (strong) strong.textContent = remaining > 0 ? number : "GO!";
+            const remaining = Math.max(0, countdownEndsAt - Date.now());
+            if (remaining > 0) setCountdownValue(overlay, Math.max(1, Math.ceil(remaining / 1000)));
             if (remaining <= 0) {
                 clearInterval(state.countdownTimer);
                 state.countdownTimer = null;
@@ -498,14 +612,21 @@
         }, 80);
     }
 
-    function enableRaceInput(startsAt) {
-        state.raceStartsAt = startsAt;
+    function enableRaceInput(startsAt, elapsedMs = 0) {
+        // Start the visible timer at GO. Only resumed races carry elapsed time.
+        state.raceStartsAt = Date.now() - Math.max(0, Number(elapsedMs) || 0);
         const overlay = document.getElementById("battle-countdown");
         if (overlay) {
+            if (state.countdownTimer) clearInterval(state.countdownTimer);
+            state.countdownTimer = null;
+            setCountdownValue(overlay, "GO!");
+            const label = overlay.querySelector("span");
+            if (label) label.textContent = "START";
             overlay.classList.add("is-go");
             setTimeout(() => {
                 overlay.hidden = true;
                 overlay.classList.remove("is-go");
+                if (label) label.textContent = "GET READY";
             }, 450);
         }
         const input = document.getElementById("battle-code-input");
@@ -542,10 +663,13 @@
             : "미완주";
         const accuracy = Math.round(player.accuracy || 0);
         const cpm = Math.round(player.cpm || 0);
+        const score = Math.round(player.score || 0);
+        const lineCombo = Math.round(player.maxLineCombo || 0);
+        const breakdown = player.scoreBreakdown || {};
         const kartAsset = index === 0
             ? "assets/python-kart-battle-coral.png"
             : "assets/python-kart-battle-lavender.png";
-        const resultLabel = won ? "1ST · WINNER" : tie ? "DRAW" : "2ND · FINISH";
+        const resultLabel = won ? "TOP SCORE · WINNER" : tie ? "DRAW" : "SCORE RUNNER-UP";
         return `
             <article class="battle-result-player ${won ? "is-winner" : ""} ${isMe ? "is-me" : ""}">
                 <div class="battle-player-rank">
@@ -554,14 +678,16 @@
                 </div>
                 <div class="battle-player-identity">
                     <span class="battle-result-kart"><img src="${kartAsset}" alt="" width="512" height="512"></span>
-                    <div><h3>${escapeHTML(player.nickname)}</h3><p>${won ? "오늘의 코드 레이서" : tie ? "막상막하의 레이서" : "끝까지 완주한 레이서"}</p></div>
+                    <div><h3>${escapeHTML(player.nickname)}</h3><p>${won ? "정확도와 콤보로 만든 최고 점수" : tie ? "과정까지 똑같았던 승부" : "다음 판에는 정확도와 콤보에 도전"}</p></div>
                     ${won ? '<span class="battle-winner-crown" aria-label="승자">♛</span>' : ''}
                 </div>
                 <dl class="battle-result-stats">
+                    <div><dt>SCORE</dt><dd>${score}<small> PTS</small></dd></div>
                     <div><dt>FINISH</dt><dd>${duration}</dd></div>
                     <div><dt>ACCURACY</dt><dd>${accuracy}<small>%</small></dd></div>
-                    <div><dt>SPEED</dt><dd>${cpm}<small> CPM</small></dd></div>
+                    <div><dt>LINE COMBO</dt><dd>×${lineCombo}</dd></div>
                 </dl>
+                <p class="battle-score-breakdown">정확도 ${breakdown.accuracy || 0} · 콤보 ${breakdown.combo || 0} · 속도 ${breakdown.speed || 0} <span>${cpm} CPM</span></p>
                 <div class="battle-performance-bars" aria-hidden="true">
                     <span style="--value:${accuracy}%"><i></i></span>
                     <span style="--value:${Math.min(100, Math.round(cpm / 4))}%"><i></i></span>
@@ -574,17 +700,11 @@
         if (result.reason === "forfeit") {
             return meWon ? "상대의 기권으로 승부가 결정됐어요" : "연결 종료로 승부가 마무리됐어요";
         }
-        if (result.tie) return "0.1초도 양보하지 않은 완벽한 접전";
-
-        const finishers = result.players.filter((player) => Number.isFinite(player.durationMs));
-        if (finishers.length === 2) {
-            const gap = Math.abs(finishers[0].durationMs - finishers[1].durationMs) / 1000;
-            if (gap < 1) return `단 ${gap.toFixed(1)}초가 승부를 갈랐어요`;
-            return `${gap.toFixed(1)}초 차이로 결승선을 통과했어요`;
-        }
-
+        if (result.tie) return "정확도와 콤보 점수까지 같은 완벽한 접전";
+        const scores = result.players.map((player) => Number(player.score) || 0);
+        const gap = Math.abs((scores[0] || 0) - (scores[1] || 0));
         const winner = result.players.find((player) => player.id === result.winnerId);
-        return winner ? `${Math.round(winner.accuracy || 0)}% 정확도로 완주한 승부` : "끝까지 팽팽했던 코드 레이스";
+        return winner ? `${winner.score}점 · ${gap}점 차이로 결정된 과정 중심 승부` : "끝까지 팽팽했던 타자 배틀";
     }
 
     function renderResult(result) {
@@ -602,10 +722,10 @@
                 ? "상대의 연결이 종료되어 승리했습니다."
                 : "배틀 연결이 종료되어 기권 처리되었습니다."
             : result.tie
-                ? "완주 시간과 정확도가 거의 같았어요."
+                ? "정확도와 콤보를 포함한 최종 점수가 같았어요."
                 : meWon
-                    ? "정확한 타이핑으로 코드 레이스를 먼저 완주했어요."
-                    : "기록을 확인하고 다음 레이스에서 다시 도전해 보세요.";
+                    ? "빠르기만 한 승부가 아니에요. 정확도와 콤보로 최고 점수를 만들었어요!"
+                    : "속도보다 정확도와 LINE COMBO를 높이면 다음 배틀을 뒤집을 수 있어요.";
 
         setText("battle-result-emblem", emblem);
         setText("battle-result-overline", result.tie ? "EVEN MATCH" : meWon ? "QUEST CLEAR!" : "NEXT CHALLENGE");
@@ -674,8 +794,11 @@
             const response = await emitWithAck("battle:resume", state.session);
             await acceptSession(response);
             if (response.room.phase === "racing" && response.targetText) {
-                showCountdown(response.room.startsAt || Date.now(), response.targetText);
-                enableRaceInput(response.room.startsAt || Date.now());
+                showCountdown(Date.now(), response.targetText, 0);
+                enableRaceInput(response.room.startsAt || Date.now(), response.elapsedMs);
+                if (response.room.retireRemainingMs > 0) {
+                    startRetirePeriod(response.room.retireRemainingMs);
+                }
             }
         } catch {
             saveSession(null);
@@ -730,11 +853,14 @@
             if (room.phase === "waiting" || room.phase === "countdown") renderWaitingRoom(room);
             else updateRacePlayers(room);
         });
-        state.socket.on("battle:countdown", ({ startsAt, targetText }) => {
-            showCountdown(startsAt, targetText);
+        state.socket.on("battle:countdown", ({ startsAt, targetText, countdownMs }) => {
+            showCountdown(startsAt, targetText, countdownMs);
         });
         state.socket.on("battle:start", ({ startsAt }) => {
             enableRaceInput(startsAt);
+        });
+        state.socket.on("battle:retire", ({ durationMs }) => {
+            startRetirePeriod(durationMs);
         });
         state.socket.on("battle:state", (room) => updateRacePlayers(room));
         state.socket.on("battle:result", (result) => renderResult(result));
@@ -805,7 +931,11 @@
             input.setRangeText("    ", input.selectionStart, input.selectionEnd, "end");
             input.dispatchEvent(new Event("input", { bubbles: true }));
         });
-        input?.addEventListener("input", () => queueInput(normalizeCode(input.value)));
+        input?.addEventListener("input", () => {
+            const value = normalizeCode(input.value);
+            updateBattleLineStates(value);
+            queueInput(value);
+        });
     }
 
     async function initialize() {

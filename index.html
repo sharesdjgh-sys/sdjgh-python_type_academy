@@ -899,32 +899,43 @@
                 <div class="game-toolbar">
                     <button class="icon-button danger" type="button" data-battle-action="leave" aria-label="배틀 나가기">×</button>
                     <div class="mission-identity">
-                        <span id="battle-race-mode">REALTIME CODE RACE</span>
+                        <span id="battle-race-mode">REALTIME TYPING BATTLE</span>
                         <h1 id="battle-race-title">배틀 미션</h1>
                     </div>
                     <div class="mission-clock">
-                        <span>RACE TIME</span>
+                        <span>BATTLE TIME</span>
                         <strong id="battle-race-timer">00:00</strong>
                     </div>
                 </div>
 
-                <section class="race-versus-hud" aria-label="실시간 레이스 현황">
+                <section class="race-versus-hud" aria-label="실시간 타자 배틀 현황">
                     <article class="race-player-card is-me">
                         <div><span>ME</span><strong id="race-my-name">PLAYER 1</strong></div>
                         <span class="race-progress"><span id="race-my-progress"></span></span>
                         <p><strong id="race-my-percent">0%</strong><span id="race-my-cpm">0 CPM</span></p>
+                        <div class="race-player-metrics">
+                            <span id="race-my-score">0 PTS</span>
+                            <span id="race-my-accuracy">100% ACC</span>
+                            <span id="race-my-line-combo">×0 LINE</span>
+                        </div>
                     </article>
                     <div class="race-vs">VS</div>
                     <article class="race-player-card">
                         <div><span>RIVAL</span><strong id="race-rival-name">PLAYER 2</strong></div>
                         <span class="race-progress"><span id="race-rival-progress"></span></span>
                         <p><strong id="race-rival-percent">0%</strong><span id="race-rival-cpm">0 CPM</span></p>
+                        <div class="race-player-metrics">
+                            <span id="race-rival-score">0 PTS</span>
+                            <span id="race-rival-accuracy">100% ACC</span>
+                            <span id="race-rival-line-combo">×0 LINE</span>
+                        </div>
                     </article>
                 </section>
 
                 <section class="battle-kart-arena" aria-label="실시간 카트 레이스 진행 상황">
+                    <div id="battle-combo-effect" class="battle-combo-effect" aria-live="polite"></div>
                     <header>
-                        <div><span>DUAL KART TRACK</span><strong>코드를 완성해 먼저 결승선을 통과하세요.</strong></div>
+                        <div><span>TYPING SCORE BATTLE</span><strong>정확도와 LINE COMBO로 최고 점수를 만드세요.</strong></div>
                         <span class="battle-track-live"><i aria-hidden="true"></i> LIVE</span>
                     </header>
                     <div class="battle-kart-lane kart-coral">
@@ -953,7 +964,7 @@
                     <section class="editor-panel input-panel">
                         <header class="panel-header"><div><span class="panel-index">02</span><div><p>MY CODE</p><h2>카운트다운 후 입력!</h2></div></div><span id="battle-input-status" class="panel-meta">대기 중</span></header>
                         <div class="code-window input-window">
-                            <div class="window-bar"><span class="window-dot active"></span><span>race_input.py</span><span class="window-status">붙여넣기 금지</span></div>
+                            <div class="window-bar"><span class="window-dot active"></span><span>typing_input.py</span><span class="window-status">붙여넣기 금지</span></div>
                             <textarea id="battle-code-input" class="code-input" aria-label="배틀 파이썬 코드 입력" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
                         </div>
                     </section>
