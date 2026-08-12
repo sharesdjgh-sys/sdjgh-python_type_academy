@@ -6169,6 +6169,63 @@ body[data-motion="off"] *::after {
     color: #dc666b;
 }
 
+.battle-live-status {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.battle-live-status article {
+    position: relative;
+    min-width: 0;
+    padding: 15px 17px 15px 20px;
+    overflow: hidden;
+    border: 1px solid rgba(128, 101, 189, 0.16);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(79, 58, 81, 0.06);
+}
+
+.battle-live-status article::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: #a4a0ac;
+    content: "";
+}
+
+.battle-live-status article[data-state="typing"]::before,
+.battle-live-status article[data-state="checking"]::before { background: #4e8fd1; }
+.battle-live-status article[data-state="finished"]::before { background: #42a879; }
+.battle-live-status article[data-state="error"]::before { background: #dc666b; }
+
+.battle-live-status article > span {
+    color: var(--muted);
+    font-family: var(--font-code);
+    font-size: 0.55rem;
+    font-weight: 950;
+    letter-spacing: 0.1em;
+}
+
+.battle-live-status article > strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.battle-live-status article[data-state="finished"] > strong { color: #25845d; }
+.battle-live-status article[data-state="error"] > strong { color: #c65359; }
+
+.battle-live-status article > p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 0.68rem;
+    line-height: 1.55;
+    word-break: keep-all;
+}
+
 .battle-race-notice {
     margin: 12px 0 0;
     padding: 12px 14px;
@@ -6463,25 +6520,25 @@ body[data-motion="off"] *::after {
 .battle-result-highlight strong { color: #4b4149; font-size: 0.66rem; font-weight: 700; }
 
 .battle-match-report {
-    margin-top: 20px;
-    padding: 26px;
+    margin-top: 28px;
+    padding: clamp(24px, 3vw, 38px);
     border: 1px solid var(--line);
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.84);
     box-shadow: 0 18px 50px rgba(79, 58, 81, 0.08);
 }
 
-.battle-report-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
-.battle-report-heading .eyebrow { margin: 0 0 4px; }
-.battle-report-heading h2 { margin: 0; font-size: clamp(1.25rem, 3vw, 1.75rem); }
-.battle-report-status { padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-family: var(--font-code); font-size: 0.55rem; font-weight: 900; letter-spacing: 0.12em; }
+.battle-report-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 26px; }
+.battle-report-heading .eyebrow { margin: 0 0 7px; font-size: 0.7rem; }
+.battle-report-heading h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 2.35rem); }
+.battle-report-status { padding: 8px 12px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-family: var(--font-code); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; }
 
 .battle-result-players { position: relative; gap: 46px; margin-top: 0; }
 
 .battle-result-player {
     position: relative;
     overflow: visible;
-    padding: 18px;
+    padding: clamp(20px, 2.5vw, 28px);
     border-radius: 16px;
     background: #fbfafc;
     animation: result-card-in 0.65s 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -6510,24 +6567,24 @@ body[data-motion="off"] *::after {
 .battle-result-player:nth-child(2) { animation-delay: 0.26s; }
 .battle-result-player.is-winner { border-color: color-mix(in srgb, var(--result-accent) 36%, white); background: linear-gradient(145deg, #fffdf9, color-mix(in srgb, var(--result-accent) 8%, white)); box-shadow: 0 13px 30px var(--result-glow); }
 
-.battle-player-rank { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.battle-player-rank > span { color: var(--result-deep); font-family: var(--font-code); font-size: 0.58rem; font-weight: 950; letter-spacing: 0.08em; }
-.battle-player-rank small { padding: 4px 6px; border-radius: 5px; background: #eeeaf2; color: #74687b; font-family: var(--font-code); font-size: 0.48rem; font-weight: 900; }
+.battle-player-rank { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.battle-player-rank > span { color: var(--result-deep); font-family: var(--font-code); font-size: 0.76rem; font-weight: 950; letter-spacing: 0.07em; }
+.battle-player-rank small { padding: 6px 9px; border-radius: 6px; background: #eeeaf2; color: #74687b; font-family: var(--font-code); font-size: 0.62rem; font-weight: 900; }
 .battle-result-player.is-me .battle-player-rank small { background: var(--result-accent); color: #fff; }
 
-.battle-player-identity { display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-.battle-result-kart { display: grid; width: 68px; height: 68px; overflow: hidden; place-items: center; border-radius: 16px; background: rgba(235, 228, 240, 0.72); }
-.battle-result-kart img { width: 92px; max-width: none; height: 92px; object-fit: contain; }
-.battle-player-identity h3 { overflow: hidden; margin: 0; font-size: 1rem; text-overflow: ellipsis; white-space: nowrap; }
-.battle-player-identity p { margin: 3px 0 0; color: var(--muted); font-size: 0.58rem; }
-.battle-winner-crown { color: var(--result-accent); font-size: 1.25rem; filter: drop-shadow(0 5px 9px var(--result-glow)); }
+.battle-player-identity { display: grid; grid-template-columns: 82px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.battle-result-kart { display: grid; width: 82px; height: 82px; overflow: hidden; place-items: center; border-radius: 18px; background: rgba(235, 228, 240, 0.72); }
+.battle-result-kart img { width: 108px; max-width: none; height: 108px; object-fit: contain; }
+.battle-player-identity h3 { overflow: hidden; margin: 0; font-size: 1.3rem; text-overflow: ellipsis; white-space: nowrap; }
+.battle-player-identity p { margin: 5px 0 0; color: var(--muted); font-size: 0.74rem; line-height: 1.45; }
+.battle-winner-crown { color: var(--result-accent); font-size: 1.6rem; filter: drop-shadow(0 5px 9px var(--result-glow)); }
 
-.battle-result-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 0; }
-.battle-result-stats div { display: grid; gap: 4px; }
-.battle-result-stats dt { color: var(--muted); font-family: var(--font-code); font-size: 0.48rem; font-weight: 800; }
-.battle-result-stats dd { margin: 0; font-family: var(--font-code); font-size: 0.72rem; font-weight: 950; }
-.battle-result-stats dd small { color: var(--muted); font-size: 0.48rem; }
-.battle-score-breakdown { display: flex; justify-content: space-between; gap: 8px; margin: 10px 0 0; color: var(--muted); font-family: var(--font-code); font-size: 0.47rem; line-height: 1.6; }
+.battle-result-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 0; }
+.battle-result-stats div { display: grid; gap: 7px; padding: 11px; border-radius: 10px; background: rgba(240, 236, 242, 0.66); }
+.battle-result-stats dt { color: var(--muted); font-family: var(--font-code); font-size: 0.62rem; font-weight: 850; }
+.battle-result-stats dd { margin: 0; font-family: var(--font-code); font-size: 1rem; font-weight: 950; }
+.battle-result-stats dd small { color: var(--muted); font-size: 0.62rem; }
+.battle-score-breakdown { display: flex; justify-content: space-between; gap: 12px; margin: 14px 0 0; color: #625766; font-family: var(--font-code); font-size: 0.65rem; font-weight: 750; line-height: 1.7; }
 .battle-score-breakdown span { flex: none; color: var(--result-deep); font-weight: 950; }
 
 .battle-performance-bars { display: grid; gap: 4px; margin-top: 12px; }
@@ -6608,8 +6665,17 @@ body[data-motion="off"] *::after {
     .battle-rule-strip,
     .battle-entry-actions,
     .battle-select-row,
-    .battle-result-players {
+    .battle-result-players,
+    .battle-live-status {
         grid-template-columns: 1fr;
+    }
+
+    .battle-result-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .battle-score-breakdown {
+        display: grid;
     }
 
     .battle-entry-chooser {

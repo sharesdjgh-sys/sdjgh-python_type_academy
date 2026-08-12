@@ -659,7 +659,7 @@
                     <button class="icon-button" type="button" data-battle-action="home" aria-label="홈으로 돌아가기">←</button>
                     <div>
                         <p class="eyebrow">REALTIME 1 VS 1</p>
-                        <h1 id="battle-portal-title">친구와 코드 레이스</h1>
+                        <h1 id="battle-portal-title">친구와 타자 배틀</h1>
                     </div>
                     <span id="battle-server-status" class="battle-connection-status"><i aria-hidden="true"></i> 서버 연결 중</span>
                 </div>
@@ -671,12 +671,12 @@
                         <h2>코드는 같고,<br><span>승자는 한 명.</span></h2>
                         <p>
                             친구와 같은 파이썬 코드를 동시에 입력해요. 빠르기만 해서는 부족해요.
-                            <strong class="battle-win-condition">오타 없이 먼저 완주하면 승리!</strong>
+                            <strong class="battle-win-condition">완주한 뒤 정확도·콤보·속도 점수로 승부해요!</strong>
                         </p>
                         <div class="battle-rule-strip" aria-label="배틀 규칙">
                             <span><strong>01</strong> 같은 미션</span>
                             <span><strong>02</strong> 3초 카운트</span>
-                            <span><strong>03</strong> 정확한 완주</span>
+                            <span><strong>03</strong> 1,000점 승부</span>
                         </div>
                     </div>
                     <figure class="battle-hero-art">
@@ -699,6 +699,44 @@
                             <strong>1 : 1</strong>
                         </figcaption>
                     </figure>
+                </section>
+
+                <section class="battle-guide" aria-labelledby="battle-guide-title">
+                    <header class="battle-guide-heading">
+                        <div>
+                            <p class="eyebrow">HOW TO PLAY</p>
+                            <h2 id="battle-guide-title">친구 배틀, 이렇게 진행돼요</h2>
+                        </div>
+                        <p>먼저 끝내는 것보다 <strong>정확하게 입력하는 과정</strong>이 더 중요합니다.</p>
+                    </header>
+                    <ol class="battle-guide-steps">
+                        <li><span>01</span><div><small>ROOM</small><strong>방 만들기 또는 참가</strong><p>한 명이 미션을 고르고 <b>6자리 코드</b>를 공유해요.</p></div></li>
+                        <li><span>02</span><div><small>READY</small><strong>두 명 모두 준비</strong><p>둘 다 준비 완료를 누르면 <b>3, 2, 1, GO!</b> 후 시작해요.</p></div></li>
+                        <li><span>03</span><div><small>TYPE</small><strong>같은 코드를 직접 입력</strong><p>붙여넣기 없이 줄바꿈과 띄어쓰기까지 <b>정확히</b> 입력해요.</p></div></li>
+                        <li><span>04</span><div><small>SCORE</small><strong>리타이어 시간 후 판정</strong><p>첫 완주 후 친구에게 <b>15초</b>가 주어지고, 기록을 합산해요.</p></div></li>
+                    </ol>
+                    <div class="battle-guide-rules">
+                        <article class="battle-score-guide">
+                            <span class="battle-guide-label">SCORE · 1,000 PTS</span>
+                            <h3>정확도와 콤보가 승부의 85%</h3>
+                            <div class="battle-score-parts">
+                                <span><strong>550</strong> 정확도</span>
+                                <span><strong>300</strong> 콤보</span>
+                                <span><strong>150</strong> 속도</span>
+                            </div>
+                            <p>두 명 모두 완주하면 점수로 승부하고, 한 명만 완주하면 완주한 친구가 승리해요.</p>
+                        </article>
+                        <article class="battle-caution-guide">
+                            <span class="battle-guide-label">CHECK BEFORE PLAY</span>
+                            <h3>배틀 전 꼭 확인하세요</h3>
+                            <ul>
+                                <li>오탈자가 남아 있으면 완주로 인정되지 않아요.</li>
+                                <li>완벽하게 입력한 줄은 LINE COMBO로 이어져요.</li>
+                                <li>연결이 끊기면 15초 동안 재접속을 기다려요.</li>
+                                <li>친선 배틀 기록은 XP·코인에 반영되지 않아요.</li>
+                            </ul>
+                        </article>
+                    </div>
                 </section>
 
                 <section class="battle-entry-chooser" aria-labelledby="battle-entry-title">
@@ -727,7 +765,7 @@
                             <span class="battle-entry-icon" aria-hidden="true">01</span>
                         </div>
                         <h2>새 배틀방 만들기</h2>
-                        <p>레이스를 만들고 6자리 초대 코드를 친구에게 보내세요.</p>
+                        <p>배틀방을 만들고 6자리 초대 코드를 친구에게 보내세요.</p>
                         <label>
                             <span>닉네임</span>
                             <input id="battle-host-nickname" name="nickname" maxlength="12" minlength="2" placeholder="2~12자" required>
@@ -971,6 +1009,18 @@
                 </div>
 
                 <div id="battle-countdown" class="battle-countdown" aria-live="assertive" hidden><strong>3</strong><span>GET READY</span></div>
+                <section class="battle-live-status" aria-label="현재 완주 상태">
+                    <article id="battle-my-state-card" data-state="waiting">
+                        <span>MY STATUS</span>
+                        <strong id="battle-my-state">입력 대기</strong>
+                        <p id="battle-my-state-detail">GO 신호 후 입력을 시작하세요.</p>
+                    </article>
+                    <article id="battle-rival-state-card" data-state="waiting">
+                        <span>FRIEND STATUS</span>
+                        <strong id="battle-rival-state">친구 대기</strong>
+                        <p id="battle-rival-state-detail">친구의 입력 상태가 여기에 표시됩니다.</p>
+                    </article>
+                </section>
                 <p id="battle-race-notice" class="battle-race-notice" aria-live="polite">상대와 연결 중입니다.</p>
             </section>
 

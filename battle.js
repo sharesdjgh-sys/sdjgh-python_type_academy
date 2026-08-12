@@ -431,6 +431,7 @@
             input.disabled = true;
             setText("battle-input-status", "완주 · 점수 확정");
         }
+        updateBattleCompletionStatus(room, normalizeCode(input?.value || ""));
         const notice = rival && !rival.connected
             ? "상대의 연결이 끊겼습니다. 15초 동안 재접속을 기다립니다."
             : me?.finishedAt
@@ -439,6 +440,89 @@
                     ? "상대가 완주했습니다. 남은 시간 동안 정확하게 끝까지 입력하세요!"
                     : "속도보다 정확도와 LINE COMBO가 더 큰 점수를 만듭니다.";
         if (!state.retireEndsAt) setText("battle-race-notice", notice);
+    }
+
+    function setCompletionCard(prefix, status, detail, tone) {
+        setText(`battle-${prefix}-state`, status);
+        setText(`battle-${prefix}-state-detail`, detail);
+        const card = document.getElementById(`battle-${prefix}-state-card`);
+        if (card) card.dataset.state = tone;
+    }
+
+    function analyzeLocalCode(value) {
+        let currentErrors = 0;
+        const length = Math.min(value.length, state.targetText.length);
+        for (let index = 0; index < length; index += 1) {
+            if (value[index] !== state.targetText[index]) currentErrors += 1;
+        }
+        if (value.length > state.targetText.length) {
+            currentErrors += value.length - state.targetText.length;
+        }
+        return {
+            currentErrors,
+            exact: value === state.targetText,
+            empty: value.length === 0
+        };
+    }
+
+    function updateBattleCompletionStatus(room, value) {
+        const me = currentPlayer(room);
+        const rival = rivalPlayer(room);
+        const local = analyzeLocalCode(value);
+
+        if (me?.finishedAt) {
+            setCompletionCard(
+                "my",
+                "완주 완료 ✓",
+                rival?.finishedAt ? "두 기록이 모두 확정됐어요." : "내 점수는 확정됐어요. 친구의 완주를 기다립니다.",
+                "finished"
+            );
+        } else if (local.exact) {
+            setCompletionCard("my", "완주 확인 중", "정확한 코드입니다. 서버에서 기록을 확인하고 있어요.", "checking");
+        } else if (local.currentErrors > 0) {
+            setCompletionCard(
+                "my",
+                `오탈자 ${local.currentErrors}개`,
+                "현재 코드가 정답과 달라 아직 완주가 아닙니다. 표시된 줄을 수정하세요.",
+                "error"
+            );
+        } else if (local.empty) {
+            setCompletionCard(
+                "my",
+                state.raceStartsAt ? "입력 시작" : "입력 대기",
+                state.raceStartsAt ? "코드를 입력하면 정확도와 진행 상태를 바로 확인할 수 있어요." : "GO 신호 후 코드를 입력하세요.",
+                state.raceStartsAt ? "typing" : "waiting"
+            );
+        } else {
+            setCompletionCard("my", "입력 중", "현재까지 오탈자 없이 진행 중이에요. 끝까지 입력하세요.", "typing");
+        }
+
+        if (!rival) {
+            setCompletionCard("rival", "친구 대기", "친구와 연결되면 상태가 표시됩니다.", "waiting");
+        } else if (!rival.connected) {
+            setCompletionCard("rival", "재접속 대기", "연결이 끊겨 15초 동안 다시 접속하기를 기다려요.", "error");
+        } else if (rival.finishedAt) {
+            setCompletionCard(
+                "rival",
+                "친구 완주 ✓",
+                me?.finishedAt ? "두 기록이 모두 확정됐어요." : "친구는 끝냈어요. 내 코드를 확인하고 계속 입력하세요.",
+                "finished"
+            );
+        } else if (me?.finishedAt) {
+            setCompletionCard(
+                "rival",
+                "친구 입력 중",
+                `친구 진행률 ${Math.round(rival.progress || 0)}% · 리타이어 시간 동안 기다리는 중이에요.`,
+                "typing"
+            );
+        } else {
+            setCompletionCard(
+                "rival",
+                "친구 입력 중",
+                `진행률 ${Math.round(rival.progress || 0)}% · 아직 완주하지 않았어요.`,
+                "typing"
+            );
+        }
     }
 
     function triggerBattleLineCombo(lineIndex) {
@@ -634,7 +718,8 @@
             input.disabled = false;
             input.focus();
         }
-        setText("battle-input-status", "레이스 중");
+        setText("battle-input-status", "배틀 진행 중");
+        updateBattleCompletionStatus(state.room, normalizeCode(input?.value || ""));
         startRaceTimer();
     }
 
@@ -934,6 +1019,7 @@
         input?.addEventListener("input", () => {
             const value = normalizeCode(input.value);
             updateBattleLineStates(value);
+            updateBattleCompletionStatus(state.room, value);
             queueInput(value);
         });
     }
