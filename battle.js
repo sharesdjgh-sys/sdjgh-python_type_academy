@@ -33,7 +33,8 @@
         finishing: false,
         completedLineIndexes: new Set(),
         lineErrorIndexes: new Set(),
-        feedbackLineCombo: 0
+        feedbackLineCombo: 0,
+        feedbackNitro: 0
     };
 
     const worldLabels = {
@@ -397,6 +398,9 @@
         state.completedLineIndexes.clear();
         state.lineErrorIndexes.clear();
         state.feedbackLineCombo = 0;
+        state.feedbackNitro = 0;
+        setText("battle-line-streak", "0");
+        setWidth("battle-nitro-fill", 0);
         targetText.split("\n").forEach((line) => {
             const item = document.createElement("li");
             const code = document.createElement("span");
@@ -565,6 +569,9 @@
         const scorableLines = Math.max(1, state.targetText.split("\n").filter(Boolean).length);
         const lineBonus = Math.round(120 / scorableLines);
         state.feedbackLineCombo = isPerfect ? state.feedbackLineCombo + 1 : 0;
+        state.feedbackNitro = Math.min(100, state.feedbackNitro + (isPerfect ? 34 : 18));
+        setText("battle-line-streak", String(state.feedbackLineCombo));
+        setWidth("battle-nitro-fill", state.feedbackNitro);
         if (effect) {
             effect.dataset.judgement = isPerfect ? "perfect" : "clear";
             effect.innerHTML = isPerfect
@@ -578,6 +585,7 @@
             arena.classList.remove("is-boosting");
             void arena.offsetWidth;
             arena.classList.add("is-boosting");
+            window.setTimeout(() => arena.classList.remove("is-boosting"), 720);
         }
         if (myKart) {
             myKart.classList.remove("is-nitro");
@@ -679,6 +687,7 @@
                 inputStatus.textContent = "입력 완료 ✓";
                 inputStatus.dataset.state = "complete";
             }
+            document.querySelector(".battle-kart-arena")?.classList.add("finishing");
         }
         if (notice) notice.dataset.mode = "final-input";
         let previousSeconds = null;
@@ -721,6 +730,7 @@
             delete notice.dataset.mode;
             notice.textContent = "판정은 종료 후 공개됩니다. 코드만 보고 끝까지 입력하세요.";
         }
+        document.querySelector(".battle-kart-arena")?.classList.remove("racing", "finishing", "is-boosting");
         setText("battle-race-title", state.room?.mission?.title || "배틀 미션");
         setText("battle-race-mode", formatRoomMission(state.room?.mission));
 
@@ -788,6 +798,7 @@
             input.focus();
         }
         setText("battle-input-status", "배틀 진행 중");
+        document.querySelector(".battle-kart-arena")?.classList.add("racing");
         startRaceTimer();
     }
 
@@ -877,6 +888,7 @@
         if (state.finishing) return;
         state.finishing = true;
         stopRaceTimers();
+        document.querySelector(".battle-kart-arena")?.classList.remove("racing", "is-boosting");
         const input = document.getElementById("battle-code-input");
         if (input) input.disabled = true;
 

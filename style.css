@@ -6038,6 +6038,37 @@ body[data-motion="off"] *::after {
     gap: 3px;
 }
 
+.battle-kart-arena > header > .battle-rhythm-hud {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.battle-line-streak {
+    display: grid;
+    min-width: 70px;
+    padding: 5px 9px;
+    border: 1px solid rgba(128, 101, 189, 0.16);
+    border-radius: 9px;
+    background: #f7f3fc;
+    text-align: center;
+}
+
+.battle-line-streak small,
+.battle-nitro-meter small {
+    color: #8065bd;
+    font-family: var(--font-code);
+    font-size: 0.42rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+}
+
+.battle-line-streak strong { color: #7151b3; font-family: var(--font-code); font-size: 0.82rem; line-height: 1.1; }
+.battle-line-streak strong b { font: inherit; }
+.battle-nitro-meter { display: grid; width: 96px; gap: 4px; }
+.battle-nitro-meter > i { display: block; height: 7px; overflow: hidden; border-radius: 999px; background: #e8e2ea; box-shadow: inset 0 1px 2px rgba(72, 43, 57, 0.1); }
+.battle-nitro-meter > i > b { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4e8fd1, #59d8f0 55%, #fff09a); box-shadow: 0 0 10px rgba(78, 143, 209, 0.45); transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
 .battle-kart-arena > header span {
     color: #8065bd;
     font-family: var(--font-code);
@@ -6089,6 +6120,9 @@ body[data-motion="off"] *::after {
 .battle-kart-lane + .battle-kart-lane {
     margin-top: 8px;
 }
+
+.battle-kart-arena.racing .battle-kart-lane { animation: battle-road-scroll 0.62s linear infinite; }
+.battle-kart-arena.racing.is-boosting .battle-kart-lane { animation-duration: 0.24s; }
 
 .battle-kart-lane.kart-coral {
     box-shadow: inset 4px 0 #dc666b;
@@ -6163,6 +6197,9 @@ body[data-motion="off"] *::after {
 .battle-kart.is-moving img {
     animation: battle-kart-bob 0.26s ease-in-out infinite alternate;
 }
+
+.battle-kart-arena.racing .battle-kart img { animation: battle-kart-bob 0.26s ease-in-out infinite alternate; }
+.battle-kart-arena.racing .battle-kart::before { opacity: 0.72; animation: battle-running-trail 0.4s ease-in-out infinite alternate; }
 
 .battle-kart.is-nitro img {
     animation: battle-nitro-kick 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -6480,7 +6517,7 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 
 .battle-result-player dl {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin: 0;
 }
 
@@ -6943,6 +6980,16 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     42% { filter: brightness(1.04); }
 }
 
+@keyframes battle-road-scroll {
+    from { background-position: 0 0, 0 72px, 0 0; }
+    to { background-position: 0 0, -73px 72px, 0 0; }
+}
+
+@keyframes battle-running-trail {
+    from { width: 48px; opacity: 0.45; }
+    to { width: 72px; opacity: 0.82; }
+}
+
 @media (max-width: 860px) {
     .battle-portal-hero,
     .battle-entry-grid,
@@ -7036,6 +7083,19 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     .battle-kart-arena > header strong {
         max-width: 230px;
         font-size: 0.63rem;
+    }
+
+    .battle-kart-arena > header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .battle-kart-arena > header > .battle-rhythm-hud {
+        width: 100%;
+    }
+
+    .battle-nitro-meter {
+        flex: 1;
     }
 
     .battle-kart-lane {
