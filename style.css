@@ -5987,19 +5987,24 @@ body[data-motion="off"] *::after {
     top: 50%;
     left: 50%;
     z-index: 8;
-    padding: 8px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 999px;
+    display: grid;
+    min-width: 210px;
+    padding: 11px 17px 12px;
+    border: 2px solid rgba(255, 255, 255, 0.88);
+    border-radius: 15px;
     background: linear-gradient(135deg, #dc666b, #8065bd);
     color: #fff;
     font-family: var(--font-code);
-    font-size: 0.6rem;
-    font-weight: 950;
-    letter-spacing: 0.06em;
+    text-align: center;
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, -35%) scale(0.72);
 }
+
+.battle-combo-effect[data-judgement="clear"] { background: linear-gradient(135deg, #4e8fd1, #7151b3); }
+.battle-combo-effect > span { font-size: 0.48rem; font-weight: 950; letter-spacing: 0.16em; opacity: 0.82; }
+.battle-combo-effect > strong { margin-top: 2px; font-size: 1.05rem; font-style: italic; letter-spacing: 0.04em; text-shadow: 0 3px 10px rgba(50, 30, 80, 0.24); }
+.battle-combo-effect > small { margin-top: 4px; font-size: 0.52rem; font-weight: 900; letter-spacing: 0.06em; }
 
 .battle-combo-effect.show {
     animation: battle-line-combo 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -6007,6 +6012,17 @@ body[data-motion="off"] *::after {
 
 .battle-kart-arena.is-boosting {
     animation: battle-arena-boost 0.5s ease-out;
+}
+
+.battle-kart-arena.is-boosting::after {
+    position: absolute;
+    z-index: 7;
+    inset: 44px 0 12px;
+    background: repeating-linear-gradient(100deg, transparent 0 42px, rgba(255, 255, 255, 0.72) 43px 45px, transparent 46px 82px);
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    animation: battle-speed-flash 0.58s ease-out;
 }
 
 .battle-kart-arena > header {
@@ -6146,6 +6162,21 @@ body[data-motion="off"] *::after {
 
 .battle-kart.is-moving img {
     animation: battle-kart-bob 0.26s ease-in-out infinite alternate;
+}
+
+.battle-kart.is-nitro img {
+    animation: battle-nitro-kick 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-kart.is-nitro::before {
+    width: 98px;
+    opacity: 1;
+    filter: blur(5px) brightness(1.45);
+    animation: battle-nitro-trail 0.72s ease-out both;
+}
+
+.battle-kart-lane.rhythm-hit {
+    animation: battle-rhythm-lane-hit 0.7s ease-out;
 }
 
 .battle-kart.is-finished {
@@ -6533,17 +6564,45 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     position: absolute;
     z-index: -1;
     inset: 0;
-    background:
-        radial-gradient(circle, #efb55c 0 3px, transparent 4px) 8% 20% / 9px 9px no-repeat,
-        radial-gradient(circle, #dc6e68 0 3px, transparent 4px) 92% 18% / 9px 9px no-repeat,
-        radial-gradient(circle, #8b70c1 0 3px, transparent 4px) 18% 72% / 9px 9px no-repeat,
-        radial-gradient(circle, #efb55c 0 3px, transparent 4px) 83% 76% / 9px 9px no-repeat,
-        linear-gradient(35deg, transparent 42%, #8b70c1 43% 57%, transparent 58%) 14% 10% / 18px 42px no-repeat,
-        linear-gradient(-35deg, transparent 42%, #efb55c 43% 57%, transparent 58%) 88% 8% / 18px 42px no-repeat,
-        linear-gradient(18deg, transparent 42%, #dc6e68 43% 57%, transparent 58%) 27% 32% / 15px 34px no-repeat,
-        linear-gradient(-18deg, transparent 42%, #8b70c1 43% 57%, transparent 58%) 73% 34% / 15px 34px no-repeat;
-    animation: result-confetti-in 0.9s 0.15s ease-out both;
+    overflow: hidden;
+    pointer-events: none;
 }
+
+.battle-result-confetti i {
+    --confetti-color: #efb55c;
+    --confetti-x: 8%;
+    --confetti-drift: 38px;
+    --confetti-delay: 0s;
+    --confetti-duration: 3.8s;
+    position: absolute;
+    top: -12%;
+    left: var(--confetti-x);
+    width: 9px;
+    height: 18px;
+    border-radius: 3px;
+    background: var(--confetti-color);
+    opacity: 0;
+    animation: result-confetti-fall var(--confetti-duration) var(--confetti-delay) linear infinite;
+}
+
+.battle-result-confetti i:nth-child(2n) { width: 8px; height: 8px; border-radius: 50%; }
+.battle-result-confetti i:nth-child(3n) { width: 13px; height: 6px; border-radius: 2px; }
+.battle-result-confetti i:nth-child(1) { --confetti-x: 5%; --confetti-drift: 52px; --confetti-delay: -0.4s; --confetti-duration: 4.1s; --confetti-color: #efb55c; }
+.battle-result-confetti i:nth-child(2) { --confetti-x: 12%; --confetti-drift: -38px; --confetti-delay: -2.1s; --confetti-duration: 3.6s; --confetti-color: #dc6e68; }
+.battle-result-confetti i:nth-child(3) { --confetti-x: 20%; --confetti-drift: 44px; --confetti-delay: -1.2s; --confetti-duration: 4.4s; --confetti-color: #8b70c1; }
+.battle-result-confetti i:nth-child(4) { --confetti-x: 29%; --confetti-drift: -56px; --confetti-delay: -3s; --confetti-duration: 4s; --confetti-color: #4e8fd1; }
+.battle-result-confetti i:nth-child(5) { --confetti-x: 37%; --confetti-drift: 34px; --confetti-delay: -0.8s; --confetti-duration: 3.5s; --confetti-color: #42a879; }
+.battle-result-confetti i:nth-child(6) { --confetti-x: 44%; --confetti-drift: -30px; --confetti-delay: -2.5s; --confetti-duration: 4.3s; --confetti-color: #efb55c; }
+.battle-result-confetti i:nth-child(7) { --confetti-x: 51%; --confetti-drift: 48px; --confetti-delay: -1.7s; --confetti-duration: 3.7s; --confetti-color: #dc6e68; }
+.battle-result-confetti i:nth-child(8) { --confetti-x: 58%; --confetti-drift: -42px; --confetti-delay: -3.4s; --confetti-duration: 4.5s; --confetti-color: #8b70c1; }
+.battle-result-confetti i:nth-child(9) { --confetti-x: 65%; --confetti-drift: 58px; --confetti-delay: -0.2s; --confetti-duration: 4.2s; --confetti-color: #4e8fd1; }
+.battle-result-confetti i:nth-child(10) { --confetti-x: 71%; --confetti-drift: -36px; --confetti-delay: -2.8s; --confetti-duration: 3.8s; --confetti-color: #42a879; }
+.battle-result-confetti i:nth-child(11) { --confetti-x: 78%; --confetti-drift: 40px; --confetti-delay: -1.5s; --confetti-duration: 4.6s; --confetti-color: #efb55c; }
+.battle-result-confetti i:nth-child(12) { --confetti-x: 84%; --confetti-drift: -54px; --confetti-delay: -3.2s; --confetti-duration: 3.9s; --confetti-color: #dc6e68; }
+.battle-result-confetti i:nth-child(13) { --confetti-x: 90%; --confetti-drift: 32px; --confetti-delay: -0.9s; --confetti-duration: 4.3s; --confetti-color: #8b70c1; }
+.battle-result-confetti i:nth-child(14) { --confetti-x: 96%; --confetti-drift: -46px; --confetti-delay: -2.3s; --confetti-duration: 3.7s; --confetti-color: #4e8fd1; }
+.battle-result-confetti i:nth-child(15) { --confetti-x: 25%; --confetti-drift: 62px; --confetti-delay: -3.7s; --confetti-duration: 4.8s; --confetti-color: #42a879; }
+.battle-result-confetti i:nth-child(16) { --confetti-x: 75%; --confetti-drift: -60px; --confetti-delay: -1.9s; --confetti-duration: 4.7s; --confetti-color: #efb55c; }
 
 [data-result="lose"] .battle-result-confetti { display: none; }
 
@@ -6598,7 +6657,7 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 [data-result="lose"] .battle-result-emblem {
     position: absolute;
     top: 14px;
-    z-index: 2;
+    z-index: 7;
     width: auto;
     min-width: 118px;
     height: 42px;
@@ -6621,8 +6680,8 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     bottom: -4px;
     left: 50%;
     z-index: 4;
-    width: 220px;
-    height: 220px;
+    width: 194px;
+    height: 194px;
     object-fit: contain;
     filter: drop-shadow(0 18px 18px rgba(72, 43, 57, 0.2));
     transform: translateX(-50%);
@@ -6677,6 +6736,14 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 @keyframes result-crown-in {
     from { opacity: 0; transform: translate(-50%, -18px) rotate(-18deg) scale(0.45); }
     to { opacity: 1; transform: translate(-50%, 0) rotate(-6deg) scale(1); }
+}
+
+@keyframes result-confetti-fall {
+    0% { opacity: 0; transform: translate3d(0, -24px, 0) rotate(0deg); }
+    10% { opacity: 1; }
+    55% { transform: translate3d(var(--confetti-drift), 245px, 0) rotate(420deg); }
+    92% { opacity: 1; }
+    100% { opacity: 0; transform: translate3d(0, 510px, 0) rotate(820deg); }
 }
 
 .battle-result-overline {
@@ -6781,7 +6848,7 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 .battle-player-identity p { margin: 5px 0 0; color: var(--muted); font-size: 0.74rem; line-height: 1.45; }
 .battle-winner-crown { color: var(--result-accent); font-size: 1.6rem; filter: drop-shadow(0 5px 9px var(--result-glow)); }
 
-.battle-result-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0 0; }
+.battle-result-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0 0; }
 .battle-result-stats div { --stat-color: #74687b; --stat-bg: #f1eef3; display: grid; gap: 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--stat-color) 16%, white); border-radius: 12px; background: var(--stat-bg); }
 .battle-result-stats .stat-score { --stat-color: #c65359; --stat-bg: #fff0ec; }
 .battle-result-stats .stat-finish { --stat-color: #397ca8; --stat-bg: #edf7fd; }
@@ -6849,6 +6916,31 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 @keyframes battle-arena-boost {
     0%, 100% { box-shadow: 0 15px 34px rgba(103, 69, 84, 0.07); }
     45% { box-shadow: 0 0 0 4px rgba(220, 102, 107, 0.12), 0 18px 42px rgba(128, 101, 189, 0.2); }
+}
+
+@keyframes battle-speed-flash {
+    0% { opacity: 0; transform: translateX(80px); }
+    22% { opacity: 0.72; }
+    100% { opacity: 0; transform: translateX(-90px); }
+}
+
+@keyframes battle-nitro-kick {
+    0% { filter: brightness(1); transform: translateX(0) scale(1); }
+    28% { filter: brightness(1.24) saturate(1.18); transform: translateX(13px) scale(1.1) rotate(-2deg); }
+    62% { transform: translateX(5px) scale(1.04) rotate(1deg); }
+    100% { filter: brightness(1); transform: translateX(0) scale(1); }
+}
+
+@keyframes battle-nitro-trail {
+    0% { width: 30px; opacity: 0; }
+    28% { width: 104px; opacity: 1; }
+    100% { width: 58px; opacity: 0; }
+}
+
+@keyframes battle-rhythm-lane-hit {
+    0%, 100% { filter: brightness(1); }
+    18% { filter: brightness(1.13) saturate(1.16); box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.82), 0 0 24px rgba(128, 101, 189, 0.28); }
+    42% { filter: brightness(1.04); }
 }
 
 @media (max-width: 860px) {
@@ -6989,8 +7081,8 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     }
 
     .battle-result-winner-kart {
-        width: 196px;
-        height: 196px;
+        width: 174px;
+        height: 174px;
     }
 
     .battle-victory-flag.flag-left { left: 24px; }

@@ -32,7 +32,8 @@
         initialized: false,
         finishing: false,
         completedLineIndexes: new Set(),
-        lineErrorIndexes: new Set()
+        lineErrorIndexes: new Set(),
+        feedbackLineCombo: 0
     };
 
     const worldLabels = {
@@ -395,6 +396,7 @@
         list.innerHTML = "";
         state.completedLineIndexes.clear();
         state.lineErrorIndexes.clear();
+        state.feedbackLineCombo = 0;
         targetText.split("\n").forEach((line) => {
             const item = document.createElement("li");
             const code = document.createElement("span");
@@ -527,11 +529,47 @@
         }
     }
 
-    function triggerBattleLineCombo(lineIndex) {
+    function playBattleLineSound(isPerfect) {
+        if (!AppState.profile?.settings?.sound) return;
+        try {
+            if (!AppState.audioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                AppState.audioContext = new AudioContext();
+            }
+            const context = AppState.audioContext;
+            const notes = isPerfect ? [523.25, 659.25, 783.99] : [440, 554.37];
+            notes.forEach((frequency, index) => {
+                const startsAt = context.currentTime + index * 0.055;
+                const oscillator = context.createOscillator();
+                const gain = context.createGain();
+                oscillator.type = "triangle";
+                oscillator.frequency.value = frequency;
+                gain.gain.setValueAtTime(0.0001, startsAt);
+                gain.gain.exponentialRampToValueAtTime(0.075, startsAt + 0.012);
+                gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + 0.14);
+                oscillator.connect(gain);
+                gain.connect(context.destination);
+                oscillator.start(startsAt);
+                oscillator.stop(startsAt + 0.15);
+            });
+        } catch {
+            // Sound feedback is optional; visual feedback remains available.
+        }
+    }
+
+    function triggerBattleLineCombo(lineIndex, isPerfect) {
         const effect = document.getElementById("battle-combo-effect");
         const arena = document.querySelector(".battle-kart-arena");
+        const myKart = document.getElementById("battle-my-kart");
+        const myLane = myKart?.closest(".battle-kart-lane");
+        const scorableLines = Math.max(1, state.targetText.split("\n").filter(Boolean).length);
+        const lineBonus = Math.round(120 / scorableLines);
+        state.feedbackLineCombo = isPerfect ? state.feedbackLineCombo + 1 : 0;
         if (effect) {
-            effect.textContent = `LINE ${lineIndex + 1} PERFECT · COMBO UP!`;
+            effect.dataset.judgement = isPerfect ? "perfect" : "clear";
+            effect.innerHTML = isPerfect
+                ? `<span>LINE ${lineIndex + 1}</span><strong>PERFECT!</strong><small>+${lineBonus} PTS · NITRO BOOST${state.feedbackLineCombo > 1 ? ` · ×${state.feedbackLineCombo} COMBO` : ""}</small>`
+                : `<span>LINE ${lineIndex + 1}</span><strong>LINE CLEAR!</strong><small>CHECKPOINT · KEEP RACING</small>`;
             effect.classList.remove("show");
             void effect.offsetWidth;
             effect.classList.add("show");
@@ -541,6 +579,17 @@
             void arena.offsetWidth;
             arena.classList.add("is-boosting");
         }
+        if (myKart) {
+            myKart.classList.remove("is-nitro");
+            void myKart.offsetWidth;
+            myKart.classList.add("is-nitro");
+        }
+        if (myLane) {
+            myLane.classList.remove("rhythm-hit");
+            void myLane.offsetWidth;
+            myLane.classList.add("rhythm-hit");
+        }
+        playBattleLineSound(isPerfect);
     }
 
     function updateBattleLineStates(value) {
@@ -549,23 +598,17 @@
         const cursorPosition = input?.selectionStart || 0;
         const currentLine = value.slice(0, cursorPosition).split("\n").length - 1;
         const targetLines = state.targetText.split("\n");
-        document.querySelectorAll("#battle-target-lines li").forEach((element, index) => {
-            const targetLine = targetLines[index] || "";
+        targetLines.forEach((targetLine, index) => {
             const hasUserLine = index < userLines.length;
             const userLine = hasUserLine ? userLines[index] : null;
             const exact = hasUserLine && userLine === targetLine;
             const isPrefix = hasUserLine && targetLine.startsWith(userLine);
-            element.classList.remove("correct", "current", "error");
             if (exact) {
-                element.classList.add("correct");
                 if (targetLine && !state.completedLineIndexes.has(index)) {
                     state.completedLineIndexes.add(index);
-                    if (!state.lineErrorIndexes.has(index)) triggerBattleLineCombo(index);
+                    triggerBattleLineCombo(index, !state.lineErrorIndexes.has(index));
                 }
-            } else if (index === currentLine && isPrefix) {
-                element.classList.add("current");
-            } else if (hasUserLine && (!isPrefix || index < currentLine)) {
-                element.classList.add("error");
+            } else if (hasUserLine && (!isPrefix || (index < currentLine && userLine !== targetLine))) {
                 state.lineErrorIndexes.add(index);
             }
         });
@@ -1069,6 +1112,7 @@
         input?.addEventListener("input", () => {
             const value = normalizeCode(input.value);
             updateBattleInputLineNumbers(input.value);
+            updateBattleLineStates(value);
             queueInput(value);
         });
         input?.addEventListener("scroll", () => {
