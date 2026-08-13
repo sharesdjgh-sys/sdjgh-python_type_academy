@@ -477,6 +477,7 @@ function showScreen(screenId, options = {}) {
     });
 
     AppState.currentScreen = screenId;
+    document.body.dataset.screen = screenId;
 
     $$('video[data-screen-video]').forEach((video) => {
         const isActive = video.closest('.screen') === target;

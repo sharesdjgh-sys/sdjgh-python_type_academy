@@ -6133,6 +6133,31 @@ body[data-motion="off"] *::after {
     position: relative;
 }
 
+/* Keep the live battle focused on the track and code editors. Detailed
+   performance metrics remain available on the result screen. */
+body[data-screen="battle-race-screen"] .topbar,
+body[data-screen="battle-race-screen"] .race-versus-hud {
+    display: none;
+}
+
+body[data-screen="battle-race-screen"] .app-shell {
+    padding-top: 12px;
+}
+
+body[data-screen="battle-race-screen"] .battle-kart-lane {
+    height: 112px;
+}
+
+body[data-screen="battle-race-screen"] .battle-kart {
+    bottom: -16px;
+    width: 136px;
+    height: 136px;
+}
+
+body[data-screen="battle-race-screen"] .battle-finish-gate {
+    bottom: 18px;
+}
+
 .battle-countdown {
     position: fixed;
     inset: 0;
@@ -6730,10 +6755,20 @@ body[data-motion="off"] *::after {
         height: 80px;
     }
 
+    body[data-screen="battle-race-screen"] .battle-kart-lane {
+        height: 94px;
+    }
+
     .battle-kart {
         bottom: -13px;
         width: 98px;
         height: 98px;
+    }
+
+    body[data-screen="battle-race-screen"] .battle-kart {
+        bottom: -14px;
+        width: 116px;
+        height: 116px;
     }
 
     .battle-finish-gate {
