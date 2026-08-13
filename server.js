@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const http = require("node:http");
+const os = require("node:os");
 const path = require("node:path");
 const express = require("express");
 const { Server } = require("socket.io");
@@ -696,7 +697,17 @@ function createBattleServer(options = {}) {
 if (require.main === module) {
     const battleServer = createBattleServer();
     battleServer.server.listen(PORT, "0.0.0.0", () => {
-        console.log(`Python Quest Academy: http://localhost:${PORT}`);
+        console.log("Python Quest Academy");
+        console.log(`  Local:   http://localhost:${PORT}`);
+
+        const networkAddresses = Object.values(os.networkInterfaces())
+            .flat()
+            .filter((address) => address?.family === "IPv4" && !address.internal)
+            .map((address) => address.address);
+
+        for (const address of [...new Set(networkAddresses)]) {
+            console.log(`  Network: http://${address}:${PORT}`);
+        }
     });
 }
 
