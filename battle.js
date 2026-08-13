@@ -404,6 +404,16 @@
         });
     }
 
+    function updateBattleInputLineNumbers(value = "") {
+        const gutter = document.getElementById("battle-input-line-numbers");
+        if (!gutter) return;
+        const lineCount = Math.max(1, String(value).split("\n").length);
+        gutter.innerHTML = Array.from(
+            { length: lineCount },
+            (_, index) => `<span>${index + 1}</span>`
+        ).join("");
+    }
+
     function updateRacePlayers(room) {
         state.room = room;
         const me = currentPlayer(room);
@@ -427,18 +437,10 @@
         setBattleKartPosition("battle-my-kart", me?.progress || 0);
         setBattleKartPosition("battle-rival-kart", rival?.progress || 0);
         const input = document.getElementById("battle-code-input");
-        if (input && me?.finishedAt) {
-            input.disabled = true;
-            setText("battle-input-status", "완주 · 점수 확정");
-        }
-        updateBattleCompletionStatus(room, normalizeCode(input?.value || ""));
+        // Do not reveal whether either player's code is correct before the result.
         const notice = rival && !rival.connected
             ? "상대의 연결이 끊겼습니다. 15초 동안 재접속을 기다립니다."
-            : me?.finishedAt
-                ? "완주했습니다! 상대의 리타이어 기록까지 함께 집계합니다."
-                : rival?.finishedAt
-                    ? "상대가 완주했습니다. 남은 시간 동안 정확하게 끝까지 입력하세요!"
-                    : "속도보다 정확도와 LINE COMBO가 더 큰 점수를 만듭니다.";
+            : "판정은 종료 후 공개됩니다. 코드만 보고 끝까지 입력하세요.";
         if (!state.retireEndsAt) setText("battle-race-notice", notice);
     }
 
@@ -630,8 +632,8 @@
             setText(
                 "battle-race-notice",
                 remaining > 0
-                    ? `RETIRE TIME ${seconds}초 · 끝까지 입력하면 점수로 승부할 수 있어요!`
-                    : "입력 종료 · 최종 점수를 집계하고 있습니다."
+                    ? `FINAL INPUT ${seconds}초 · 마지막까지 코드를 확인하세요.`
+                    : "입력 종료 · 결과를 집계하고 있습니다."
             );
             if (remaining <= 0) {
                 clearInterval(state.retireTimer);
@@ -665,6 +667,7 @@
         if (input) {
             input.value = "";
             input.disabled = true;
+            updateBattleInputLineNumbers();
         }
         const overlay = document.getElementById("battle-countdown");
         if (overlay) {
@@ -719,7 +722,6 @@
             input.focus();
         }
         setText("battle-input-status", "배틀 진행 중");
-        updateBattleCompletionStatus(state.room, normalizeCode(input?.value || ""));
         startRaceTimer();
     }
 
@@ -1018,9 +1020,12 @@
         });
         input?.addEventListener("input", () => {
             const value = normalizeCode(input.value);
-            updateBattleLineStates(value);
-            updateBattleCompletionStatus(state.room, value);
+            updateBattleInputLineNumbers(input.value);
             queueInput(value);
+        });
+        input?.addEventListener("scroll", () => {
+            const gutter = document.getElementById("battle-input-line-numbers");
+            if (gutter) gutter.scrollTop = input.scrollTop;
         });
     }
 

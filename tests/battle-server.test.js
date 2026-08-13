@@ -208,7 +208,15 @@ describe("배틀방 프로토콜", () => {
         await emitAck(guest, "battle:ready", { ready: true });
         await once(host, "battle:start", 5000);
 
+        const hiddenJudgementPromise = once(host, "battle:state");
         await emitAck(host, "battle:input", { sequence: 1, value: "print('hx')" });
+        const hiddenJudgement = await hiddenJudgementPromise;
+        const hiddenHost = hiddenJudgement.players.find((player) => player.id === created.playerId);
+        assert.equal(hiddenHost.progress, 100);
+        assert.equal(hiddenHost.errors, 0);
+        assert.equal(hiddenHost.score, 0);
+        assert.equal(hiddenHost.finishedAt, null);
+
         await emitAck(host, "battle:input", { sequence: 2, value: "print('hi')" });
         const resultPromise = once(host, "battle:result");
         await emitAck(guest, "battle:input", { sequence: 1, value: "print('hi')" });

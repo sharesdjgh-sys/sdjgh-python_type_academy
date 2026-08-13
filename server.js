@@ -241,6 +241,7 @@ function createBattleServer(options = {}) {
     }
 
     function roomSnapshot(room) {
+        const hideRaceJudgement = room.phase === "countdown" || room.phase === "racing";
         return {
             roomCode: room.code,
             phase: room.phase,
@@ -249,13 +250,8 @@ function createBattleServer(options = {}) {
             retireRemainingMs: room.retireAt ? Math.max(0, room.retireAt - Date.now()) : null,
             hostId: room.hostId,
             mission: missionPublic(room.mission),
-            players: [...room.players.values()].map((player) => ({
-                id: player.id,
-                nickname: player.nickname,
-                ready: player.ready,
-                connected: player.connected,
-                isHost: player.id === room.hostId,
-                ...(player.tracker ? player.tracker.snapshot() : {
+            players: [...room.players.values()].map((player) => {
+                const stats = player.tracker ? player.tracker.snapshot() : {
                     progress: 0,
                     accuracy: 100,
                     cpm: 0,
@@ -266,8 +262,34 @@ function createBattleServer(options = {}) {
                     score: 0,
                     finishedAt: null,
                     durationMs: null
-                })
-            }))
+                };
+                if (hideRaceJudgement && player.tracker) {
+                    stats.progress = player.tracker.targetText.length
+                        ? Math.min(100, (player.tracker.previousValue.length / player.tracker.targetText.length) * 100)
+                        : 0;
+                    stats.accuracy = 100;
+                    stats.cpm = 0;
+                    stats.combo = 0;
+                    stats.maxCombo = 0;
+                    stats.lineCombo = 0;
+                    stats.maxLineCombo = 0;
+                    stats.perfectLines = 0;
+                    stats.errors = 0;
+                    stats.corrections = 0;
+                    stats.score = 0;
+                    stats.scoreBreakdown = { accuracy: 0, combo: 0, speed: 0 };
+                    stats.finishedAt = null;
+                    stats.durationMs = null;
+                }
+                return {
+                    id: player.id,
+                    nickname: player.nickname,
+                    ready: player.ready,
+                    connected: player.connected,
+                    isHost: player.id === room.hostId,
+                    ...stats
+                };
+            })
         };
     }
 

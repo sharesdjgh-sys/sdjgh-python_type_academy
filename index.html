@@ -1003,13 +1003,16 @@
                         <header class="panel-header"><div><span class="panel-index">02</span><div><p>MY CODE</p><h2>카운트다운 후 입력!</h2></div></div><span id="battle-input-status" class="panel-meta">대기 중</span></header>
                         <div class="code-window input-window">
                             <div class="window-bar"><span class="window-dot active"></span><span>typing_input.py</span><span class="window-status">붙여넣기 금지</span></div>
-                            <textarea id="battle-code-input" class="code-input" aria-label="배틀 파이썬 코드 입력" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
+                            <div class="battle-code-editor">
+                                <div id="battle-input-line-numbers" class="battle-input-line-numbers" aria-hidden="true"><span>1</span></div>
+                                <textarea id="battle-code-input" class="code-input" aria-label="배틀 파이썬 코드 입력" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
+                            </div>
                         </div>
                     </section>
                 </div>
 
                 <div id="battle-countdown" class="battle-countdown" aria-live="assertive" hidden><strong>3</strong><span>GET READY</span></div>
-                <section class="battle-live-status" aria-label="현재 완주 상태">
+                <section class="battle-live-status" aria-label="현재 완주 상태" hidden>
                     <article id="battle-my-state-card" data-state="waiting">
                         <span>MY STATUS</span>
                         <strong id="battle-my-state">입력 대기</strong>
