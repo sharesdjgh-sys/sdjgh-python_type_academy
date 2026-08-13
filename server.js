@@ -180,7 +180,7 @@ class RaceTracker {
         const elapsed = Math.max(1, (this.finishedAt || now) - this.startsAt);
         const accuracy = this.attempts
             ? (this.correctAttempts / this.attempts) * 100
-            : 100;
+            : 0;
         const progress = this.targetText.length ? (correct / this.targetText.length) * 100 : 0;
         const cpm = Math.round((correct * 60000) / elapsed);
         const scorableLines = Math.max(1, this.targetLines.filter(Boolean).length);
@@ -248,6 +248,7 @@ function createBattleServer(options = {}) {
             startsAt: room.startsAt,
             retireAt: room.retireAt,
             retireRemainingMs: room.retireAt ? Math.max(0, room.retireAt - Date.now()) : null,
+            finisherId: room.finisherId,
             hostId: room.hostId,
             mission: missionPublic(room.mission),
             players: [...room.players.values()].map((player) => {
@@ -391,12 +392,14 @@ function createBattleServer(options = {}) {
         broadcastRoom(room);
     }
 
-    function scheduleFinish(room) {
+    function scheduleFinish(room, finisherId) {
         if (room.finishTimer || room.phase !== "racing") return;
         room.retireAt = Date.now() + retireWindowMs;
+        room.finisherId = finisherId;
         io.to(room.code).emit("battle:retire", {
             retireAt: room.retireAt,
-            durationMs: retireWindowMs
+            durationMs: retireWindowMs,
+            finisherId
         });
         broadcastRoom(room);
         room.finishTimer = setTimeout(() => finishRace(room, "retired"), retireWindowMs);
@@ -408,6 +411,7 @@ function createBattleServer(options = {}) {
         room.phase = "waiting";
         room.startsAt = null;
         room.retireAt = null;
+        room.finisherId = null;
         for (const player of room.players.values()) {
             player.ready = false;
             player.tracker = null;
@@ -483,6 +487,7 @@ function createBattleServer(options = {}) {
                 updatedAt: Date.now(),
                 startsAt: null,
                 retireAt: null,
+                finisherId: null,
                 finishedAt: null,
                 countdownTimer: null,
                 finishTimer: null
@@ -644,7 +649,7 @@ function createBattleServer(options = {}) {
                 const everyoneFinished = [...room.players.values()]
                     .every((item) => Boolean(item.tracker?.finishedAt));
                 if (everyoneFinished) finishRace(room, "scored");
-                else scheduleFinish(room);
+                else scheduleFinish(room, player.id);
             }
         });
 

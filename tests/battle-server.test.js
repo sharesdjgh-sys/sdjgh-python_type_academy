@@ -67,6 +67,16 @@ afterEach(async () => {
 });
 
 describe("RaceTracker", () => {
+    test("아무것도 입력하지 않으면 정확도와 점수가 0이다", () => {
+        const tracker = new RaceTracker("abc", 1000);
+        const result = tracker.snapshot(2000);
+
+        assert.equal(result.accuracy, 0);
+        assert.equal(result.score, 0);
+        assert.deepEqual(result.scoreBreakdown, { accuracy: 0, combo: 0, speed: 0 });
+        assert.equal(result.finishedAt, null);
+    });
+
     test("정확도와 완주 상태를 서버에서 계산한다", () => {
         const tracker = new RaceTracker("abc", 1000);
         tracker.apply("ax", 1500);
@@ -172,6 +182,7 @@ describe("배틀방 프로토콜", () => {
         assert.equal(inputResponse.ok, true);
         const retire = await retirePromise;
         assert.equal(retire.durationMs, 250);
+        assert.equal(retire.finisherId, created.playerId);
         const result = await resultPromise;
         assert.equal(result.winnerId, created.playerId);
         assert.equal(result.reason, "retired");

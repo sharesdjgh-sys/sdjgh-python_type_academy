@@ -623,25 +623,38 @@
         state.inputTimer = null;
     }
 
-    function startRetirePeriod(durationMs) {
+    function startRetirePeriod(durationMs, finisherId = null) {
         if (state.retireTimer) clearInterval(state.retireTimer);
         state.retireEndsAt = Date.now() + Math.max(0, Number(durationMs) || 0);
+        const notice = document.getElementById("battle-race-notice");
+        const rivalFinished = Boolean(finisherId && finisherId !== state.session?.playerId);
+        const input = document.getElementById("battle-code-input");
+        const inputStatus = document.getElementById("battle-input-status");
+        if (!rivalFinished && finisherId) {
+            if (input) input.disabled = true;
+            if (inputStatus) {
+                inputStatus.textContent = "입력 완료 ✓";
+                inputStatus.dataset.state = "complete";
+            }
+        }
+        if (notice) notice.dataset.mode = "final-input";
+        let previousSeconds = null;
         const renderRetireTime = () => {
             const remaining = Math.max(0, state.retireEndsAt - Date.now());
             const seconds = Math.ceil(remaining / 1000);
-            setText(
-                "battle-race-notice",
-                remaining > 0
-                    ? `FINAL INPUT ${seconds}초 · 마지막까지 코드를 확인하세요.`
-                    : "입력 종료 · 결과를 집계하고 있습니다."
-            );
+            if (notice && seconds !== previousSeconds) {
+                previousSeconds = seconds;
+                notice.innerHTML = remaining > 0
+                    ? `<span class="battle-final-copy"><b>${rivalFinished ? "상대 입력 완료" : "입력 완료 ✓"}</b><small>${rivalFinished ? "역전할 수 있는 마지막 시간입니다" : "코드가 완성되었습니다 · 상대를 기다리는 중입니다"}</small></span><strong>${seconds}<small>초</small></strong>`
+                    : `<span class="battle-final-copy"><b>입력 종료</b><small>최종 결과를 집계하고 있습니다</small></span><strong class="is-loading">···</strong>`;
+            }
             if (remaining <= 0) {
                 clearInterval(state.retireTimer);
                 state.retireTimer = null;
             }
         };
         renderRetireTime();
-        state.retireTimer = setInterval(renderRetireTime, 100);
+        state.retireTimer = setInterval(renderRetireTime, 250);
     }
 
     function setCountdownValue(overlay, value) {
@@ -660,6 +673,11 @@
         state.finishing = false;
         state.retireEndsAt = null;
         renderTargetLines(state.targetText);
+        const notice = document.getElementById("battle-race-notice");
+        if (notice) {
+            delete notice.dataset.mode;
+            notice.textContent = "판정은 종료 후 공개됩니다. 코드만 보고 끝까지 입력하세요.";
+        }
         setText("battle-race-title", state.room?.mission?.title || "배틀 미션");
         setText("battle-race-mode", formatRoomMission(state.room?.mission));
 
@@ -668,6 +686,11 @@
             input.value = "";
             input.disabled = true;
             updateBattleInputLineNumbers();
+        }
+        const inputStatus = document.getElementById("battle-input-status");
+        if (inputStatus) {
+            inputStatus.textContent = "대기 중";
+            delete inputStatus.dataset.state;
         }
         const overlay = document.getElementById("battle-countdown");
         if (overlay) {
@@ -884,7 +907,7 @@
                 showCountdown(Date.now(), response.targetText, 0);
                 enableRaceInput(response.room.startsAt || Date.now(), response.elapsedMs);
                 if (response.room.retireRemainingMs > 0) {
-                    startRetirePeriod(response.room.retireRemainingMs);
+                    startRetirePeriod(response.room.retireRemainingMs, response.room.finisherId);
                 }
             }
         } catch {
@@ -946,8 +969,8 @@
         state.socket.on("battle:start", ({ startsAt }) => {
             enableRaceInput(startsAt);
         });
-        state.socket.on("battle:retire", ({ durationMs }) => {
-            startRetirePeriod(durationMs);
+        state.socket.on("battle:retire", ({ durationMs, finisherId }) => {
+            startRetirePeriod(durationMs, finisherId);
         });
         state.socket.on("battle:state", (room) => updateRacePlayers(room));
         state.socket.on("battle:result", (result) => renderResult(result));

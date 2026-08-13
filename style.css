@@ -2590,6 +2590,18 @@ main {
     font-size: 0.61rem;
 }
 
+#battle-input-status[data-state="complete"] {
+    border-color: rgba(37, 132, 93, 0.22);
+    background: #edf9f3;
+    color: #25845d;
+    font-weight: 900;
+}
+
+#battle-code-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+}
+
 .live-status {
     color: var(--success);
 }
@@ -6301,6 +6313,63 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     color: #705e8f;
     font-size: 0.67rem;
     text-align: center;
+}
+
+.battle-race-notice[data-mode="final-input"] {
+    position: fixed;
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 16px;
+    z-index: 65;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: min(620px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 15px 18px 15px 20px;
+    align-items: center;
+    gap: 18px;
+    border: 2px solid rgba(220, 102, 107, 0.45);
+    border-radius: 18px;
+    background: rgba(255, 250, 248, 0.97);
+    box-shadow: 0 18px 48px rgba(72, 43, 57, 0.25), 0 0 0 5px rgba(220, 102, 107, 0.08);
+    color: #51454b;
+    text-align: left;
+    backdrop-filter: blur(16px);
+    animation: battle-final-notice-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-final-copy {
+    display: grid;
+    gap: 4px;
+}
+
+.battle-final-copy b {
+    color: #c65359;
+    font-size: 0.92rem;
+}
+
+.battle-final-copy small {
+    color: #705e68;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.battle-race-notice[data-mode="final-input"] > strong {
+    color: #c65359;
+    font-family: var(--font-code);
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.battle-race-notice[data-mode="final-input"] > strong small {
+    margin-left: 3px;
+    font-size: 0.7rem;
+}
+
+@keyframes battle-final-notice-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .battle-result-screen {
