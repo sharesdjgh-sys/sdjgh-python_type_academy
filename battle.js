@@ -776,6 +776,9 @@
         const score = Math.round(player.score || 0);
         const lineCombo = Math.round(player.maxLineCombo || 0);
         const breakdown = player.scoreBreakdown || {};
+        const accuracyPoints = Math.round(breakdown.accuracy || 0);
+        const comboPoints = Math.round(breakdown.combo || 0);
+        const speedPoints = Math.round(breakdown.speed || 0);
         const kartAsset = index === 0
             ? "assets/python-kart-battle-coral.png"
             : "assets/python-kart-battle-lavender.png";
@@ -792,16 +795,26 @@
                     ${won ? '<span class="battle-winner-crown" aria-label="승자">♛</span>' : ''}
                 </div>
                 <dl class="battle-result-stats">
-                    <div><dt>SCORE</dt><dd>${score}<small> PTS</small></dd></div>
-                    <div><dt>FINISH</dt><dd>${duration}</dd></div>
-                    <div><dt>ACCURACY</dt><dd>${accuracy}<small>%</small></dd></div>
-                    <div><dt>LINE COMBO</dt><dd>×${lineCombo}</dd></div>
+                    <div class="stat-score"><dt><i aria-hidden="true"></i>SCORE <small>총점</small></dt><dd>${score}<small> PTS</small></dd></div>
+                    <div class="stat-finish"><dt><i aria-hidden="true"></i>FINISH <small>완주 기록</small></dt><dd>${duration}</dd></div>
+                    <div class="stat-accuracy"><dt><i aria-hidden="true"></i>ACCURACY <small>정확도</small></dt><dd>${accuracy}<small>%</small></dd></div>
+                    <div class="stat-combo"><dt><i aria-hidden="true"></i>LINE COMBO <small>연속 성공</small></dt><dd>×${lineCombo}</dd></div>
                 </dl>
-                <p class="battle-score-breakdown">정확도 ${breakdown.accuracy || 0} · 콤보 ${breakdown.combo || 0} · 속도 ${breakdown.speed || 0} <span>${cpm} CPM</span></p>
-                <div class="battle-performance-bars" aria-hidden="true">
-                    <span style="--value:${accuracy}%"><i></i></span>
-                    <span style="--value:${Math.min(100, Math.round(cpm / 4))}%"><i></i></span>
-                </div>
+                <section class="battle-score-chart" aria-label="최종 점수 구성">
+                    <header><div><span>SCORE DETAIL</span><strong>1,000점 만점 구성</strong></div><b>${score}<small> PTS</small></b></header>
+                    <div class="battle-score-row score-accuracy" style="--value:${Math.min(100, (accuracyPoints / 550) * 100)}%">
+                        <div><span>정확도 점수 <small>정확한 입력 비율</small></span><strong>${accuracyPoints}<small> / 550점</small></strong></div>
+                        <span class="battle-score-track"><i></i></span>
+                    </div>
+                    <div class="battle-score-row score-combo" style="--value:${Math.min(100, (comboPoints / 300) * 100)}%">
+                        <div><span>콤보 점수 <small>연속 입력과 완벽한 줄</small></span><strong>${comboPoints}<small> / 300점</small></strong></div>
+                        <span class="battle-score-track"><i></i></span>
+                    </div>
+                    <div class="battle-score-row score-speed" style="--value:${Math.min(100, (speedPoints / 150) * 100)}%">
+                        <div><span>속도 점수 <small>${cpm} CPM</small></span><strong>${speedPoints}<small> / 150점</small></strong></div>
+                        <span class="battle-score-track"><i></i></span>
+                    </div>
+                </section>
             </article>
         `;
     }
