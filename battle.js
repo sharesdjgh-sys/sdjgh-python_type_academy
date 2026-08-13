@@ -838,8 +838,10 @@
         if (input) input.disabled = true;
 
         const meWon = result.winnerId === state.session?.playerId;
-        const title = result.tie ? "무승부!" : meWon ? "승리!" : "아쉬운 패배";
-        const emblem = result.tie ? "DRAW" : meWon ? "WIN" : "LOSE";
+        const winner = result.players.find((player) => player.id === result.winnerId);
+        const winnerIndex = result.players.findIndex((player) => player.id === result.winnerId);
+        const title = result.tie ? "완벽한 무승부!" : meWon ? "배틀 챔피언!" : `${winner?.nickname || "상대"}의 승리`;
+        const emblem = result.tie ? "DRAW" : meWon ? "VICTORY" : "RESULT";
         const message = result.reason === "forfeit"
             ? meWon
                 ? "상대의 연결이 종료되어 승리했습니다."
@@ -847,13 +849,23 @@
             : result.tie
                 ? "정확도와 콤보를 포함한 최종 점수가 같았어요."
                 : meWon
-                    ? "빠르기만 한 승부가 아니에요. 정확도와 콤보로 최고 점수를 만들었어요!"
+                    ? `${winner?.nickname || "플레이어"} 님, 멋진 코드 레이스였습니다! 정확도와 콤보로 정상에 올랐어요.`
                     : "속도보다 정확도와 LINE COMBO를 높이면 다음 배틀을 뒤집을 수 있어요.";
 
         setText("battle-result-emblem", emblem);
-        setText("battle-result-overline", result.tie ? "EVEN MATCH" : meWon ? "QUEST CLEAR!" : "NEXT CHALLENGE");
+        setText("battle-result-overline", result.tie ? "PERFECT TIE" : meWon ? "BATTLE CHAMPION" : "MATCH COMPLETE");
         setText("battle-result-title", title);
         setText("battle-result-message", message);
+        const winnerKart = document.getElementById("battle-result-winner-kart");
+        if (winnerKart) {
+            winnerKart.hidden = result.tie;
+            if (!result.tie) {
+                winnerKart.src = winnerIndex === 0
+                    ? "assets/python-kart-battle-coral.png"
+                    : "assets/python-kart-battle-lavender.png";
+                winnerKart.alt = `${winner?.nickname || "승자"}의 승리 카트`;
+            }
+        }
         const highlight = document.getElementById("battle-result-highlight");
         if (highlight) {
             highlight.innerHTML = `<span>${result.tie ? "승부의 순간" : "결정적 한 수"}</span><strong>${resultHighlight(result, meWon)}</strong>`;
@@ -864,7 +876,7 @@
                 .map((player, index) => resultPlayerMarkup(player, result.winnerId, result.tie, index))
                 .join("");
         }
-        document.getElementById("battle-result-screen")?.setAttribute("data-result", emblem.toLowerCase());
+        document.getElementById("battle-result-screen")?.setAttribute("data-result", result.tie ? "draw" : meWon ? "win" : "lose");
         showScreen("battle-result-screen");
     }
 

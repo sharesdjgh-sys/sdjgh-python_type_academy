@@ -6565,9 +6565,9 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
 .battle-result-emblem-wrap {
     position: relative;
     display: grid;
-    width: 154px;
-    height: 154px;
-    margin: 0 auto -2px;
+    width: min(310px, 86vw);
+    height: 230px;
+    margin: -4px auto 4px;
     place-items: center;
 }
 
@@ -6590,21 +6590,93 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     content: "";
 }
 
-.battle-result-orbit.orbit-one { inset: 2px; }
-.battle-result-orbit.orbit-two { inset: 16px; animation: result-orbit 6s linear infinite reverse; }
+.battle-result-orbit.orbit-one { inset: 6px 46px 4px; }
+.battle-result-orbit.orbit-two { inset: 24px 64px 22px; animation: result-orbit 6s linear infinite reverse; }
 
 .battle-result-emblem,
 [data-result="win"] .battle-result-emblem,
 [data-result="lose"] .battle-result-emblem {
-    width: 102px;
-    height: 102px;
-    margin: 0;
-    border-width: 7px;
+    position: absolute;
+    top: 14px;
+    z-index: 2;
+    width: auto;
+    min-width: 118px;
+    height: 42px;
+    padding: 0 18px;
+    border: 3px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
     background: linear-gradient(145deg, var(--result-accent), var(--result-deep));
-    font-size: 1.25rem;
-    letter-spacing: -0.04em;
+    color: #fff;
+    font-family: var(--font-code);
+    font-size: 0.8rem;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    line-height: 36px;
     box-shadow: 0 18px 40px var(--result-glow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     animation: result-emblem-in 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-result-winner-kart {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    z-index: 4;
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 18px rgba(72, 43, 57, 0.2));
+    transform: translateX(-50%);
+    animation: result-winner-kart-in 0.85s 0.12s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-result-winner-kart[hidden] { display: none; }
+
+.battle-champion-crown {
+    position: absolute;
+    top: 43px;
+    left: 50%;
+    z-index: 5;
+    color: #efb53d;
+    font-size: 2.2rem;
+    line-height: 1;
+    filter: drop-shadow(0 5px 8px rgba(192, 119, 20, 0.28));
+    transform: translateX(-50%) rotate(-6deg);
+    animation: result-crown-in 0.6s 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.battle-victory-flag {
+    position: absolute;
+    top: 76px;
+    z-index: 1;
+    width: 58px;
+    height: 42px;
+    border: 2px solid rgba(64, 54, 58, 0.18);
+    background: conic-gradient(#fff 25%, #40363a 0 50%, #fff 0 75%, #40363a 0) 0 0 / 18px 18px;
+    box-shadow: 0 8px 18px rgba(72, 43, 57, 0.12);
+}
+
+.battle-victory-flag::after { position: absolute; top: -3px; width: 3px; height: 104px; border-radius: 999px; background: #564a4f; content: ""; }
+.battle-victory-flag.flag-left { left: 30px; transform: rotate(-12deg); transform-origin: bottom right; }
+.battle-victory-flag.flag-left::after { left: -4px; }
+.battle-victory-flag.flag-right { right: 30px; transform: scaleX(-1) rotate(-12deg); transform-origin: bottom right; }
+.battle-victory-flag.flag-right::after { left: -4px; }
+
+[data-result="lose"] .battle-champion-crown,
+[data-result="lose"] .battle-victory-flag,
+[data-result="draw"] .battle-champion-crown,
+[data-result="draw"] .battle-victory-flag { display: none; }
+
+[data-result="draw"] .battle-result-emblem-wrap { height: 154px; }
+[data-result="draw"] .battle-result-emblem { top: 54px; }
+
+@keyframes result-winner-kart-in {
+    from { opacity: 0; transform: translate(-50%, 32px) scale(0.74) rotate(-3deg); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1) rotate(0); }
+}
+
+@keyframes result-crown-in {
+    from { opacity: 0; transform: translate(-50%, -18px) rotate(-18deg) scale(0.45); }
+    to { opacity: 1; transform: translate(-50%, 0) rotate(-6deg) scale(1); }
 }
 
 .battle-result-overline {
@@ -6912,8 +6984,20 @@ body[data-screen="battle-race-screen"] .battle-finish-gate {
     }
 
     .battle-result-emblem-wrap {
-        width: 138px;
-        height: 138px;
+        width: min(280px, 86vw);
+        height: 210px;
+    }
+
+    .battle-result-winner-kart {
+        width: 196px;
+        height: 196px;
+    }
+
+    .battle-victory-flag.flag-left { left: 24px; }
+    .battle-victory-flag.flag-right { right: 24px; }
+
+    [data-result="draw"] .battle-result-emblem-wrap {
+        height: 148px;
     }
 
     .battle-result-highlight {
