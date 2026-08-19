@@ -647,11 +647,17 @@ function getEnemyName(difficulty, levelGroup) {
     return enemies[clamp((Number(levelGroup) || 1) - 1, 0, enemies.length - 1)] || "코드 블록";
 }
 
+function starIconMarkup(earned = false) {
+    return `
+        <svg class="star-icon${earned ? " earned" : ""}" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m12 2.7 2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.51l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94Z"></path>
+        </svg>
+    `;
+}
+
 function missionStarsMarkup(stars) {
     const count = clamp(Number(stars) || 0, 0, 3);
-    return Array.from({ length: 3 }, (_, index) =>
-        `<span class="${index < count ? "earned" : ""}" aria-hidden="true"></span>`
-    ).join("");
+    return Array.from({ length: 3 }, (_, index) => starIconMarkup(index < count)).join("");
 }
 
 function setMissionView(view = "lobby", options = {}) {
@@ -831,7 +837,7 @@ async function renderMissionScreen() {
                 <div class="stage-reward">
                     <div class="stage-reward-copy">
                         <span>STAR COLLECTION</span>
-                        <strong>${stageStars} / ${maxStageStars} ★</strong>
+                        <strong>${stageStars} / ${maxStageStars} ${starIconMarkup(true)}</strong>
                     </div>
                     <span class="stage-reward-progress" aria-label="별 수집 ${starPercentage}%">
                         <span style="width:${starPercentage}%"></span>

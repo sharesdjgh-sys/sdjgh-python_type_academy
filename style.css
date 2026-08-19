@@ -1959,10 +1959,10 @@ main {
         "title title"
         "rating action";
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto minmax(48px, 1fr) auto;
+    grid-template-rows: auto minmax(58px, 1fr) auto;
     align-items: center;
     gap: 8px 10px;
-    min-height: 142px;
+    min-height: 156px;
     padding: 15px 14px 13px;
     overflow: hidden;
     border-color: color-mix(in srgb, var(--quest-card-accent, var(--accent)) 24%, transparent);
@@ -1988,7 +1988,7 @@ main {
 #mission-screen[data-visual-map="true"] .mission-button::after {
     position: absolute;
     right: 14px;
-    bottom: 42px;
+    bottom: 48px;
     left: 14px;
     height: 1px;
     background: color-mix(in srgb, var(--quest-card-accent, var(--accent)) 15%, transparent);
@@ -2011,8 +2011,8 @@ main {
     grid-area: title;
     margin: 0;
     overflow: hidden;
-    font-size: 0.8rem;
-    line-height: 1.4;
+    font-size: 0.9rem;
+    line-height: 1.35;
     text-overflow: initial;
     white-space: normal;
 }
@@ -2044,24 +2044,46 @@ main {
     align-self: end;
     justify-self: start;
     z-index: 1;
+    min-height: 25px;
     margin: 0;
-    padding-top: 11px;
-    gap: 4px;
+    padding-top: 9px;
+    gap: 5px;
 }
 
-#mission-screen[data-visual-map="true"] .mission-button .mission-rating span {
+#mission-screen[data-visual-map="true"] .mission-button .mission-rating .star-icon {
     display: block;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     margin: 0;
-    background: #ded7e5;
-    clip-path: polygon(50% 2%, 61% 35%, 96% 35%, 68% 55%, 79% 89%, 50% 69%, 21% 89%, 32% 55%, 4% 35%, 39% 35%);
+    overflow: visible;
+    color: #dcd5e3;
+    fill: currentColor;
+    stroke: rgba(112, 88, 121, 0.12);
+    stroke-width: 0.8;
     filter: drop-shadow(0 1px 1px rgba(72, 52, 81, 0.1));
 }
 
-#mission-screen[data-visual-map="true"] .mission-button .mission-rating .earned {
-    background: linear-gradient(145deg, #ffe078 10%, #f4b83f 55%, #e99a2e 100%);
+#mission-screen[data-visual-map="true"] .mission-button .mission-rating .star-icon.earned {
+    color: #f5b83e;
+    stroke: #e79b28;
     filter: drop-shadow(0 2px 3px rgba(218, 146, 36, 0.3));
+}
+
+#mission-screen[data-visual-map="true"] .stage-reward-copy strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#mission-screen[data-visual-map="true"] .stage-reward-copy .star-icon {
+    width: 15px;
+    height: 15px;
+    overflow: visible;
+    color: #f5b83e;
+    fill: currentColor;
+    stroke: #e79b28;
+    stroke-width: 0.8;
+    filter: drop-shadow(0 2px 3px rgba(218, 146, 36, 0.28));
 }
 
 #mission-screen[data-visual-map="true"] .mission-button .mission-action {
@@ -2072,24 +2094,25 @@ main {
     justify-self: end;
     gap: 5px;
     z-index: 1;
+    min-height: 25px;
     margin: 0;
-    padding-top: 10px;
+    padding-top: 8px;
     color: var(--quest-card-accent, var(--accent));
     font-family: var(--font-sans);
-    font-size: 0.59rem;
+    font-size: 0.67rem;
     font-weight: 800;
     letter-spacing: 0;
 }
 
 #mission-screen[data-visual-map="true"] .mission-action i {
     display: grid;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     place-items: center;
     border-radius: 50%;
     background: var(--quest-card-accent, var(--accent));
     color: #ffffff;
-    font-size: 0.68rem;
+    font-size: 0.78rem;
     font-style: normal;
     transition: transform var(--fast);
 }
