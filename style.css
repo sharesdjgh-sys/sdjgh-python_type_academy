@@ -294,6 +294,34 @@ button:active {
     color: var(--accent);
 }
 
+.logout-button {
+    display: inline-flex;
+    min-height: 34px;
+    padding: 7px 10px;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface-soft);
+    color: var(--text-soft);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color var(--fast), color var(--fast), background var(--fast), transform var(--fast);
+}
+
+.logout-button:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.logout-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
 main {
     min-width: 0;
 }
@@ -4337,6 +4365,15 @@ main {
 
     .header-profile {
         gap: 7px;
+    }
+
+    .logout-button {
+        min-height: 32px;
+        padding-inline: 9px;
+    }
+
+    .logout-label {
+        display: none;
     }
 
     .topbar {

@@ -828,6 +828,19 @@ input:focus-visible {
     color: #c78b1f;
 }
 
+.logout-button {
+    border-color: rgba(217, 88, 93, 0.16);
+    background: #fff4f1;
+    color: var(--accent-strong);
+    box-shadow: 0 6px 14px rgba(130, 84, 99, 0.06);
+}
+
+.logout-button:hover {
+    border-color: rgba(217, 88, 93, 0.3);
+    background: #ffffff;
+    color: #c9474d;
+}
+
 .eyebrow {
     color: var(--accent-strong);
     font-family: var(--font-sans);

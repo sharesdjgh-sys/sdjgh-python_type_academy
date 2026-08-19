@@ -15,6 +15,7 @@
     >
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="light-theme.css">
+    <script defer src="auth.js"></script>
     <script defer src="python-codes.js"></script>
     <script defer src="script.js"></script>
     <script defer src="/socket.io/socket.io.js"></script>
@@ -52,6 +53,10 @@
                     <span id="header-xp-fill"></span>
                 </span>
                 <span class="header-coin"><span aria-hidden="true">◆</span> <strong id="header-coins">0</strong></span>
+                <button id="logout-button" class="logout-button" type="button">
+                    <span aria-hidden="true">↪</span>
+                    <span class="logout-label">로그아웃</span>
+                </button>
             </div>
         </header>
 

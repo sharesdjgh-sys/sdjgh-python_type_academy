@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const { afterEach, describe, test } = require("node:test");
+const bcrypt = require("bcryptjs");
 const { io: createClient } = require("socket.io-client");
 const { RaceTracker, createBattleServer } = require("../server");
 
@@ -64,6 +65,81 @@ async function connect(url) {
 afterEach(async () => {
     for (const client of openClients.splice(0)) client.close();
     for (const server of openServers.splice(0)) await server.close();
+});
+
+describe("Login page", () => {
+    test("/login 경로에서 독립 로그인 페이지를 제공한다", async () => {
+        const { url } = await createHarness();
+        const response = await fetch(`${url}/login`);
+        const body = await response.text();
+
+        assert.equal(response.status, 200);
+        assert.match(response.headers.get("content-type"), /text\/html/);
+        assert.match(body, /id="login-form"/);
+        assert.match(body, /Pyrun Studio 계정/);
+    });
+
+    test("로그인하지 않은 사용자는 대시보드에서 로그인 페이지로 이동한다", async () => {
+        const { url } = await createHarness();
+        const response = await fetch(`${url}/`, { redirect: "manual" });
+
+        assert.equal(response.status, 302);
+        assert.equal(response.headers.get("location"), "/login?next=%2F");
+    });
+
+    test("Pyrun 계정 인증 후 세션으로 대시보드에 접근한다", async () => {
+        const passwordHash = await bcrypt.hash("correct-password", 4);
+        const databasePool = {
+            query: async (query, parameters) => {
+                assert.match(query, /s\.code/);
+                assert.match(query, /u\.username/);
+                assert.deepEqual(parameters, ["서대전여고", "10101"]);
+                return { rows: [{
+                    id: 7,
+                    school_id: 1,
+                    school_name: "서대전여자고등학교",
+                    school_code: "서대전여고",
+                    username: "10101",
+                    student_number: "10101",
+                    role: "student",
+                    display_name: "테스트 학생",
+                    nickname: "바이트",
+                    password_hash: passwordHash
+                }] };
+            }
+        };
+        const { url } = await createHarness({ databasePool });
+        const loginResponse = await fetch(`${url}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                schoolName: "서대전여고",
+                studentNumber: "10101",
+                password: "correct-password"
+            })
+        });
+        const cookie = loginResponse.headers.get("set-cookie").split(";", 1)[0];
+        const dashboardResponse = await fetch(`${url}/`, { headers: { Cookie: cookie } });
+        const body = await dashboardResponse.text();
+
+        assert.equal(loginResponse.status, 200);
+        assert.match(cookie, /^pta_session=/);
+        assert.equal(dashboardResponse.status, 200);
+        assert.match(body, /id="main-menu"/);
+
+        const logoutResponse = await fetch(`${url}/api/auth/logout`, {
+            method: "POST",
+            headers: { Cookie: cookie }
+        });
+        const afterLogout = await fetch(`${url}/`, {
+            redirect: "manual",
+            headers: { Cookie: cookie }
+        });
+
+        assert.equal(logoutResponse.status, 204);
+        assert.equal(afterLogout.status, 302);
+        assert.equal(afterLogout.headers.get("location"), "/login?next=%2F");
+    });
 });
 
 describe("RaceTracker", () => {

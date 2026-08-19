@@ -1,11 +1,15 @@
 "use strict";
 
+if (require.main === module) require("dotenv").config({ quiet: true });
+
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const http = require("node:http");
 const os = require("node:os");
 const path = require("node:path");
+const bcrypt = require("bcryptjs");
 const express = require("express");
+const { Pool } = require("pg");
 const { Server } = require("socket.io");
 
 const ROOT = __dirname;
@@ -16,7 +20,23 @@ const RECONNECT_GRACE_MS = 15 * 1000;
 const COUNTDOWN_MS = 3000;
 const RETIRE_WINDOW_MS = 15 * 1000;
 const MAX_INPUT_EVENTS_PER_SECOND = 20;
+const SESSION_COOKIE = "pta_session";
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 8;
+const DUMMY_PASSWORD_HASH = "$2b$10$T2gGiOMwbf4ZOr51ssJYGe8qXit9KlnwDp7n0fBhBd0YGD.F0LtA6";
 const TARGET_CPM = { short: 150, medium: 125, long: 105 };
+
+function parseCookies(header = "") {
+    return header.split(";").reduce((cookies, part) => {
+        const separator = part.indexOf("=");
+        if (separator < 0) return cookies;
+        const name = part.slice(0, separator).trim();
+        const value = part.slice(separator + 1).trim();
+        if (name) cookies[name] = value;
+        return cookies;
+    }, {});
+}
 
 function normalizeCode(code) {
     return String(code || "")
@@ -217,6 +237,7 @@ class RaceTracker {
 
 function createBattleServer(options = {}) {
     const app = express();
+    app.set("trust proxy", 1);
     const server = http.createServer(app);
     const io = new Server(server, {
         cors: { origin: false },
@@ -225,7 +246,80 @@ function createBattleServer(options = {}) {
     const missions = options.missions || loadMissions();
     const retireWindowMs = options.retireWindowMs ?? RETIRE_WINDOW_MS;
     const rooms = new Map();
+    const sessions = new Map();
+    const loginAttempts = new Map();
+    const ownsDatabasePool = !options.databasePool && Boolean(process.env.DATABASE_URL);
+    const databasePool = options.databasePool || (process.env.DATABASE_URL ? new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+        idleTimeoutMillis: 30 * 1000,
+        connectionTimeoutMillis: 10 * 1000,
+        application_name: "pythonTypeAcademy"
+    }) : null);
 
+    function sessionFor(request) {
+        const sessionId = parseCookies(request.headers.cookie)[SESSION_COOKIE];
+        if (!sessionId) return null;
+        const session = sessions.get(sessionId);
+        if (!session || session.expiresAt <= Date.now()) {
+            sessions.delete(sessionId);
+            return null;
+        }
+        return { id: sessionId, ...session };
+    }
+
+    function setSessionCookie(request, response, sessionId) {
+        const parts = [
+            `${SESSION_COOKIE}=${sessionId}`,
+            "HttpOnly",
+            "SameSite=Lax",
+            "Path=/",
+            `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`
+        ];
+        if (request.secure || process.env.NODE_ENV === "production") parts.push("Secure");
+        response.setHeader("Set-Cookie", parts.join("; "));
+    }
+
+    function clearSessionCookie(request, response) {
+        const parts = [`${SESSION_COOKIE}=`, "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=0"];
+        if (request.secure || process.env.NODE_ENV === "production") parts.push("Secure");
+        response.setHeader("Set-Cookie", parts.join("; "));
+    }
+
+    function loginAttemptKey(schoolName, studentNumber) {
+        return crypto.createHash("sha256")
+            .update(`${schoolName.toLowerCase()}:${studentNumber}`)
+            .digest("base64url");
+    }
+
+    function loginIsLimited(key, now = Date.now()) {
+        const attempt = loginAttempts.get(key);
+        if (!attempt) return false;
+        if (now - attempt.startedAt >= LOGIN_WINDOW_MS) {
+            loginAttempts.delete(key);
+            return false;
+        }
+        return attempt.count >= MAX_LOGIN_ATTEMPTS;
+    }
+
+    function recordFailedLogin(key, now = Date.now()) {
+        const previous = loginAttempts.get(key);
+        if (!previous || now - previous.startedAt >= LOGIN_WINDOW_MS) {
+            loginAttempts.set(key, { count: 1, startedAt: now });
+            return;
+        }
+        previous.count += 1;
+    }
+
+    function requirePageSession(request, response, next) {
+        if (sessionFor(request)) {
+            next();
+            return;
+        }
+        response.redirect(302, `/login?next=${encodeURIComponent(request.originalUrl)}`);
+    }
+
+    app.use(express.json({ limit: "16kb" }));
     app.use((request, response, next) => {
         if (/^\/(?:server\.js|package(?:-lock)?\.json|tests)(?:\/|$)/.test(request.path)) {
             response.sendStatus(404);
@@ -233,7 +327,103 @@ function createBattleServer(options = {}) {
         }
         next();
     });
-    app.use(express.static(ROOT, { dotfiles: "deny", index: "index.html" }));
+
+    app.get("/api/auth/session", (request, response) => {
+        const session = sessionFor(request);
+        if (!session) {
+            response.status(401).json({ authenticated: false });
+            return;
+        }
+        response.json({ authenticated: true, user: session.user });
+    });
+
+    app.post("/api/auth/login", async (request, response) => {
+        const schoolName = String(request.body?.schoolName || "").trim();
+        const studentNumber = String(request.body?.studentNumber || "").trim();
+        const password = String(request.body?.password || "");
+
+        if (!schoolName || !studentNumber || !password
+            || schoolName.length > 80 || studentNumber.length > 32 || password.length > 128) {
+            response.status(400).json({ error: "학교명, 학번, 비밀번호를 확인해 주세요." });
+            return;
+        }
+
+        const attemptKey = loginAttemptKey(schoolName, studentNumber);
+        if (loginIsLimited(attemptKey)) {
+            response.status(429).json({ error: "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요." });
+            return;
+        }
+        if (!databasePool) {
+            response.status(503).json({ error: "로그인 서버가 아직 설정되지 않았습니다." });
+            return;
+        }
+
+        try {
+            const result = await databasePool.query(`
+                SELECT u.id,
+                       u.school_id,
+                       u.username,
+                       u.student_number,
+                       u.role,
+                       u.display_name,
+                       u.nickname,
+                       u.password_hash,
+                       s.name AS school_name,
+                       s.code AS school_code
+                FROM public.users u
+                JOIN public.schools s ON s.id = u.school_id
+                WHERE lower(trim(s.code)) = lower(trim($1))
+                  AND u.username = $2
+                LIMIT 2
+            `, [schoolName, studentNumber]);
+            const user = result.rows.length === 1 ? result.rows[0] : null;
+            const passwordMatches = await bcrypt.compare(password, user?.password_hash || DUMMY_PASSWORD_HASH);
+
+            if (!user || !passwordMatches) {
+                recordFailedLogin(attemptKey);
+                response.status(401).json({ error: "학교명, 학번 또는 비밀번호가 올바르지 않습니다." });
+                return;
+            }
+
+            loginAttempts.delete(attemptKey);
+            const sessionId = crypto.randomBytes(32).toString("base64url");
+            const publicUser = {
+                id: user.id,
+                schoolId: user.school_id,
+                schoolName: user.school_name,
+                schoolCode: user.school_code,
+                studentNumber: user.student_number || user.username,
+                role: user.role,
+                displayName: user.display_name,
+                nickname: user.nickname
+            };
+            sessions.set(sessionId, { user: publicUser, expiresAt: Date.now() + SESSION_TTL_MS });
+            setSessionCookie(request, response, sessionId);
+            response.json({ authenticated: true, user: publicUser });
+        } catch (error) {
+            console.error("Login database error:", error.message);
+            response.status(503).json({ error: "로그인 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요." });
+        }
+    });
+
+    app.post("/api/auth/logout", (request, response) => {
+        const session = sessionFor(request);
+        if (session) sessions.delete(session.id);
+        clearSessionCookie(request, response);
+        response.status(204).end();
+    });
+
+    app.get(["/login", "/login/", "/login.html"], (request, response) => {
+        if (sessionFor(request)) {
+            response.redirect(302, "/");
+            return;
+        }
+        response.sendFile(path.join(ROOT, "login.html"));
+    });
+    app.get(["/", "/index.html"], requirePageSession, (request, response) => {
+        response.sendFile(path.join(ROOT, "index.html"));
+    });
+    app.use(express.static(ROOT, { dotfiles: "deny", index: false }));
 
     function missionPublic(mission) {
         const { targetText, file, ...publicMission } = mission;
@@ -714,10 +904,25 @@ function createBattleServer(options = {}) {
     }, 30 * 1000);
     cleanupTimer.unref();
 
+    const authCleanupTimer = setInterval(() => {
+        const now = Date.now();
+        for (const [sessionId, session] of sessions) {
+            if (session.expiresAt <= now) sessions.delete(sessionId);
+        }
+        for (const [key, attempt] of loginAttempts) {
+            if (now - attempt.startedAt >= LOGIN_WINDOW_MS) loginAttempts.delete(key);
+        }
+    }, 5 * 60 * 1000);
+    authCleanupTimer.unref();
+
     return { app, server, io, rooms, missions, close: () => new Promise((resolve) => {
         clearInterval(cleanupTimer);
+        clearInterval(authCleanupTimer);
         for (const room of rooms.values()) clearRoomTimers(room);
-        io.close(() => server.close(resolve));
+        io.close(() => server.close(async () => {
+            if (ownsDatabasePool) await databasePool.end().catch(() => {});
+            resolve();
+        }));
     }) };
 }
 
