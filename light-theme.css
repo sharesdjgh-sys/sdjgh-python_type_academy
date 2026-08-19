@@ -1564,8 +1564,23 @@ input:focus-visible {
 }
 
 #mission-screen[data-visual-map="true"] .mission-button .mission-step {
-    background: #f3ecef;
-    color: #866f78;
+    background: var(--quest-card-soft, var(--surface-soft));
+    color: var(--quest-card-accent, var(--accent));
+}
+
+#mission-screen[data-world="beginner"] {
+    --quest-card-accent: #df666b;
+    --quest-card-soft: #fff0ec;
+}
+
+#mission-screen[data-world="intermediate"] {
+    --quest-card-accent: #8f6fdb;
+    --quest-card-soft: #f1ebff;
+}
+
+#mission-screen[data-world="advanced"] {
+    --quest-card-accent: #56a9d4;
+    --quest-card-soft: #eaf7ff;
 }
 
 #mission-screen[data-visual-map="true"] .stage-reward-progress {

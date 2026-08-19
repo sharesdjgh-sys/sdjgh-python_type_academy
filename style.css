@@ -1945,50 +1945,157 @@ main {
 }
 
 #mission-screen[data-visual-map="true"] .stage-missions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
     gap: 8px;
     padding: 0 22px 18px;
 }
 
 #mission-screen[data-visual-map="true"] .mission-button {
+    position: relative;
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) auto;
+    grid-template-areas:
+        "step step"
+        "title title"
+        "rating action";
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(48px, 1fr) auto;
     align-items: center;
-    gap: 11px;
-    min-height: 52px;
-    padding: 8px 11px;
+    gap: 8px 10px;
+    min-height: 142px;
+    padding: 15px 14px 13px;
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--quest-card-accent, var(--accent)) 24%, transparent);
+    border-radius: 15px;
+    background:
+        linear-gradient(155deg, #ffffff 42%, var(--quest-card-soft, var(--surface-soft)) 145%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 8px 18px rgba(91, 58, 74, 0.07);
+}
+
+#mission-screen[data-visual-map="true"] .mission-button::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: var(--quest-card-accent, var(--accent));
+    content: "";
+    transition: height var(--fast);
+}
+
+#mission-screen[data-visual-map="true"] .mission-button::after {
+    position: absolute;
+    right: 14px;
+    bottom: 42px;
+    left: 14px;
+    height: 1px;
+    background: color-mix(in srgb, var(--quest-card-accent, var(--accent)) 15%, transparent);
+    content: "";
+}
+
+#mission-screen[data-visual-map="true"] .mission-button:hover {
+    border-color: color-mix(in srgb, var(--quest-card-accent, var(--accent)) 42%, transparent);
+    background:
+        linear-gradient(145deg, #ffffff, var(--quest-card-soft, var(--surface-soft)));
+    box-shadow: 0 13px 24px rgba(91, 58, 74, 0.12);
+    transform: translateY(-4px);
+}
+
+#mission-screen[data-visual-map="true"] .mission-button:hover::before {
+    height: 6px;
 }
 
 #mission-screen[data-visual-map="true"] .mission-button strong {
+    grid-area: title;
     margin: 0;
-    font-size: 0.74rem;
+    overflow: hidden;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-overflow: initial;
+    white-space: normal;
 }
 
 #mission-screen[data-visual-map="true"] .mission-button .mission-step {
-    display: grid;
-    width: 30px;
-    height: 30px;
+    grid-area: step;
+    display: inline-flex;
+    width: max-content;
+    height: 25px;
     margin: 0;
-    place-items: center;
-    border-radius: 9px;
-    background: var(--surface-soft);
-    color: var(--muted);
-    font-size: 0.6rem;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 99px;
+    background: var(--quest-card-soft, var(--surface-soft));
+    color: var(--quest-card-accent, var(--accent));
+    font-size: 0.56rem;
     font-weight: 900;
-    letter-spacing: 0;
+    letter-spacing: 0.04em;
+    box-shadow: none;
+}
+
+#mission-screen[data-visual-map="true"] .mission-button .mission-step::before {
+    content: "QUEST\00a0";
 }
 
 #mission-screen[data-visual-map="true"] .mission-button .mission-rating {
+    grid-area: rating;
     display: flex;
+    align-self: end;
+    justify-self: start;
+    z-index: 1;
     margin: 0;
-    color: rgba(255, 255, 255, 0.18);
-    font-size: 0.68rem;
-    letter-spacing: 0.04em;
+    padding-top: 11px;
+    gap: 4px;
 }
 
 #mission-screen[data-visual-map="true"] .mission-button .mission-rating span {
-    display: inline;
+    display: block;
+    width: 14px;
+    height: 14px;
     margin: 0;
+    background: #ded7e5;
+    clip-path: polygon(50% 2%, 61% 35%, 96% 35%, 68% 55%, 79% 89%, 50% 69%, 21% 89%, 32% 55%, 4% 35%, 39% 35%);
+    filter: drop-shadow(0 1px 1px rgba(72, 52, 81, 0.1));
+}
+
+#mission-screen[data-visual-map="true"] .mission-button .mission-rating .earned {
+    background: linear-gradient(145deg, #ffe078 10%, #f4b83f 55%, #e99a2e 100%);
+    filter: drop-shadow(0 2px 3px rgba(218, 146, 36, 0.3));
+}
+
+#mission-screen[data-visual-map="true"] .mission-button .mission-action {
+    grid-area: action;
+    display: inline-flex;
+    align-items: center;
+    align-self: end;
+    justify-self: end;
+    gap: 5px;
+    z-index: 1;
+    margin: 0;
+    padding-top: 10px;
+    color: var(--quest-card-accent, var(--accent));
+    font-family: var(--font-sans);
+    font-size: 0.59rem;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+#mission-screen[data-visual-map="true"] .mission-action i {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--quest-card-accent, var(--accent));
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-style: normal;
+    transition: transform var(--fast);
+}
+
+#mission-screen[data-visual-map="true"] .mission-button:hover .mission-action i {
+    transform: translateX(2px);
 }
 
 #mission-screen[data-visual-map="true"] .stage-reward {
@@ -4945,7 +5052,50 @@ main {
     }
 
     #mission-screen[data-visual-map="true"] .stage-missions {
+        grid-template-columns: 1fr;
         padding: 0 16px 15px;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button {
+        grid-template-areas: "step title rating";
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        grid-template-rows: auto;
+        gap: 11px;
+        min-height: 52px;
+        padding: 8px 11px;
+        border-radius: 11px;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button::before,
+    #mission-screen[data-visual-map="true"] .mission-button::after {
+        display: none;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button strong {
+        font-size: 0.74rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button .mission-rating {
+        align-self: center;
+        justify-self: end;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button .mission-step {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        place-items: center;
+        border-radius: 9px;
+    }
+
+    #mission-screen[data-visual-map="true"] .mission-button .mission-step::before,
+    #mission-screen[data-visual-map="true"] .mission-button .mission-action {
+        display: none;
     }
 
     #mission-screen[data-visual-map="true"] .stage-reward {

@@ -650,7 +650,7 @@ function getEnemyName(difficulty, levelGroup) {
 function missionStarsMarkup(stars) {
     const count = clamp(Number(stars) || 0, 0, 3);
     return Array.from({ length: 3 }, (_, index) =>
-        `<span class="${index < count ? "earned" : ""}">★</span>`
+        `<span class="${index < count ? "earned" : ""}" aria-hidden="true"></span>`
     ).join("");
 }
 
@@ -822,7 +822,8 @@ async function renderMissionScreen() {
                             >
                                 <span class="mission-step">${String(index + 1).padStart(2, "0")}</span>
                                 <strong>${escapeHTML(code.title)}</strong>
-                                <span class="mission-rating">${missionStarsMarkup(record?.stars || 0)}</span>
+                                <span class="mission-rating" aria-label="획득 별 ${record?.stars || 0}개">${missionStarsMarkup(record?.stars || 0)}</span>
+                                <span class="mission-action">도전하기 <i aria-hidden="true">→</i></span>
                             </button>
                         `;
                     }).join("")}

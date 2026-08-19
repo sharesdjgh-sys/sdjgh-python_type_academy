@@ -522,6 +522,16 @@ a {
     pointer-events: none;
 }
 
+.input-icon-school {
+    color: #a181b4;
+}
+
+.input-icon-school svg {
+    display: block;
+    width: 19px;
+    height: 19px;
+}
+
 .input-wrap input {
     width: 100%;
     min-width: 0;
