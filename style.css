@@ -261,6 +261,63 @@ button:active {
     font-variant-numeric: tabular-nums;
 }
 
+.header-user {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+    margin-right: 2px;
+    padding-right: 12px;
+    border-right: 1px solid var(--line);
+    font-family: var(--font-sans);
+}
+
+.header-user-avatar {
+    display: grid;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid var(--line-strong);
+    border-radius: 11px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.header-user-copy {
+    display: grid;
+    min-width: 0;
+    line-height: 1.18;
+}
+
+.header-user-copy strong {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+#header-user-nickname {
+    overflow: hidden;
+    max-width: 10rem;
+    color: var(--text);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+}
+
+#header-user-name {
+    flex: 0 0 auto;
+    overflow: hidden;
+    max-width: 7rem;
+    color: var(--text-soft);
+    font-size: 0.72rem;
+    font-weight: 650;
+    text-overflow: ellipsis;
+}
+
 .header-level {
     color: var(--muted);
 }
@@ -4678,6 +4735,14 @@ body.preview-open {
         display: none;
     }
 
+    .header-user-avatar {
+        display: none;
+    }
+
+    #header-user-nickname {
+        max-width: 7rem;
+    }
+
     .home-layout,
     .result-layout,
     .career-grid {
@@ -4795,6 +4860,35 @@ body.preview-open {
 
     .header-profile {
         gap: 7px;
+    }
+
+    .header-user {
+        max-width: 8.5rem;
+        margin-right: 0;
+        padding-right: 8px;
+    }
+
+    .header-user-copy strong {
+        display: block;
+        overflow: hidden;
+        max-width: 100%;
+        text-overflow: ellipsis;
+    }
+
+    #header-user-nickname,
+    #header-user-name {
+        display: inline;
+        max-width: none;
+        font-size: 0.68rem;
+    }
+
+    #header-user-name::before {
+        content: " ";
+    }
+
+    .header-level,
+    .header-coin {
+        display: none;
     }
 
     .logout-button {

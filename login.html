@@ -16,14 +16,6 @@
     <div class="ambient-shape ambient-shape-blue" aria-hidden="true"></div>
 
     <main class="login-shell">
-        <a class="brand" href="/" aria-label="Python Quest Academy 홈으로 이동">
-            <span class="brand-mark" aria-hidden="true">Py</span>
-            <span class="brand-copy">
-                <strong>Python Quest</strong>
-                <small>PLAY · TYPE · LEVEL UP</small>
-            </span>
-        </a>
-
         <section class="login-stage" aria-labelledby="login-title">
             <div class="story-panel">
                 <div class="story-copy">
@@ -117,6 +109,7 @@
                                 inputmode="text"
                                 autocomplete="organization"
                                 maxlength="80"
+                                value="서대전여고"
                                 placeholder="예: 서대전여고"
                                 aria-describedby="school-name-hint school-name-error"
                                 required
@@ -138,10 +131,11 @@
                                 autocomplete="username"
                                 maxlength="32"
                                 placeholder="학번을 입력하세요"
-                                aria-describedby="student-number-error"
+                                aria-describedby="student-number-hint student-number-error"
                                 required
                             >
                         </div>
+                        <span id="student-number-hint" class="field-hint">예: 10101, 10205</span>
                         <span id="student-number-error" class="field-error" aria-live="polite"></span>
                     </div>
 
@@ -174,7 +168,7 @@
                     </div>
 
                     <button id="login-button" class="login-button" type="submit">
-                        <span>Python Quest 시작하기</span>
+                        <span>Python Type Quest 시작하기</span>
                         <span aria-hidden="true">→</span>
                     </button>
 

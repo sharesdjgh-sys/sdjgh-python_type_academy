@@ -76,6 +76,7 @@ describe("Login page", () => {
         assert.equal(response.status, 200);
         assert.match(response.headers.get("content-type"), /text\/html/);
         assert.match(body, /id="login-form"/);
+        assert.match(body, /id="school-name"[\s\S]*?value="서대전여고"/);
         assert.match(body, /Pyrun Studio 계정/);
     });
 

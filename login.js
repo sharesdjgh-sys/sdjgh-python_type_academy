@@ -97,6 +97,6 @@ form.addEventListener("submit", async (event) => {
         loginStatus.textContent = "로그인 서버에 연결할 수 없습니다. 네트워크 상태를 확인해 주세요.";
     } finally {
         loginButton.disabled = false;
-        loginButton.firstElementChild.textContent = "Pyrun 계정으로 시작하기";
+        loginButton.firstElementChild.textContent = "Python Type Quest 시작하기";
     }
 });
