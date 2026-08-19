@@ -383,15 +383,21 @@ a {
 }
 
 .track-icon-pyrun {
-    padding: 4px;
-    background: #f2edff;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
     object-fit: contain;
-    box-shadow: 0 7px 16px rgba(124, 99, 183, 0.22);
+    box-shadow: none;
+    filter: drop-shadow(0 5px 8px rgba(124, 99, 183, 0.2));
 }
 
 .track-icon-quest {
-    background: var(--accent);
-    box-shadow: 0 7px 16px rgba(217, 88, 93, 0.2);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    object-fit: contain;
+    box-shadow: none;
+    filter: drop-shadow(0 5px 8px rgba(124, 99, 183, 0.2));
 }
 
 .service-track div > span:last-child {
