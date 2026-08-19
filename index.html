@@ -1188,6 +1188,53 @@
         </main>
     </div>
 
+    <dialog id="mission-preview" class="mission-preview" aria-labelledby="mission-preview-title">
+        <div class="mission-preview-card">
+            <header class="mission-preview-header">
+                <div>
+                    <p class="eyebrow">QUEST PREVIEW</p>
+                    <h2 id="mission-preview-title">퀘스트 미리보기</h2>
+                </div>
+                <button class="mission-preview-close" type="button" data-action="close-mission-preview" aria-label="미리보기 닫기">×</button>
+            </header>
+
+            <div class="mission-preview-meta" aria-label="퀘스트 정보">
+                <span id="mission-preview-world">기초 월드</span>
+                <span id="mission-preview-mode">워밍업</span>
+                <span><strong id="mission-preview-lines">1</strong> LINES</span>
+                <span><strong id="mission-preview-cpm">150</strong> CPM 목표</span>
+            </div>
+
+            <p id="mission-preview-description" class="mission-preview-description"></p>
+
+            <section class="mission-preview-code-panel" aria-labelledby="mission-preview-code-title">
+                <header>
+                    <div>
+                        <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
+                        <strong id="mission-preview-code-title">TARGET CODE</strong>
+                    </div>
+                    <span>미리 읽어보고 준비하세요</span>
+                </header>
+                <pre><code id="mission-preview-code"></code></pre>
+            </section>
+
+            <div class="mission-preview-footer-info">
+                <div>
+                    <span>MY BEST</span>
+                    <strong id="mission-preview-best">아직 도전 전</strong>
+                </div>
+                <div id="mission-preview-rating" class="mission-preview-rating" aria-label="현재 획득 별 0개"></div>
+            </div>
+
+            <footer class="mission-preview-actions">
+                <button class="preview-secondary-button" type="button" data-action="close-mission-preview">다른 퀘스트 보기</button>
+                <button id="mission-preview-start" class="preview-start-button" type="button" data-action="confirm-mission-preview">
+                    <span>퀘스트 시작</span><i aria-hidden="true">→</i>
+                </button>
+            </footer>
+        </div>
+    </dialog>
+
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

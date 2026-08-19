@@ -824,7 +824,7 @@ async function renderMissionScreen() {
                                 type="button"
                                 data-action="start-mission"
                                 data-code-id="${escapeHTML(code.id)}"
-                                aria-label="${escapeHTML(code.title)} 미션 시작"
+                                aria-label="${escapeHTML(code.title)} 미리보기"
                             >
                                 <span class="mission-step">${String(index + 1).padStart(2, "0")}</span>
                                 <strong>${escapeHTML(code.title)}</strong>
@@ -910,6 +910,56 @@ async function startGame(difficulty, length, codeId) {
         length
     });
     AppState.game.start();
+}
+
+function closeMissionPreview() {
+    const dialog = $("#mission-preview");
+    if (!dialog?.open) return;
+    dialog.close();
+    document.body.classList.remove("preview-open");
+}
+
+async function showMissionPreview(difficulty, length, codeId) {
+    const metadata = await getMetadata();
+    const located = codeDifficultyAndLength(metadata, codeId);
+
+    if (!located) {
+        showToast("선택한 퀘스트 정보를 찾을 수 없습니다.", "error");
+        return;
+    }
+
+    const code = await window.codeManager.findCodeById(codeId);
+    const dialog = $("#mission-preview");
+    if (!dialog) return;
+
+    difficulty = located.difficulty;
+    length = located.length;
+    const record = AppState.profile.missions[codeId];
+    const stars = clamp(Number(record?.stars) || 0, 0, 3);
+    const lineCount = normalizeCode(code.code).split("\n").length;
+
+    dialog.dataset.codeId = codeId;
+    dialog.dataset.difficulty = difficulty;
+    dialog.dataset.length = length;
+    setText("mission-preview-title", code.title || "코드 퀘스트");
+    setText("mission-preview-world", WORLD_CONFIG[difficulty]?.title || "Python World");
+    setText("mission-preview-mode", LENGTH_CONFIG[length]?.label || "퀘스트");
+    setText("mission-preview-lines", lineCount);
+    setText("mission-preview-cpm", LENGTH_CONFIG[length]?.targetCpm || 0);
+    setText("mission-preview-description", code.description || "코드를 미리 살펴보고 퀘스트에 도전해 보세요.");
+    setText("mission-preview-best", record
+        ? `최고 ${Number(record.bestScore || 0).toLocaleString("ko-KR")}점 · ${Number(record.bestAccuracy || 0)}%`
+        : "아직 도전 전");
+    $("#mission-preview-code").textContent = normalizeCode(code.code);
+
+    const rating = $("#mission-preview-rating");
+    rating.innerHTML = missionStarsMarkup(stars);
+    rating.setAttribute("aria-label", `현재 획득 별 ${stars}개`);
+
+    if (dialog.open) dialog.close();
+    dialog.showModal();
+    document.body.classList.add("preview-open");
+    window.requestAnimationFrame(() => $("#mission-preview-start")?.focus());
 }
 
 class TypingBattle {
@@ -2096,12 +2146,23 @@ async function handleAction(button) {
             setMissionView("lobby");
             break;
         case "start-mission":
-            await startGame(
+            await showMissionPreview(
                 AppState.currentDifficulty,
                 AppState.currentLength,
                 button.dataset.codeId
             );
             break;
+        case "close-mission-preview":
+            closeMissionPreview();
+            break;
+        case "confirm-mission-preview": {
+            const dialog = $("#mission-preview");
+            if (!dialog?.dataset.codeId) break;
+            const { difficulty, length, codeId } = dialog.dataset;
+            closeMissionPreview();
+            await startGame(difficulty, length, codeId);
+            break;
+        }
         case "exit-game":
             if (AppState.game) AppState.game.destroy();
             await showWorld(AppState.currentDifficulty, AppState.currentLength, "stages");
@@ -2143,7 +2204,18 @@ async function handleAction(button) {
 }
 
 function bindEvents() {
+    $("#mission-preview")?.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeMissionPreview();
+    });
+
     document.addEventListener("click", (event) => {
+        const preview = $("#mission-preview");
+        if (event.target === preview) {
+            closeMissionPreview();
+            return;
+        }
+
         const button = event.target.closest("[data-action]");
         if (!button || button.disabled) return;
 
@@ -2158,6 +2230,12 @@ function bindEvents() {
 
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+
+        if ($("#mission-preview")?.open) {
+            event.preventDefault();
+            closeMissionPreview();
+            return;
+        }
 
         if (window.BattleMode?.isBattleScreen()) {
             window.BattleMode.handleEscape();
