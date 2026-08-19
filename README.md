@@ -75,7 +75,9 @@ python-codes/**/*.py              실제 타이핑·실행용 Python 코드
 
 ## 데이터 저장
 
-플레이 기록은 브라우저의 `localStorage`에 `pythonQuestProfileV2` 키로 저장됩니다. 서버나 계정 간 동기화는 제공하지 않습니다. 배틀 결과는 이 기록에 저장되지 않습니다.
+플레이 기록과 사용자 설정은 로그인한 Pyrun 계정의 사용자 ID를 기준으로 Neon PostgreSQL의 `academy.player_profiles` 테이블에 저장됩니다. 브라우저 `localStorage`의 기존 기록은 앱 시작 시 삭제되며 화면에는 DB에서 불러온 기록만 표시됩니다. 친선 배틀 결과는 개인 플레이 기록에 반영되지 않습니다.
+
+로컬 실행 시 프로젝트 루트의 `.env`에 `DATABASE_URL`을 설정해야 합니다. 배포 환경에서는 `.env` 파일을 업로드하지 말고 호스팅 서비스의 비밀 환경변수로 등록합니다.
 
 ## 외부 연결
 

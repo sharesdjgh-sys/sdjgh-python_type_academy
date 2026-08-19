@@ -89,8 +89,17 @@ describe("Login page", () => {
 
     test("Pyrun 계정 인증 후 세션으로 대시보드에 접근한다", async () => {
         const passwordHash = await bcrypt.hash("correct-password", 4);
+        let storedProfile = null;
         const databasePool = {
             query: async (query, parameters) => {
+                if (/academy\.player_profiles/.test(query)) {
+                    if (/WITH inserted/.test(query)) {
+                        storedProfile ||= {};
+                        return { rows: [{ profile: storedProfile, updated_at: new Date().toISOString() }] };
+                    }
+                    storedProfile = JSON.parse(parameters[1]);
+                    return { rows: [{ profile: storedProfile, updated_at: new Date().toISOString() }] };
+                }
                 assert.match(query, /s\.code/);
                 assert.match(query, /u\.username/);
                 assert.deepEqual(parameters, ["서대전여고", "10101"]);
@@ -126,6 +135,33 @@ describe("Login page", () => {
         assert.match(cookie, /^pta_session=/);
         assert.equal(dashboardResponse.status, 200);
         assert.match(body, /id="main-menu"/);
+
+        const initialProfileResponse = await fetch(`${url}/api/profile`, { headers: { Cookie: cookie } });
+        const initialProfile = await initialProfileResponse.json();
+        assert.equal(initialProfileResponse.status, 200);
+        assert.deepEqual(initialProfile.profile, {});
+
+        const saveProfileResponse = await fetch(`${url}/api/profile`, {
+            method: "PUT",
+            headers: { Cookie: cookie, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                profile: {
+                    version: 2,
+                    xp: 120,
+                    coins: 14,
+                    totalRuns: 1,
+                    missions: {},
+                    achievements: ["first_clear"],
+                    recentRuns: [],
+                    settings: { sound: true, motion: false }
+                }
+            })
+        });
+        const savedProfile = await saveProfileResponse.json();
+        assert.equal(saveProfileResponse.status, 200);
+        assert.equal(savedProfile.profile.xp, 120);
+        assert.equal(savedProfile.profile.coins, 14);
+        assert.deepEqual(savedProfile.profile.settings, { sound: true, motion: false });
 
         const logoutResponse = await fetch(`${url}/api/auth/logout`, {
             method: "POST",

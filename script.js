@@ -5,8 +5,8 @@
 // 코드 타이핑 학습을 월드 탐험과 전투 흐름으로 구성한 클라이언트 앱
 // =========================================================
 
-const PROFILE_KEY = "pythonQuestProfileV2";
 const PROFILE_VERSION = 2;
+const LEGACY_PROFILE_KEYS = ["pythonQuestProfileV2", "gameProgress", "pythonTypingRecords"];
 const PYODIDE_VERSION = "0.24.1";
 const PYODIDE_INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 const PYODIDE_SCRIPT_URL = `${PYODIDE_INDEX_URL}pyodide.js`;
@@ -207,6 +207,7 @@ const AppState = {
     pyodide: null,
     pyodidePromise: null,
     audioContext: null,
+    profileSaveQueue: Promise.resolve(),
     initialized: false
 };
 
@@ -234,15 +235,6 @@ function escapeHTML(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-}
-
-function safeParse(value, fallback) {
-    try {
-        return JSON.parse(value);
-    } catch (error) {
-        console.warn("저장 데이터를 읽는 중 형식 오류가 발견되었습니다.", error);
-        return fallback;
-    }
 }
 
 function localDateKey(date = new Date()) {
@@ -331,67 +323,67 @@ function mergeProfile(stored) {
     };
 }
 
-function migrateLegacyProfile(profile) {
-    const legacyProgress = safeParse(localStorage.getItem("gameProgress"), {});
-    const legacyRecords = safeParse(localStorage.getItem("pythonTypingRecords"), []);
-
-    for (const [difficulty, records] of Object.entries(legacyProgress || {})) {
-        if (!records || typeof records !== "object") continue;
-
-        for (const [codeId, record] of Object.entries(records)) {
-            if (!record || !record.completed || profile.missions[codeId]) continue;
-            profile.missions[codeId] = {
-                difficulty,
-                length: codeId.split("_")[1] === "s"
-                    ? "short"
-                    : codeId.split("_")[1] === "m"
-                        ? "medium"
-                        : "long",
-                stars: 1,
-                bestScore: 0,
-                bestCpm: 0,
-                bestAccuracy: 100,
-                clears: 1,
-                updatedAt: record.timestamp || new Date().toISOString()
-            };
-        }
+function clearLegacyProfileStorage() {
+    try {
+        for (const key of LEGACY_PROFILE_KEYS) localStorage.removeItem(key);
+    } catch (error) {
+        console.warn("기존 브라우저 기록을 정리하지 못했습니다.", error);
     }
-
-    if (Array.isArray(legacyRecords) && legacyRecords.length > 0) {
-        profile.totalRuns = Math.max(profile.totalRuns, legacyRecords.length);
-        profile.bestCpm = Math.max(
-            profile.bestCpm,
-            ...legacyRecords.map((record) => Number(record.wpm) || 0)
-        );
-    }
-
-    return profile;
 }
 
-function loadProfile() {
-    const stored = safeParse(localStorage.getItem(PROFILE_KEY), null);
-    let profile = mergeProfile(stored);
-
-    if (!stored) {
-        profile = migrateLegacyProfile(profile);
+async function parseProfileResponse(response, fallbackMessage) {
+    const payload = await response.json().catch(() => ({}));
+    if (response.status === 401) {
+        window.location.replace("/login");
+        throw new Error("로그인이 만료되었습니다.");
     }
+    if (!response.ok) throw new Error(payload.error || fallbackMessage);
+    return payload;
+}
+
+async function loadProfile() {
+    clearLegacyProfileStorage();
+    const response = await fetch("/api/profile", {
+        headers: { Accept: "application/json" },
+        cache: "no-store"
+    });
+    const payload = await parseProfileResponse(response, "플레이 기록을 불러오지 못했습니다.");
+    AppState.profile = mergeProfile(payload.profile);
 
     const today = localDateKey();
-    if (profile.daily.date !== today) {
-        profile.daily = { date: today, runs: 0 };
+    let profileChanged = !payload.profile || Object.keys(payload.profile).length === 0;
+    if (AppState.profile.daily.date !== today) {
+        AppState.profile.daily = { date: today, runs: 0 };
+        profileChanged = true;
     }
 
-    return profile;
+    if (profileChanged) await saveProfile();
+    return AppState.profile;
 }
 
-function saveProfile() {
+async function saveProfile() {
+    const snapshot = JSON.parse(JSON.stringify(AppState.profile));
+    const operation = AppState.profileSaveQueue.then(async () => {
+        const response = await fetch("/api/profile", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json"
+            },
+            body: JSON.stringify({ profile: snapshot })
+        });
+        return parseProfileResponse(response, "플레이 기록을 저장하지 못했습니다.");
+    });
+    AppState.profileSaveQueue = operation.catch(() => {});
+
     try {
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(AppState.profile));
-        return true;
+        const payload = await operation;
+        AppState.profile = mergeProfile(payload.profile);
+        return AppState.profile;
     } catch (error) {
-        console.error("플레이 기록 저장 실패:", error);
-        showToast("브라우저 저장 공간을 사용할 수 없어 이번 기록을 저장하지 못했습니다.", "error");
-        return false;
+        console.error("DB 플레이 기록 저장 실패:", error);
+        showToast(error.message || "DB에 플레이 기록을 저장하지 못했습니다.", "error");
+        throw error;
     }
 }
 
@@ -1443,7 +1435,14 @@ class TypingBattle {
         const finishDelay = AppState.profile.settings.motion ? 850 : 80;
         await new Promise((resolve) => window.setTimeout(resolve, finishDelay));
 
-        const rewardState = applyRewards(result);
+        let rewardState;
+        try {
+            rewardState = await applyRewards(result);
+        } catch {
+            showToast("DB 저장에 실패해 이번 기록은 반영되지 않았습니다. 다시 시도해 주세요.", "error");
+            await showHome();
+            return;
+        }
 
         result.isPersonalBest = rewardState.isPersonalBest;
         result.newAchievements = rewardState.newAchievements;
@@ -1502,7 +1501,8 @@ function unlockAchievements(profile, result) {
     return newlyUnlocked;
 }
 
-function applyRewards(result) {
+async function applyRewards(result) {
+    const previousProfile = JSON.parse(JSON.stringify(AppState.profile));
     const profile = AppState.profile;
     const previous = profile.missions[result.codeId];
     const isPersonalBest = !previous || result.score > (previous.bestScore || 0);
@@ -1551,7 +1551,12 @@ function applyRewards(result) {
     updateStreak(profile);
 
     const newAchievements = unlockAchievements(profile, result);
-    saveProfile();
+    try {
+        await saveProfile();
+    } catch (error) {
+        AppState.profile = mergeProfile(previousProfile);
+        throw error;
+    }
 
     return { isPersonalBest, newAchievements };
 }
@@ -2023,11 +2028,18 @@ function showSettings() {
     showScreen("settings-screen");
 }
 
-function applySettingChanges() {
+async function applySettingChanges() {
+    const previousSettings = { ...AppState.profile.settings };
     AppState.profile.settings.sound = $("#sound-toggle").checked;
     AppState.profile.settings.motion = $("#motion-toggle").checked;
     document.body.dataset.motion = AppState.profile.settings.motion ? "on" : "off";
-    saveProfile();
+    try {
+        await saveProfile();
+    } catch {
+        AppState.profile.settings = previousSettings;
+        document.body.dataset.motion = previousSettings.motion ? "on" : "off";
+        renderSettings();
+    }
 }
 
 async function handleAction(button) {
@@ -2134,8 +2146,8 @@ function bindEvents() {
         });
     });
 
-    $("#sound-toggle").addEventListener("change", applySettingChanges);
-    $("#motion-toggle").addEventListener("change", applySettingChanges);
+    $("#sound-toggle").addEventListener("change", () => applySettingChanges().catch(() => {}));
+    $("#motion-toggle").addEventListener("change", () => applySettingChanges().catch(() => {}));
 
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
@@ -2160,7 +2172,7 @@ async function initializeApp() {
     if (AppState.initialized) return;
     AppState.initialized = true;
 
-    AppState.profile = loadProfile();
+    AppState.profile = await loadProfile();
     bindEvents();
     updateProfileUI();
 

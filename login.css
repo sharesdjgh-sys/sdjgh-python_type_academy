@@ -383,7 +383,9 @@ a {
 }
 
 .track-icon-pyrun {
-    background: var(--lavender);
+    padding: 4px;
+    background: #f2edff;
+    object-fit: contain;
     box-shadow: 0 7px 16px rgba(124, 99, 183, 0.22);
 }
 

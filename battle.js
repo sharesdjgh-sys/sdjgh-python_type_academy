@@ -2,7 +2,7 @@
 
 // 1대1 실시간 코드 레이스 클라이언트
 (() => {
-    const SESSION_KEY = "pythonQuestBattleSessionV1";
+    const LEGACY_SESSION_KEY = "pythonQuestBattleSessionV1";
     const COUNTDOWN_DURATION_MS = 3000;
     const battleScreens = new Set([
         "battle-portal-screen",
@@ -55,18 +55,16 @@
         5: "🔴"
     };
 
-    function loadSession() {
+    function clearLegacySession() {
         try {
-            return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
-        } catch {
-            return null;
+            sessionStorage.removeItem(LEGACY_SESSION_KEY);
+        } catch (error) {
+            console.warn("기존 배틀 세션을 정리하지 못했습니다.", error);
         }
     }
 
     function saveSession(session) {
         state.session = session;
-        if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        else sessionStorage.removeItem(SESSION_KEY);
     }
 
     function setServerStatus(connected, text = null) {
@@ -1136,7 +1134,8 @@
     async function initialize() {
         if (state.initialized) return;
         state.initialized = true;
-        state.session = loadSession();
+        clearLegacySession();
+        state.session = null;
         bindEvents();
         bindSocket();
         try {

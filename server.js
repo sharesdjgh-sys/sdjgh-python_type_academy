@@ -38,6 +38,113 @@ function parseCookies(header = "") {
     }, {});
 }
 
+function boundedNumber(value, min, max, fallback = 0) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+}
+
+function boundedInteger(value, min, max, fallback = 0) {
+    return Math.round(boundedNumber(value, min, max, fallback));
+}
+
+function cleanString(value, maxLength = 100) {
+    return typeof value === "string" ? value.slice(0, maxLength) : "";
+}
+
+function normalizeProfilePayload(candidate) {
+    const source = candidate && typeof candidate === "object" && !Array.isArray(candidate)
+        ? candidate
+        : {};
+    const missions = {};
+    const missionEntries = source.missions && typeof source.missions === "object"
+        ? Object.entries(source.missions).slice(0, 500)
+        : [];
+
+    for (const [rawCodeId, rawRecord] of missionEntries) {
+        const codeId = cleanString(rawCodeId, 80);
+        if (!codeId || !/^[a-zA-Z0-9_:-]+$/.test(codeId)) continue;
+        const record = rawRecord && typeof rawRecord === "object" ? rawRecord : {};
+        missions[codeId] = {
+            difficulty: ["beginner", "intermediate", "advanced"].includes(record.difficulty)
+                ? record.difficulty
+                : "beginner",
+            length: ["short", "medium", "long"].includes(record.length)
+                ? record.length
+                : "short",
+            stars: boundedInteger(record.stars, 0, 3),
+            bestScore: boundedInteger(record.bestScore, 0, 1000000),
+            bestCpm: boundedInteger(record.bestCpm, 0, 5000),
+            bestAccuracy: boundedNumber(record.bestAccuracy, 0, 100),
+            clears: boundedInteger(record.clears, 0, 100000),
+            updatedAt: cleanString(record.updatedAt, 40) || null
+        };
+    }
+
+    const recentRuns = Array.isArray(source.recentRuns)
+        ? source.recentRuns.slice(0, 12).map((rawRun) => {
+            const run = rawRun && typeof rawRun === "object" ? rawRun : {};
+            return {
+                codeId: cleanString(run.codeId, 80),
+                title: cleanString(run.title, 120),
+                difficulty: ["beginner", "intermediate", "advanced"].includes(run.difficulty)
+                    ? run.difficulty
+                    : "beginner",
+                length: ["short", "medium", "long"].includes(run.length)
+                    ? run.length
+                    : "short",
+                score: boundedInteger(run.score, 0, 1000000),
+                stars: boundedInteger(run.stars, 0, 3),
+                accuracy: boundedNumber(run.accuracy, 0, 100),
+                cpm: boundedInteger(run.cpm, 0, 5000),
+                completedAt: cleanString(run.completedAt, 40) || null
+            };
+        }).filter((run) => run.codeId)
+        : [];
+
+    const lastMissionSource = source.lastMission && typeof source.lastMission === "object"
+        ? source.lastMission
+        : null;
+    const lastMission = lastMissionSource ? {
+        difficulty: ["beginner", "intermediate", "advanced"].includes(lastMissionSource.difficulty)
+            ? lastMissionSource.difficulty
+            : "beginner",
+        length: ["short", "medium", "long"].includes(lastMissionSource.length)
+            ? lastMissionSource.length
+            : "short",
+        codeId: cleanString(lastMissionSource.codeId, 80)
+    } : null;
+
+    return {
+        version: boundedInteger(source.version, 1, 100, 2),
+        xp: boundedInteger(source.xp, 0, 100000000),
+        coins: boundedInteger(source.coins, 0, 100000000),
+        totalRuns: boundedInteger(source.totalRuns, 0, 1000000),
+        bestCpm: boundedInteger(source.bestCpm, 0, 5000),
+        totalCorrectAttempts: boundedInteger(source.totalCorrectAttempts, 0, 1000000000),
+        totalAttempts: boundedInteger(source.totalAttempts, 0, 1000000000),
+        perfectRuns: boundedInteger(source.perfectRuns, 0, 1000000),
+        missions,
+        achievements: Array.isArray(source.achievements)
+            ? [...new Set(source.achievements.map((id) => cleanString(id, 80)).filter(Boolean))].slice(0, 100)
+            : [],
+        recentRuns,
+        lastMission: lastMission?.codeId ? lastMission : null,
+        streak: {
+            current: boundedInteger(source.streak?.current, 0, 100000),
+            best: boundedInteger(source.streak?.best, 0, 100000),
+            lastPlayed: cleanString(source.streak?.lastPlayed, 10) || null
+        },
+        daily: {
+            date: cleanString(source.daily?.date, 10) || null,
+            runs: boundedInteger(source.daily?.runs, 0, 100000)
+        },
+        settings: {
+            sound: Boolean(source.settings?.sound),
+            motion: source.settings?.motion !== false
+        }
+    };
+}
+
 function normalizeCode(code) {
     return String(code || "")
         .replace(/\r\n/g, "\n")
@@ -319,7 +426,17 @@ function createBattleServer(options = {}) {
         response.redirect(302, `/login?next=${encodeURIComponent(request.originalUrl)}`);
     }
 
-    app.use(express.json({ limit: "16kb" }));
+    function requireApiSession(request, response, next) {
+        const session = sessionFor(request);
+        if (!session) {
+            response.status(401).json({ error: "로그인이 필요합니다." });
+            return;
+        }
+        request.authSession = session;
+        next();
+    }
+
+    app.use(express.json({ limit: "256kb" }));
     app.use((request, response, next) => {
         if (/^\/(?:server\.js|package(?:-lock)?\.json|tests)(?:\/|$)/.test(request.path)) {
             response.sendStatus(404);
@@ -411,6 +528,63 @@ function createBattleServer(options = {}) {
         if (session) sessions.delete(session.id);
         clearSessionCookie(request, response);
         response.status(204).end();
+    });
+
+    app.get("/api/profile", requireApiSession, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        try {
+            const result = await databasePool.query(`
+                WITH inserted AS (
+                    INSERT INTO academy.player_profiles (user_id)
+                    VALUES ($1)
+                    ON CONFLICT (user_id) DO NOTHING
+                    RETURNING profile, updated_at
+                )
+                SELECT profile, updated_at FROM inserted
+                UNION ALL
+                SELECT profile, updated_at
+                FROM academy.player_profiles
+                WHERE user_id = $1
+                LIMIT 1
+            `, [request.authSession.user.id]);
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                profile: result.rows[0]?.profile || {},
+                updatedAt: result.rows[0]?.updated_at || null
+            });
+        } catch (error) {
+            console.error("Profile load database error:", error.message);
+            response.status(503).json({ error: "플레이 기록을 불러오지 못했습니다." });
+        }
+    });
+
+    app.put("/api/profile", requireApiSession, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        const profile = normalizeProfilePayload(request.body?.profile);
+        try {
+            const result = await databasePool.query(`
+                INSERT INTO academy.player_profiles (user_id, profile)
+                VALUES ($1, $2::jsonb)
+                ON CONFLICT (user_id) DO UPDATE
+                SET profile = EXCLUDED.profile,
+                    updated_at = now()
+                RETURNING profile, updated_at
+            `, [request.authSession.user.id, JSON.stringify(profile)]);
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                profile: result.rows[0].profile,
+                updatedAt: result.rows[0].updated_at
+            });
+        } catch (error) {
+            console.error("Profile save database error:", error.message);
+            response.status(503).json({ error: "플레이 기록을 저장하지 못했습니다." });
+        }
     });
 
     app.get(["/login", "/login/", "/login.html"], (request, response) => {
