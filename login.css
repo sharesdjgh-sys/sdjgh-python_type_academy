@@ -457,10 +457,16 @@ a {
 
 .form-heading h2 {
     margin: 10px 0 6px;
+    background: linear-gradient(100deg, var(--accent-strong) 0%, #8b6bd3 88%);
+    background-clip: text;
+    color: var(--lavender);
     font-family: var(--font-title);
-    font-size: clamp(1.75rem, 2.5vw, 2.45rem);
+    font-size: clamp(1.55rem, 2.2vw, 2.15rem);
     font-weight: 800;
-    letter-spacing: -0.045em;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .form-heading p {
@@ -879,7 +885,7 @@ a:focus-visible {
     }
 
     .form-heading h2 {
-        font-size: 1.75rem;
+        font-size: clamp(1.25rem, 6vw, 1.55rem);
     }
 
     .login-form {
