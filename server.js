@@ -26,6 +26,50 @@ const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 8;
 const DUMMY_PASSWORD_HASH = "$2b$10$T2gGiOMwbf4ZOr51ssJYGe8qXit9KlnwDp7n0fBhBd0YGD.F0LtA6";
 const TARGET_CPM = { short: 150, medium: 125, long: 105 };
+const PLATFORM_ORIGIN = "https://platform.sdjgh-ai.kr";
+const PLATFORM_VERIFY_URL = `${PLATFORM_ORIGIN}/api/auth/verify`;
+const SSO_SCHOOL_CODE = "서대전여고";
+const SSO_ROLE_MAP = { 학생: "student", 교사: "teacher", 관리자: "admin" };
+
+// The platform's uid is "입학연도-학번" (e.g. "24-10101"); this app's own
+// student numbers are the bare 5-digit part, so strip the year prefix to
+// match existing/CSV-imported pyrun accounts instead of creating duplicates.
+function ssoUidToStudentNumber(uid) {
+    const dashIndex = uid.indexOf("-");
+    return dashIndex >= 0 ? uid.slice(dashIndex + 1) : uid;
+}
+
+// Mirrors pyrun's lib/student-number.ts (GCCNN: 1 digit grade, 2 digit class, 2 digit seat).
+function parseSchoolStudentNumber(value) {
+    if (!/^\d{5}$/.test(value)) return null;
+    const grade = Number(value.slice(0, 1));
+    const classNumber = Number(value.slice(1, 3));
+    const seatNumber = Number(value.slice(3, 5));
+    if (grade < 1 || classNumber < 1 || seatNumber < 1) return null;
+    return { grade, classNumber, seatNumber };
+}
+
+async function verifySsoToken(token) {
+    if (!token) return null;
+    try {
+        const res = await fetch(PLATFORM_VERIFY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token })
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.valid ? data.user ?? null : null;
+    } catch {
+        return null;
+    }
+}
+
+// Modern browsers send this for the top-level document request of a nested
+// browsing context — the one purpose-built signal for "am I being embedded".
+function isEmbeddedRequest(request) {
+    return request.get("sec-fetch-dest") === "iframe";
+}
 
 function parseCookies(header = "") {
     return header.split(";").reduce((cookies, part) => {
@@ -423,6 +467,14 @@ function createBattleServer(options = {}) {
             next();
             return;
         }
+        if (isEmbeddedRequest(request)) {
+            // Embedded in the platform shell with no local session yet — don't
+            // redirect to our own /login (that would nest a login screen inside
+            // the iframe). Serve the page and let sso-guard.js on the client
+            // establish a session via /api/auth/sso-login, then reload.
+            next();
+            return;
+        }
         response.redirect(302, `/login?next=${encodeURIComponent(request.originalUrl)}`);
     }
 
@@ -437,6 +489,10 @@ function createBattleServer(options = {}) {
     }
 
     app.use(express.json({ limit: "256kb" }));
+    app.use((request, response, next) => {
+        response.setHeader("Content-Security-Policy", `frame-ancestors ${PLATFORM_ORIGIN}`);
+        next();
+    });
     app.use((request, response, next) => {
         if (/^\/(?:server\.js|package(?:-lock)?\.json|tests)(?:\/|$)/.test(request.path)) {
             response.sendStatus(404);
@@ -520,6 +576,80 @@ function createBattleServer(options = {}) {
         } catch (error) {
             console.error("Login database error:", error.message);
             response.status(503).json({ error: "로그인 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요." });
+        }
+    });
+
+    app.post("/api/auth/sso-login", async (request, response) => {
+        const token = String(request.body?.token || "");
+        if (!token) {
+            response.status(400).json({ error: "토큰이 필요합니다." });
+            return;
+        }
+        if (!databasePool) {
+            response.status(503).json({ error: "로그인 서버가 아직 설정되지 않았습니다." });
+            return;
+        }
+
+        const ssoUser = await verifySsoToken(token);
+        if (!ssoUser) {
+            response.status(401).json({ error: "유효하지 않은 토큰입니다." });
+            return;
+        }
+
+        const studentNumber = ssoUidToStudentNumber(ssoUser.uid);
+        const role = SSO_ROLE_MAP[ssoUser.role] || "student";
+
+        try {
+            const schoolResult = await databasePool.query(
+                `SELECT id, name, code FROM public.schools WHERE lower(trim(code)) = lower(trim($1)) LIMIT 1`,
+                [SSO_SCHOOL_CODE]
+            );
+            const school = schoolResult.rows[0];
+            if (!school) {
+                response.status(503).json({ error: "학교 정보를 찾을 수 없습니다." });
+                return;
+            }
+
+            const existing = await databasePool.query(
+                `SELECT id, school_id, username, student_number, role, display_name, nickname
+                 FROM public.users WHERE school_id = $1 AND username = $2 LIMIT 1`,
+                [school.id, studentNumber]
+            );
+
+            let user = existing.rows[0];
+            if (!user) {
+                const classInfo = role === "student" ? parseSchoolStudentNumber(studentNumber) : null;
+                const randomPasswordHash = await bcrypt.hash(crypto.randomBytes(24).toString("hex"), 10);
+                const inserted = await databasePool.query(
+                    `INSERT INTO public.users
+                        (school_id, username, password_hash, role, display_name, nickname, student_number, grade, class_number, seat_number)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                     RETURNING id, school_id, username, student_number, role, display_name, nickname`,
+                    [
+                        school.id, studentNumber, randomPasswordHash, role, ssoUser.name, "코드러너", studentNumber,
+                        classInfo?.grade ?? null, classInfo?.classNumber ?? null, classInfo?.seatNumber ?? null
+                    ]
+                );
+                user = inserted.rows[0];
+            }
+
+            const sessionId = crypto.randomBytes(32).toString("base64url");
+            const publicUser = {
+                id: user.id,
+                schoolId: user.school_id,
+                schoolName: school.name,
+                schoolCode: school.code,
+                studentNumber: user.student_number || user.username,
+                role: user.role,
+                displayName: user.display_name,
+                nickname: user.nickname
+            };
+            sessions.set(sessionId, { user: publicUser, expiresAt: Date.now() + SESSION_TTL_MS });
+            setSessionCookie(request, response, sessionId);
+            response.json({ authenticated: true, user: publicUser });
+        } catch (error) {
+            console.error("SSO login database error:", error.message);
+            response.status(503).json({ error: "로그인 서버에 연결할 수 없습니다." });
         }
     });
 

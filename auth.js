@@ -35,7 +35,12 @@ async function loadAuthenticatedUser() {
         });
 
         if (response.status === 401) {
-            window.location.replace("/login");
+            // Embedded in the platform shell: sso-guard.js (loaded before this
+            // script) is still verifying/signing in — don't nest our own login
+            // page inside the iframe while that's in flight.
+            if (window.self === window.top) {
+                window.location.replace("/login");
+            }
             return;
         }
         if (!response.ok) return;
