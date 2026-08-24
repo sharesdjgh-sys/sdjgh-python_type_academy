@@ -532,21 +532,33 @@ function createBattleServer(options = {}) {
         return { id: sessionId, ...session };
     }
 
+    // SSO auto-login runs inside a third-party iframe (embedded under
+    // platform.sdjgh-ai.kr). SameSite=Lax cookies are excluded from every
+    // request made in that cross-site ancestor context — fetches AND the
+    // iframe's own navigations, since the browser's actual top-level
+    // document is a different site — so the session cookie set by
+    // /api/auth/sso-login never came back on the reload that follows it.
+    // SameSite=None (which requires Secure) fixes that; fall back to Lax
+    // over plain http (local dev), where None without Secure would just be
+    // rejected by the browser and isn't needed anyway (no iframe there).
+    function cookieAttributes(request) {
+        const secure = request.secure || process.env.NODE_ENV === "production";
+        return secure ? ["SameSite=None", "Secure"] : ["SameSite=Lax"];
+    }
+
     function setSessionCookie(request, response, sessionId) {
         const parts = [
             `${SESSION_COOKIE}=${sessionId}`,
             "HttpOnly",
-            "SameSite=Lax",
+            ...cookieAttributes(request),
             "Path=/",
             `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`
         ];
-        if (request.secure || process.env.NODE_ENV === "production") parts.push("Secure");
         response.setHeader("Set-Cookie", parts.join("; "));
     }
 
     function clearSessionCookie(request, response) {
-        const parts = [`${SESSION_COOKIE}=`, "HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=0"];
-        if (request.secure || process.env.NODE_ENV === "production") parts.push("Secure");
+        const parts = [`${SESSION_COOKIE}=`, "HttpOnly", ...cookieAttributes(request), "Path=/", "Max-Age=0"];
         response.setHeader("Set-Cookie", parts.join("; "));
     }
 
