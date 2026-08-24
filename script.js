@@ -2432,20 +2432,29 @@ async function openAchievementDetail(achievementId, trigger) {
             : "";
         const itemMetrics = item.statusLabel
             ? `
-                <span class="achievement-detail-item-metrics">
+                <span class="achievement-detail-item-status-row">
                     <span class="achievement-detail-item-state">${escapeHTML(item.statusLabel)}</span>
-                    <span class="achievement-detail-item-metric">
-                        <small>최고 정확도</small>
-                        <strong>${escapeHTML(item.accuracyValue)}</strong>
-                    </span>
-                    <span class="achievement-detail-item-metric">
-                        <small>최고 점수</small>
-                        <strong>${escapeHTML(item.scoreValue)}</strong>
-                    </span>
                     <span class="achievement-detail-item-guidance">${escapeHTML(item.guidance)}</span>
                 </span>
+                <span class="achievement-detail-item-performance">
+                    <span class="achievement-detail-performance-card is-accuracy">
+                        <span class="achievement-detail-performance-label">
+                            <small>BEST ACCURACY</small>
+                            <b>최고 정확도</b>
+                        </span>
+                        <strong>${escapeHTML(item.accuracyValue)}</strong>
+                        ${itemProgress}
+                    </span>
+                    <span class="achievement-detail-performance-card is-score">
+                        <span class="achievement-detail-performance-label">
+                            <small>BEST SCORE</small>
+                            <b>최고 점수</b>
+                        </span>
+                        <strong>${escapeHTML(item.scoreValue)}</strong>
+                    </span>
+                </span>
             `
-            : `<small>${escapeHTML(item.meta)}</small>`;
+            : `<small>${escapeHTML(item.meta)}</small>${itemProgress}`;
 
         return `
             <li class="achievement-detail-item is-${escapeHTML(item.type)}">
@@ -2456,7 +2465,6 @@ async function openAchievementDetail(achievementId, trigger) {
                         ${itemStars}
                     </span>
                     ${itemMetrics}
-                    ${itemProgress}
                 </span>
                 ${itemAction}
             </li>
