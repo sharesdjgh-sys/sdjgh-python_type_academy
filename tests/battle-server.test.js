@@ -62,6 +62,35 @@ async function connect(url) {
     return socket;
 }
 
+async function login(url, { role = "student", username = "10101" } = {}) {
+    const response = await fetch(`${url}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            schoolName: "teacher-test-school",
+            studentNumber: username,
+            password: "correct-password"
+        })
+    });
+    assert.equal(response.status, 200);
+    return response.headers.get("set-cookie").split(";", 1)[0];
+}
+
+async function authUser(role = "teacher", username = "teacher01") {
+    return {
+        id: role === "teacher" ? 31 : 41,
+        school_id: 9,
+        school_name: "테스트학교",
+        school_code: "teacher-test-school",
+        username,
+        student_number: role === "student" ? username : null,
+        role,
+        display_name: role === "teacher" ? "테스트 교사" : "테스트 학생",
+        nickname: role === "teacher" ? "코드쌤" : "파이",
+        password_hash: await bcrypt.hash("correct-password", 4)
+    };
+}
+
 afterEach(async () => {
     for (const client of openClients.splice(0)) client.close();
     for (const server of openServers.splice(0)) await server.close();
@@ -176,6 +205,118 @@ describe("Login page", () => {
         assert.equal(logoutResponse.status, 204);
         assert.equal(afterLogout.status, 302);
         assert.equal(afterLogout.headers.get("location"), "/login?next=%2F");
+    });
+});
+
+describe("교사 학습 관리", () => {
+    test("교사만 관리 페이지와 배정 학급 API에 접근한다", async () => {
+        const teacher = await authUser("teacher", "teacher01");
+        const teacherPool = {
+            query: async (query) => {
+                if (/FROM public\.users u/.test(query)) return { rows: [teacher] };
+                if (/count\(student\.id\)/.test(query)) {
+                    return { rows: [{ grade: 2, class_number: 3, student_count: 27 }] };
+                }
+                if (/SELECT 1[\s\S]*teacher_class_assignments/.test(query)) return { rows: [] };
+                throw new Error(`Unexpected teacher query: ${query}`);
+            }
+        };
+        const { url: teacherUrl } = await createHarness({ databasePool: teacherPool });
+        const teacherCookie = await login(teacherUrl, { role: "teacher", username: "teacher01" });
+        const pageResponse = await fetch(`${teacherUrl}/teacher`, { headers: { Cookie: teacherCookie } });
+        const pageBody = await pageResponse.text();
+        const classesResponse = await fetch(`${teacherUrl}/api/teacher/classes`, { headers: { Cookie: teacherCookie } });
+        const classes = await classesResponse.json();
+        const unassignedResponse = await fetch(`${teacherUrl}/api/teacher/classes/2/4`, { headers: { Cookie: teacherCookie } });
+
+        assert.equal(pageResponse.status, 200);
+        assert.match(pageBody, /id="teacher-main"/);
+        assert.equal(classesResponse.status, 200);
+        assert.deepEqual(classes.classes, [{ grade: 2, classNumber: 3, studentCount: 27 }]);
+        assert.equal(unassignedResponse.status, 403);
+
+        const student = await authUser("student", "20301");
+        const studentPool = {
+            query: async (query) => {
+                if (/FROM public\.users u/.test(query)) return { rows: [student] };
+                throw new Error("학생 권한 검사 전에 DB를 조회하면 안 됩니다.");
+            }
+        };
+        const { url: studentUrl } = await createHarness({ databasePool: studentPool });
+        const studentCookie = await login(studentUrl, { role: "student", username: "20301" });
+        const deniedPage = await fetch(`${studentUrl}/teacher`, { redirect: "manual", headers: { Cookie: studentCookie } });
+        const deniedApi = await fetch(`${studentUrl}/api/teacher/classes`, { headers: { Cookie: studentCookie } });
+
+        assert.equal(deniedPage.status, 403);
+        assert.equal(deniedApi.status, 403);
+    });
+
+    test("게임 결과를 프로필과 이력으로 원자적으로 저장하고 중복 실행을 기록하지 않는다", async () => {
+        const teacher = await authUser("teacher", "teacher02");
+        const recordedRunIds = new Set();
+        const transactionLog = [];
+        const client = {
+            query: async (query, parameters) => {
+                if (["BEGIN", "COMMIT", "ROLLBACK"].includes(query)) {
+                    transactionLog.push(query);
+                    return { rows: [] };
+                }
+                if (/INSERT INTO academy\.player_profiles/.test(query)) {
+                    return { rows: [{ profile: JSON.parse(parameters[1]), updated_at: new Date().toISOString() }] };
+                }
+                if (/INSERT INTO academy\.practice_runs/.test(query)) {
+                    assert.match(query, /ON CONFLICT \(user_id, client_run_id\) DO NOTHING/);
+                    assert.equal(parameters[2], "test_1");
+                    assert.equal(parameters[3], "테스트 출력");
+                    const duplicate = recordedRunIds.has(parameters[1]);
+                    recordedRunIds.add(parameters[1]);
+                    return { rows: duplicate ? [] : [{ id: 1 }], rowCount: duplicate ? 0 : 1 };
+                }
+                throw new Error(`Unexpected transaction query: ${query}`);
+            },
+            release: () => {}
+        };
+        const databasePool = {
+            query: async (query) => {
+                if (/FROM public\.users u/.test(query)) return { rows: [teacher] };
+                throw new Error(`Unexpected pool query: ${query}`);
+            },
+            connect: async () => client
+        };
+        const { url } = await createHarness({ databasePool });
+        const cookie = await login(url, { role: "teacher", username: "teacher02" });
+        const payload = {
+            profile: { version: 2, totalRuns: 1, missions: {}, recentRuns: [] },
+            run: {
+                clientRunId: "20336d95-0d24-4bd5-b05e-5d4de3f4f4a1",
+                codeId: "test_1",
+                score: 812,
+                rank: "A",
+                stars: 2,
+                accuracy: 96.4,
+                cpm: 244,
+                durationSeconds: 31.2,
+                maxCombo: 12,
+                attempts: 18,
+                correctAttempts: 17,
+                errors: 1,
+                corrections: 1,
+                completedAt: "2026-08-24T10:00:00.000Z"
+            }
+        };
+        const first = await fetch(`${url}/api/profile/runs`, {
+            method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        });
+        const second = await fetch(`${url}/api/profile/runs`, {
+            method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        });
+
+        assert.equal(first.status, 200);
+        assert.equal(second.status, 200);
+        assert.equal((await first.json()).runRecorded, true);
+        assert.equal((await second.json()).runRecorded, false);
+        assert.deepEqual(transactionLog, ["BEGIN", "COMMIT", "BEGIN", "COMMIT"]);
+        assert.equal(recordedRunIds.size, 1);
     });
 });
 

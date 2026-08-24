@@ -828,6 +828,19 @@ input:focus-visible {
     color: #c78b1f;
 }
 
+.teacher-dashboard-link {
+    border-color: rgba(112, 85, 190, 0.18);
+    background: #f3efff;
+    color: #6e55aa;
+    box-shadow: 0 6px 14px rgba(112, 85, 190, 0.07);
+}
+
+.teacher-dashboard-link:hover {
+    border-color: rgba(112, 85, 190, 0.34);
+    background: #ffffff;
+    color: #5c4397;
+}
+
 .logout-button {
     border-color: rgba(217, 88, 93, 0.16);
     background: #fff4f1;

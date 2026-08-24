@@ -2,6 +2,7 @@
 
 const logoutButton = document.querySelector("#logout-button");
 const headerUser = document.querySelector("#header-user");
+const teacherDashboardLink = document.querySelector("#teacher-dashboard-link");
 
 function renderHeaderUser(user) {
     if (!headerUser || !user) return;
@@ -26,6 +27,8 @@ function renderHeaderUser(user) {
     headerUser.setAttribute("aria-label", `로그인 사용자 ${fullLabel}`);
     headerUser.title = fullLabel;
     headerUser.hidden = false;
+    if (teacherDashboardLink) teacherDashboardLink.hidden = user.role !== "teacher";
+    document.body.dataset.userRole = user.role || "student";
 }
 
 async function loadAuthenticatedUser() {

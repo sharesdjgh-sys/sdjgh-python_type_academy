@@ -17,7 +17,7 @@ const fields = [
     {
         input: studentNumberInput,
         error: document.querySelector("#student-number-error"),
-        message: "학번을 입력해 주세요."
+        message: "학번 또는 교사 ID를 입력해 주세요."
     },
     {
         input: passwordInput,

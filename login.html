@@ -80,7 +80,7 @@
                 <div class="form-heading">
                     <span class="form-step">PLAYER LOGIN</span>
                     <h2 id="login-title">READY FOR YOUR QUEST?</h2>
-                    <p>학교명, 학번, 비밀번호를 입력해 주세요.</p>
+                    <p>학교명, 학번 또는 교사 ID, 비밀번호를 입력해 주세요.</p>
                 </div>
 
                 <form id="login-form" class="login-form" novalidate>
@@ -120,22 +120,22 @@
                     </div>
 
                     <div class="field-group">
-                        <label for="student-number">학번</label>
+                        <label for="student-number">학번 또는 교사 ID</label>
                         <div class="input-wrap">
                             <span class="input-icon" aria-hidden="true">#</span>
                             <input
                                 id="student-number"
                                 name="studentNumber"
                                 type="text"
-                                inputmode="numeric"
+                                inputmode="text"
                                 autocomplete="username"
                                 maxlength="32"
-                                placeholder="학번을 입력하세요"
+                                placeholder="학번 또는 교사 ID를 입력하세요"
                                 aria-describedby="student-number-hint student-number-error"
                                 required
                             >
                         </div>
-                        <span id="student-number-hint" class="field-hint">예: 10101, 10205</span>
+                        <span id="student-number-hint" class="field-hint">학생은 학번, 교사는 Pyrun Studio ID</span>
                         <span id="student-number-error" class="field-error" aria-live="polite"></span>
                     </div>
 
@@ -183,7 +183,7 @@
                     </p>
                 </aside>
 
-                <p class="login-help">로그인에 문제가 있으면 담당 선생님께 학교명과 학번을 확인해 주세요.</p>
+                <p class="login-help">로그인에 문제가 있으면 Pyrun Studio에 등록된 학교명과 ID를 확인해 주세요.</p>
             </div>
         </section>
 

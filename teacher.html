@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#fff8f3">
+    <title>교사 학습 관리 | Python Type Academy</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="teacher.css">
+    <script src="sso-guard.js" defer></script>
+    <script src="teacher.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#teacher-main">본문으로 이동</a>
+    <header class="teacher-header">
+        <a class="brand" href="/" aria-label="Python Type Academy 게임으로 돌아가기">
+            <span class="brand-mark" aria-hidden="true">Py</span>
+            <span><strong>PYTHON TYPE</strong><small>ACADEMY · TEACHER</small></span>
+        </a>
+        <div class="header-actions">
+            <div class="teacher-identity" aria-live="polite">
+                <span id="teacher-avatar" aria-hidden="true">T</span>
+                <span><strong id="teacher-name">선생님</strong><small id="teacher-school">학교 확인 중</small></span>
+            </div>
+            <a class="game-link" href="/"><span aria-hidden="true">⌨</span> 게임으로 돌아가기</a>
+            <button id="teacher-logout" class="logout-link" type="button">로그아웃</button>
+        </div>
+    </header>
+
+    <main id="teacher-main" class="teacher-main">
+        <section class="hero" aria-labelledby="page-title">
+            <div>
+                <p class="eyebrow">LEARNING CONTROL ROOM</p>
+                <h1 id="page-title">교사 학습 관리</h1>
+                <p>배정된 학급의 연습량과 퀘스트 진도를 한눈에 확인하세요.</p>
+            </div>
+            <div class="hero-rule">
+                <span>배지 인증 기준</span>
+                <strong>퀘스트 최고 정확도 80% 이상</strong>
+            </div>
+        </section>
+
+        <section class="class-bar" aria-label="학급 및 조회 기간">
+            <div>
+                <span class="control-label">배정 학급</span>
+                <div id="class-tabs" class="class-tabs" role="tablist" aria-label="배정 학급"></div>
+            </div>
+            <div>
+                <span class="control-label">활동 기간</span>
+                <div id="range-tabs" class="range-tabs" aria-label="활동 기간">
+                    <button type="button" data-range="7d">7일</button>
+                    <button type="button" data-range="30d" class="active" aria-pressed="true">30일</button>
+                    <button type="button" data-range="all">전체</button>
+                </div>
+            </div>
+        </section>
+
+        <div id="page-message" class="page-message" role="status">배정 학급을 불러오는 중입니다.</div>
+
+        <div id="dashboard-content" hidden>
+            <section id="summary-cards" class="summary-grid" aria-label="학급 요약"></section>
+
+            <section class="panel activity-panel" aria-labelledby="activity-title">
+                <div class="panel-heading">
+                    <div>
+                        <p class="panel-kicker">PRACTICE PULSE</p>
+                        <h2 id="activity-title">일별 연습 활동</h2>
+                    </div>
+                    <p id="activity-caption">최근 30일 활동</p>
+                </div>
+                <div id="class-activity-chart" class="activity-chart" aria-label="일별 연습 횟수 차트"></div>
+            </section>
+
+            <section class="panel roster-panel" aria-labelledby="roster-title">
+                <div class="panel-heading roster-heading">
+                    <div>
+                        <p class="panel-kicker">STUDENT ROSTER</p>
+                        <h2 id="roster-title">학생별 학습 현황</h2>
+                    </div>
+                    <div class="roster-tools">
+                        <label class="search-box">
+                            <span class="sr-only">학생 검색</span>
+                            <span aria-hidden="true">⌕</span>
+                            <input id="student-search" type="search" placeholder="이름·학번 검색">
+                        </label>
+                        <select id="status-filter" aria-label="활동 상태 필터">
+                            <option value="all">모든 상태</option>
+                            <option value="untried">미도전</option>
+                            <option value="active">최근 활동</option>
+                            <option value="resting">휴식중</option>
+                        </select>
+                        <select id="student-sort" aria-label="학생 정렬">
+                            <option value="recent">최근 활동순</option>
+                            <option value="progress">인증 진도순</option>
+                            <option value="effort">연습 횟수순</option>
+                            <option value="seat">번호순</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="student-table">
+                        <thead>
+                            <tr>
+                                <th>학생</th>
+                                <th>상태</th>
+                                <th>배지 인증 진도</th>
+                                <th>기간 연습</th>
+                                <th>누적 최고 기록</th>
+                                <th>최근 활동</th>
+                                <th><span class="sr-only">상세</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-rows"></tbody>
+                    </table>
+                </div>
+                <div id="roster-empty" class="empty-state" hidden>조건에 맞는 학생이 없습니다.</div>
+            </section>
+        </div>
+    </main>
+
+    <dialog id="student-dialog" class="student-dialog">
+        <div class="dialog-shell">
+            <header class="dialog-header">
+                <div>
+                    <p id="detail-class" class="panel-kicker"></p>
+                    <h2 id="detail-name">학생 상세</h2>
+                    <p id="detail-meta"></p>
+                </div>
+                <button id="dialog-close" class="dialog-close" type="button" aria-label="학생 상세 닫기">×</button>
+            </header>
+            <div id="detail-loading" class="detail-loading" role="status">학습 기록을 불러오는 중입니다.</div>
+            <div id="detail-content" class="detail-content" hidden>
+                <section id="detail-summary" class="detail-summary" aria-label="학생 요약"></section>
+
+                <section class="detail-section">
+                    <div class="panel-heading">
+                        <div><p class="panel-kicker">ACTIVITY</p><h3>일별 연습 흐름</h3></div>
+                    </div>
+                    <div id="student-activity-chart" class="activity-chart compact"></div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="panel-heading detail-filter-heading">
+                        <div><p class="panel-kicker">BADGE PROGRESS</p><h3>스테이지별 배지 진도</h3></div>
+                        <div class="quest-filters">
+                            <select id="difficulty-filter" aria-label="월드 필터">
+                                <option value="all">모든 월드</option>
+                                <option value="beginner">초급 월드</option>
+                                <option value="intermediate">중급 월드</option>
+                                <option value="advanced">고급 월드</option>
+                            </select>
+                            <select id="length-filter" aria-label="스테이지 필터">
+                                <option value="all">모든 스테이지</option>
+                                <option value="short">스테이지 1 · 짧게</option>
+                                <option value="medium">스테이지 2 · 보통</option>
+                                <option value="long">스테이지 3 · 길게</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="stage-progress" class="stage-grid"></div>
+                    <div class="table-wrap quest-table-wrap">
+                        <table class="quest-table">
+                            <thead><tr><th>퀘스트</th><th>별</th><th>최고 정확도</th><th>최고 점수</th><th>도전</th><th>인증</th></tr></thead>
+                            <tbody id="quest-rows"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="detail-section">
+                    <div class="panel-heading"><div><p class="panel-kicker">PRACTICE LOG</p><h3>연습 이력</h3></div><p id="history-note"></p></div>
+                    <div id="run-history" class="run-history"></div>
+                    <button id="load-more-runs" class="load-more" type="button" hidden>이력 더 보기</button>
+                </section>
+            </div>
+        </div>
+    </dialog>
+</body>
+</html>

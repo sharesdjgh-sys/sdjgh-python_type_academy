@@ -314,6 +314,17 @@ function escapeHTML(value) {
         .replace(/'/g, "&#039;");
 }
 
+function createClientRunId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+}
+
 function localDateKey(date = new Date()) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -438,16 +449,38 @@ async function loadProfile() {
     return AppState.profile;
 }
 
-async function saveProfile() {
+async function saveProfile(runResult = null) {
     const snapshot = JSON.parse(JSON.stringify(AppState.profile));
     const operation = AppState.profileSaveQueue.then(async () => {
-        const response = await fetch("/api/profile", {
-            method: "PUT",
+        const response = await fetch(runResult ? "/api/profile/runs" : "/api/profile", {
+            method: runResult ? "POST" : "PUT",
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json"
             },
-            body: JSON.stringify({ profile: snapshot })
+            body: JSON.stringify({
+                profile: snapshot,
+                ...(runResult
+                    ? {
+                        run: {
+                            clientRunId: runResult.clientRunId,
+                            codeId: runResult.codeId,
+                            score: runResult.score,
+                            rank: runResult.rank,
+                            stars: runResult.stars,
+                            accuracy: runResult.accuracy,
+                            cpm: runResult.cpm,
+                            durationSeconds: runResult.durationSeconds,
+                            maxCombo: runResult.maxCombo,
+                            attempts: runResult.attempts,
+                            correctAttempts: runResult.correctAttempts,
+                            errors: runResult.errors,
+                            corrections: runResult.corrections,
+                            completedAt: runResult.completedAt
+                        }
+                    }
+                    : {})
+            })
         });
         return parseProfileResponse(response, "플레이 기록을 저장하지 못했습니다.");
     });
@@ -1545,6 +1578,7 @@ class TypingBattle {
         const coins = Math.round((8 + stars * 6 + score / 110) * multiplier);
 
         return {
+            clientRunId: createClientRunId(),
             codeId: this.code.id,
             title: this.code.title,
             difficulty: this.difficulty,
@@ -1713,7 +1747,7 @@ async function applyRewards(result) {
 
     const newAchievements = unlockAchievements(profile, result);
     try {
-        await saveProfile();
+        await saveProfile(result);
     } catch (error) {
         AppState.profile = mergeProfile(previousProfile);
         throw error;

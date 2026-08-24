@@ -75,7 +75,11 @@ python-codes/**/*.py              실제 타이핑·실행용 Python 코드
 
 ## 데이터 저장
 
-플레이 기록과 사용자 설정은 로그인한 Pyrun 계정의 사용자 ID를 기준으로 Neon PostgreSQL의 `academy.player_profiles` 테이블에 저장됩니다. 브라우저 `localStorage`의 기존 기록은 앱 시작 시 삭제되며 화면에는 DB에서 불러온 기록만 표시됩니다. 친선 배틀 결과는 개인 플레이 기록에 반영되지 않습니다.
+플레이 기록과 사용자 설정은 로그인한 Pyrun 계정의 사용자 ID를 기준으로 Neon PostgreSQL의 `academy.player_profiles` 테이블에 저장됩니다. 개인 플레이를 마치면 전체 연습 이력도 `academy.practice_runs`에 함께 저장되어 교사 학습 관리 화면에서 기간별 노력과 진도를 확인할 수 있습니다. 브라우저 `localStorage`의 기존 기록은 앱 시작 시 삭제되며 화면에는 DB에서 불러온 기록만 표시됩니다. 친선 배틀 결과는 개인 플레이 기록에 반영되지 않습니다.
+
+교사 계정에는 게임 대시보드 사용자 ID 옆에 `교사 관리` 버튼이 표시됩니다. 관리 화면은 Pyrun Studio의 `public.teacher_class_assignments`에 배정된 학급과 같은 학교의 해당 학생만 조회하며, 교사도 `게임으로 돌아가기`를 통해 일반 게임을 그대로 플레이할 수 있습니다.
+
+DB를 처음 구성하거나 기존 환경을 갱신할 때 `npm run db:migrate`를 실행합니다. 이 명령은 `migrations/001_academy_player_profiles.sql`, `migrations/002_academy_practice_runs.sql`을 번호 순서대로 적용하고 필수 테이블과 인덱스를 검증합니다. 두 번째 마이그레이션 적용 이후의 개인 연습부터 전체 이력에 누적됩니다.
 
 로컬 실행 시 프로젝트 루트의 `.env`에 `DATABASE_URL`을 설정해야 합니다. 배포 환경에서는 `.env` 파일을 업로드하지 말고 호스팅 서비스의 비밀 환경변수로 등록합니다.
 

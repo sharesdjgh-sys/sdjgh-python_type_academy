@@ -26,6 +26,8 @@ const LOGIN_WINDOW_MS = 10 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 8;
 const DUMMY_PASSWORD_HASH = "$2b$10$T2gGiOMwbf4ZOr51ssJYGe8qXit9KlnwDp7n0fBhBd0YGD.F0LtA6";
 const TARGET_CPM = { short: 150, medium: 125, long: 105 };
+const BADGE_ACCURACY_THRESHOLD = 80;
+const TEACHER_RANGES = new Set(["7d", "30d", "all"]);
 const PLATFORM_ORIGIN = "https://platform.sdjgh-ai.kr";
 const PLATFORM_VERIFY_URL = `${PLATFORM_ORIGIN}/api/auth/verify`;
 const SSO_SCHOOL_CODE = "서대전여고";
@@ -186,6 +188,117 @@ function normalizeProfilePayload(candidate) {
             sound: Boolean(source.settings?.sound),
             motion: source.settings?.motion !== false
         }
+    };
+}
+
+function normalizePracticeRun(candidate, missions) {
+    const source = candidate && typeof candidate === "object" && !Array.isArray(candidate)
+        ? candidate
+        : {};
+    const clientRunId = cleanString(source.clientRunId, 80);
+    const codeId = cleanString(source.codeId, 80);
+    const mission = missions.get(codeId);
+
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientRunId)) {
+        throw new Error("플레이 식별자가 올바르지 않습니다.");
+    }
+    if (!mission) throw new Error("퀘스트 정보를 찾을 수 없습니다.");
+
+    const completedAt = new Date(source.completedAt);
+    const safeCompletedAt = Number.isNaN(completedAt.getTime())
+        ? new Date()
+        : completedAt;
+
+    return {
+        clientRunId,
+        codeId,
+        title: cleanString(mission.title, 120) || "코드 퀘스트",
+        difficulty: ["beginner", "intermediate", "advanced"].includes(mission.difficulty)
+            ? mission.difficulty
+            : "beginner",
+        length: ["short", "medium", "long"].includes(mission.length)
+            ? mission.length
+            : "short",
+        score: boundedInteger(source.score, 0, 1000000),
+        rank: ["S", "A", "B", "C"].includes(source.rank) ? source.rank : "C",
+        stars: boundedInteger(source.stars, 0, 3),
+        accuracy: boundedNumber(source.accuracy, 0, 100),
+        cpm: boundedInteger(source.cpm, 0, 5000),
+        durationSeconds: boundedNumber(source.durationSeconds, 0, 36000),
+        maxCombo: boundedInteger(source.maxCombo, 0, 100000),
+        attempts: boundedInteger(source.attempts, 0, 1000000),
+        correctAttempts: boundedInteger(source.correctAttempts, 0, 1000000),
+        errors: boundedInteger(source.errors, 0, 1000000),
+        corrections: boundedInteger(source.corrections, 0, 1000000),
+        completedAt: safeCompletedAt.toISOString()
+    };
+}
+
+function parseTeacherRange(value) {
+    const range = TEACHER_RANGES.has(value) ? value : "30d";
+    if (range === "all") return { range, startAt: null };
+
+    const days = range === "7d" ? 7 : 30;
+    const now = new Date();
+    const seoul = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).format(now);
+    const startAt = new Date(`${seoul}T00:00:00+09:00`);
+    startAt.setUTCDate(startAt.getUTCDate() - (days - 1));
+    return { range, startAt: startAt.toISOString() };
+}
+
+function profileLastActivity(profile) {
+    const recent = Array.isArray(profile?.recentRuns) ? profile.recentRuns : [];
+    const recentDate = recent.map((run) => run?.completedAt).find(Boolean);
+    if (recentDate) return recentDate;
+
+    const missionDates = Object.values(profile?.missions || {})
+        .map((mission) => mission?.updatedAt)
+        .filter(Boolean)
+        .sort()
+        .reverse();
+    return missionDates[0] || null;
+}
+
+function summarizePlayerProfile(profileCandidate, missionTotal) {
+    const profile = profileCandidate && typeof profileCandidate === "object"
+        ? profileCandidate
+        : {};
+    const missions = profile.missions && typeof profile.missions === "object"
+        ? Object.values(profile.missions)
+        : [];
+    const certifiedQuests = missions.filter((mission) =>
+        Number(mission?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+    ).length;
+    const totalAttempts = Number(profile.totalAttempts || 0);
+    const totalCorrectAttempts = Number(profile.totalCorrectAttempts || 0);
+    const bestScore = missions.reduce((best, mission) =>
+        Math.max(best, Number(mission?.bestScore || 0)), 0);
+    const bestAccuracy = missions.reduce((best, mission) =>
+        Math.max(best, Number(mission?.bestAccuracy || 0)), 0);
+
+    return {
+        totalRuns: Number(profile.totalRuns || 0),
+        completedQuests: missions.length,
+        certifiedQuests,
+        missionTotal,
+        progressPercent: missionTotal > 0
+            ? Math.round((certifiedQuests / missionTotal) * 100)
+            : 0,
+        overallAccuracy: totalAttempts > 0
+            ? Math.round((totalCorrectAttempts / totalAttempts) * 1000) / 10
+            : 0,
+        bestScore,
+        bestAccuracy,
+        bestCpm: Number(profile.bestCpm || 0),
+        stars: missions.reduce((total, mission) => total + Number(mission?.stars || 0), 0),
+        badges: Array.isArray(profile.achievements) ? profile.achievements.length : 0,
+        streak: Number(profile.streak?.current || 0),
+        lastActivityAt: profileLastActivity(profile)
     };
 }
 
@@ -488,6 +601,34 @@ function createBattleServer(options = {}) {
         next();
     }
 
+    function requireTeacherPage(request, response, next) {
+        const session = sessionFor(request);
+        if (!session) {
+            response.redirect(302, `/login?next=${encodeURIComponent(request.originalUrl)}`);
+            return;
+        }
+        if (session.user.role !== "teacher") {
+            response.status(403).send("교사 계정만 접근할 수 있습니다.");
+            return;
+        }
+        request.authSession = session;
+        next();
+    }
+
+    function requireTeacherApi(request, response, next) {
+        const session = sessionFor(request);
+        if (!session) {
+            response.status(401).json({ error: "로그인이 필요합니다." });
+            return;
+        }
+        if (session.user.role !== "teacher") {
+            response.status(403).json({ error: "교사 계정만 접근할 수 있습니다." });
+            return;
+        }
+        request.authSession = session;
+        next();
+    }
+
     app.use(express.json({ limit: "256kb" }));
     app.use((request, response, next) => {
         response.setHeader("Content-Security-Policy", `frame-ancestors ${PLATFORM_ORIGIN}`);
@@ -717,6 +858,423 @@ function createBattleServer(options = {}) {
         }
     });
 
+    app.post("/api/profile/runs", requireApiSession, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        if (!["student", "teacher"].includes(request.authSession.user.role)) {
+            response.status(403).json({ error: "게임 기록을 저장할 수 없는 계정입니다." });
+            return;
+        }
+
+        let run;
+        try {
+            run = normalizePracticeRun(request.body?.run, missions);
+        } catch (error) {
+            response.status(400).json({ error: error.message });
+            return;
+        }
+        const profile = normalizeProfilePayload(request.body?.profile);
+        const client = await databasePool.connect().catch(() => null);
+        if (!client) {
+            response.status(503).json({ error: "플레이 기록 저장소에 연결할 수 없습니다." });
+            return;
+        }
+
+        try {
+            await client.query("BEGIN");
+            const profileResult = await client.query(`
+                INSERT INTO academy.player_profiles (user_id, profile)
+                VALUES ($1, $2::jsonb)
+                ON CONFLICT (user_id) DO UPDATE
+                SET profile = EXCLUDED.profile,
+                    updated_at = now()
+                RETURNING profile, updated_at
+            `, [request.authSession.user.id, JSON.stringify(profile)]);
+            const runResult = await client.query(`
+                INSERT INTO academy.practice_runs (
+                    user_id, client_run_id, code_id, title, difficulty, length,
+                    score, rank, stars, accuracy, cpm, duration_seconds,
+                    max_combo, attempts, correct_attempts, errors, corrections, completed_at
+                ) VALUES (
+                    $1, $2::uuid, $3, $4, $5, $6,
+                    $7, $8, $9, $10, $11, $12,
+                    $13, $14, $15, $16, $17, $18::timestamptz
+                )
+                ON CONFLICT (user_id, client_run_id) DO NOTHING
+                RETURNING id
+            `, [
+                request.authSession.user.id,
+                run.clientRunId,
+                run.codeId,
+                run.title,
+                run.difficulty,
+                run.length,
+                run.score,
+                run.rank,
+                run.stars,
+                run.accuracy,
+                run.cpm,
+                run.durationSeconds,
+                run.maxCombo,
+                run.attempts,
+                run.correctAttempts,
+                run.errors,
+                run.corrections,
+                run.completedAt
+            ]);
+            await client.query("COMMIT");
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                profile: profileResult.rows[0].profile,
+                updatedAt: profileResult.rows[0].updated_at,
+                runRecorded: runResult.rowCount > 0
+            });
+        } catch (error) {
+            await client.query("ROLLBACK").catch(() => {});
+            console.error("Practice run save database error:", error.message);
+            response.status(503).json({ error: "플레이 기록을 저장하지 못했습니다." });
+        } finally {
+            client.release();
+        }
+    });
+
+    app.get("/api/teacher/classes", requireTeacherApi, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        try {
+            const result = await databasePool.query(`
+                SELECT tca.grade,
+                       tca.class_number,
+                       count(student.id)::integer AS student_count
+                FROM public.teacher_class_assignments tca
+                JOIN public.users teacher ON teacher.id = tca.teacher_user_id
+                LEFT JOIN public.users student
+                  ON student.school_id = teacher.school_id
+                 AND student.role = 'student'
+                 AND student.grade = tca.grade
+                 AND student.class_number = tca.class_number
+                WHERE tca.teacher_user_id = $1
+                GROUP BY tca.grade, tca.class_number
+                ORDER BY tca.grade, tca.class_number
+            `, [request.authSession.user.id]);
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                classes: result.rows.map((row) => ({
+                    grade: Number(row.grade),
+                    classNumber: Number(row.class_number),
+                    studentCount: Number(row.student_count)
+                }))
+            });
+        } catch (error) {
+            console.error("Teacher classes load database error:", error.message);
+            response.status(503).json({ error: "배정 학급을 불러오지 못했습니다." });
+        }
+    });
+
+    app.get("/api/teacher/classes/:grade/:classNumber", requireTeacherApi, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        const grade = boundedInteger(request.params.grade, 1, 20, 0);
+        const classNumber = boundedInteger(request.params.classNumber, 1, 100, 0);
+        if (!grade || !classNumber) {
+            response.status(400).json({ error: "학년과 반 정보를 확인해 주세요." });
+            return;
+        }
+        const period = parseTeacherRange(request.query.range);
+
+        try {
+            const assignment = await databasePool.query(`
+                SELECT 1
+                FROM public.teacher_class_assignments
+                WHERE teacher_user_id = $1
+                  AND grade = $2
+                  AND class_number = $3
+                LIMIT 1
+            `, [request.authSession.user.id, grade, classNumber]);
+            if (assignment.rows.length === 0) {
+                response.status(403).json({ error: "배정되지 않은 학급입니다." });
+                return;
+            }
+
+            const studentsResult = await databasePool.query(`
+                SELECT student.id,
+                       student.display_name,
+                       student.nickname,
+                       student.student_number,
+                       student.seat_number,
+                       profile.profile,
+                       profile.updated_at
+                FROM public.users student
+                LEFT JOIN academy.player_profiles profile ON profile.user_id = student.id
+                WHERE student.school_id = $1
+                  AND student.role = 'student'
+                  AND student.grade = $2
+                  AND student.class_number = $3
+                ORDER BY student.seat_number NULLS LAST, student.student_number, student.display_name
+            `, [request.authSession.user.schoolId, grade, classNumber]);
+            const studentIds = studentsResult.rows.map((row) => Number(row.id));
+            let rangeRows = [];
+            let dailyRows = [];
+            if (studentIds.length > 0) {
+                const rangeResult = await databasePool.query(`
+                    SELECT user_id,
+                           count(*)::integer AS run_count,
+                           coalesce(sum(duration_seconds), 0)::double precision AS duration_seconds,
+                           coalesce(avg(accuracy), 0)::double precision AS average_accuracy,
+                           max(completed_at) AS last_completed_at
+                    FROM academy.practice_runs
+                    WHERE user_id = ANY($1::integer[])
+                      AND ($2::timestamptz IS NULL OR completed_at >= $2::timestamptz)
+                    GROUP BY user_id
+                `, [studentIds, period.startAt]);
+                rangeRows = rangeResult.rows;
+                const dailyResult = await databasePool.query(`
+                    SELECT (completed_at AT TIME ZONE 'Asia/Seoul')::date AS date,
+                           count(*)::integer AS run_count,
+                           coalesce(sum(duration_seconds), 0)::double precision AS duration_seconds,
+                           coalesce(avg(accuracy), 0)::double precision AS average_accuracy
+                    FROM academy.practice_runs
+                    WHERE user_id = ANY($1::integer[])
+                      AND ($2::timestamptz IS NULL OR completed_at >= $2::timestamptz)
+                    GROUP BY (completed_at AT TIME ZONE 'Asia/Seoul')::date
+                    ORDER BY date
+                `, [studentIds, period.startAt]);
+                dailyRows = dailyResult.rows;
+            }
+
+            const rangeByStudent = new Map(rangeRows.map((row) => [Number(row.user_id), row]));
+            const missionTotal = missions.size;
+            const students = studentsResult.rows.map((row) => {
+                const profile = row.profile || {};
+                const cumulative = summarizePlayerProfile(profile, missionTotal);
+                const range = rangeByStudent.get(Number(row.id));
+                const rangeRuns = Number(range?.run_count || 0);
+                return {
+                    id: Number(row.id),
+                    displayName: row.display_name || row.nickname || "이름 미등록",
+                    nickname: row.nickname || "",
+                    studentNumber: row.student_number || "",
+                    seatNumber: row.seat_number === null ? null : Number(row.seat_number),
+                    profileUpdatedAt: row.updated_at || null,
+                    cumulative,
+                    period: {
+                        runs: rangeRuns,
+                        durationMinutes: Math.round((Number(range?.duration_seconds || 0) / 60) * 10) / 10,
+                        averageAccuracy: Math.round(Number(range?.average_accuracy || 0) * 10) / 10,
+                        lastActivityAt: range?.last_completed_at || null
+                    },
+                    status: cumulative.totalRuns === 0
+                        ? "untried"
+                        : rangeRuns > 0 ? "active" : "resting"
+                };
+            });
+            const certifiedTotal = students.reduce((total, student) => total + student.cumulative.certifiedQuests, 0);
+            const durationSeconds = rangeRows.reduce((total, row) => total + Number(row.duration_seconds || 0), 0);
+            const runCount = rangeRows.reduce((total, row) => total + Number(row.run_count || 0), 0);
+
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                class: { grade, classNumber, studentCount: students.length },
+                range: period.range,
+                summary: {
+                    startedStudents: students.filter((student) => student.cumulative.totalRuns > 0).length,
+                    activeStudents: students.filter((student) => student.period.runs > 0).length,
+                    runCount,
+                    durationMinutes: Math.round((durationSeconds / 60) * 10) / 10,
+                    averageProgress: students.length > 0 && missionTotal > 0
+                        ? Math.round((certifiedTotal / (students.length * missionTotal)) * 1000) / 10
+                        : 0
+                },
+                dailyActivity: dailyRows.map((row) => ({
+                    date: row.date,
+                    runs: Number(row.run_count),
+                    durationMinutes: Math.round((Number(row.duration_seconds || 0) / 60) * 10) / 10,
+                    averageAccuracy: Math.round(Number(row.average_accuracy || 0) * 10) / 10
+                })),
+                students
+            });
+        } catch (error) {
+            console.error("Teacher class dashboard load error:", error.message);
+            response.status(503).json({ error: "학급 학습 현황을 불러오지 못했습니다." });
+        }
+    });
+
+    app.get("/api/teacher/students/:studentId", requireTeacherApi, async (request, response) => {
+        if (!databasePool) {
+            response.status(503).json({ error: "데이터베이스가 설정되지 않았습니다." });
+            return;
+        }
+        const studentId = boundedInteger(request.params.studentId, 1, 1000000000, 0);
+        if (!studentId) {
+            response.status(400).json({ error: "학생 정보를 확인해 주세요." });
+            return;
+        }
+        const period = parseTeacherRange(request.query.range);
+        const cursorDate = request.query.cursor ? new Date(String(request.query.cursor)) : null;
+        const cursor = cursorDate && !Number.isNaN(cursorDate.getTime()) ? cursorDate.toISOString() : null;
+
+        try {
+            const studentResult = await databasePool.query(`
+                SELECT student.id,
+                       student.display_name,
+                       student.nickname,
+                       student.student_number,
+                       student.grade,
+                       student.class_number,
+                       student.seat_number,
+                       profile.profile,
+                       profile.updated_at
+                FROM public.users student
+                JOIN public.users teacher ON teacher.id = $1
+                LEFT JOIN academy.player_profiles profile ON profile.user_id = student.id
+                WHERE student.id = $2
+                  AND student.role = 'student'
+                  AND student.school_id = teacher.school_id
+                  AND EXISTS (
+                      SELECT 1
+                      FROM public.teacher_class_assignments assignment
+                      WHERE assignment.teacher_user_id = teacher.id
+                        AND assignment.grade = student.grade
+                        AND assignment.class_number = student.class_number
+                  )
+                LIMIT 1
+            `, [request.authSession.user.id, studentId]);
+            if (studentResult.rows.length === 0) {
+                response.status(403).json({ error: "배정된 학생만 확인할 수 있습니다." });
+                return;
+            }
+
+            const row = studentResult.rows[0];
+            const profile = row.profile || {};
+            const cumulative = summarizePlayerProfile(profile, missions.size);
+            const periodResult = await databasePool.query(`
+                SELECT count(*)::integer AS run_count,
+                       coalesce(sum(duration_seconds), 0)::double precision AS duration_seconds,
+                       coalesce(avg(accuracy), 0)::double precision AS average_accuracy,
+                       (
+                           SELECT min(all_runs.completed_at)
+                           FROM academy.practice_runs all_runs
+                           WHERE all_runs.user_id = $1
+                       ) AS history_available_since,
+                       max(completed_at) AS last_completed_at
+                FROM academy.practice_runs
+                WHERE user_id = $1
+                  AND ($2::timestamptz IS NULL OR completed_at >= $2::timestamptz)
+            `, [studentId, period.startAt]);
+            const dailyResult = await databasePool.query(`
+                SELECT (completed_at AT TIME ZONE 'Asia/Seoul')::date AS date,
+                       count(*)::integer AS run_count,
+                       coalesce(sum(duration_seconds), 0)::double precision AS duration_seconds,
+                       coalesce(avg(accuracy), 0)::double precision AS average_accuracy
+                FROM academy.practice_runs
+                WHERE user_id = $1
+                  AND ($2::timestamptz IS NULL OR completed_at >= $2::timestamptz)
+                GROUP BY (completed_at AT TIME ZONE 'Asia/Seoul')::date
+                ORDER BY date
+            `, [studentId, period.startAt]);
+            const historyResult = await databasePool.query(`
+                SELECT client_run_id,
+                       code_id,
+                       title,
+                       difficulty,
+                       length,
+                       score,
+                       rank,
+                       stars,
+                       accuracy,
+                       cpm,
+                       duration_seconds,
+                       max_combo,
+                       completed_at
+                FROM academy.practice_runs
+                WHERE user_id = $1
+                  AND ($2::timestamptz IS NULL OR completed_at >= $2::timestamptz)
+                  AND ($3::timestamptz IS NULL OR completed_at < $3::timestamptz)
+                ORDER BY completed_at DESC, id DESC
+                LIMIT 51
+            `, [studentId, period.startAt, cursor]);
+            const historyRows = historyResult.rows.slice(0, 50);
+            const missionRecords = profile.missions && typeof profile.missions === "object"
+                ? profile.missions
+                : {};
+            const quests = [...missions.values()].map((mission) => {
+                const record = missionRecords[mission.id] || null;
+                return {
+                    id: mission.id,
+                    title: mission.title,
+                    difficulty: mission.difficulty,
+                    length: mission.length,
+                    levelGroup: Number(mission.levelGroup) || 1,
+                    certified: Number(record?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD,
+                    stars: Number(record?.stars || 0),
+                    bestScore: Number(record?.bestScore || 0),
+                    bestAccuracy: Number(record?.bestAccuracy || 0),
+                    bestCpm: Number(record?.bestCpm || 0),
+                    clears: Number(record?.clears || 0),
+                    updatedAt: record?.updatedAt || null
+                };
+            });
+            const periodRow = periodResult.rows[0] || {};
+
+            response.setHeader("Cache-Control", "no-store");
+            response.json({
+                student: {
+                    id: Number(row.id),
+                    displayName: row.display_name || row.nickname || "이름 미등록",
+                    nickname: row.nickname || "",
+                    studentNumber: row.student_number || "",
+                    grade: Number(row.grade),
+                    classNumber: Number(row.class_number),
+                    seatNumber: row.seat_number === null ? null : Number(row.seat_number),
+                    profileUpdatedAt: row.updated_at || null
+                },
+                range: period.range,
+                cumulative,
+                period: {
+                    runs: Number(periodRow.run_count || 0),
+                    durationMinutes: Math.round((Number(periodRow.duration_seconds || 0) / 60) * 10) / 10,
+                    averageAccuracy: Math.round(Number(periodRow.average_accuracy || 0) * 10) / 10,
+                    historyAvailableSince: periodRow.history_available_since || null,
+                    lastActivityAt: periodRow.last_completed_at || null
+                },
+                dailyActivity: dailyResult.rows.map((activity) => ({
+                    date: activity.date,
+                    runs: Number(activity.run_count),
+                    durationMinutes: Math.round((Number(activity.duration_seconds || 0) / 60) * 10) / 10,
+                    averageAccuracy: Math.round(Number(activity.average_accuracy || 0) * 10) / 10
+                })),
+                quests,
+                runs: historyRows.map((history) => ({
+                    clientRunId: history.client_run_id,
+                    codeId: history.code_id,
+                    title: history.title,
+                    difficulty: history.difficulty,
+                    length: history.length,
+                    score: Number(history.score),
+                    rank: history.rank,
+                    stars: Number(history.stars),
+                    accuracy: Number(history.accuracy),
+                    cpm: Number(history.cpm),
+                    durationSeconds: Number(history.duration_seconds),
+                    maxCombo: Number(history.max_combo),
+                    completedAt: history.completed_at
+                })),
+                nextCursor: historyResult.rows.length > 50
+                    ? historyRows.at(-1)?.completed_at || null
+                    : null
+            });
+        } catch (error) {
+            console.error("Teacher student detail load error:", error.message);
+            response.status(503).json({ error: "학생 상세 기록을 불러오지 못했습니다." });
+        }
+    });
+
     app.get(["/login", "/login/", "/login.html"], (request, response) => {
         if (sessionFor(request)) {
             response.redirect(302, "/");
@@ -726,6 +1284,9 @@ function createBattleServer(options = {}) {
     });
     app.get(["/", "/index.html"], requirePageSession, (request, response) => {
         response.sendFile(path.join(ROOT, "index.html"));
+    });
+    app.get(["/teacher", "/teacher/", "/teacher.html"], requireTeacherPage, (request, response) => {
+        response.sendFile(path.join(ROOT, "teacher.html"));
     });
     app.use(express.static(ROOT, { dotfiles: "deny", index: false }));
 
