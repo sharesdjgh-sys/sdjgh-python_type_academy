@@ -2461,9 +2461,11 @@ input:focus-visible {
 
 .achievement-icon {
     border: 0;
-    border-radius: 13px 13px 13px 4px;
-    background: #ffe5df;
-    color: var(--accent-strong);
+    background: transparent;
+}
+
+.achievement-icon img {
+    filter: drop-shadow(0 8px 12px rgba(126, 82, 96, 0.18));
 }
 
 .achievement-card.locked {

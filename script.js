@@ -154,6 +154,7 @@ const ACHIEVEMENTS = [
     {
         id: "first_clear",
         icon: "01",
+        image: "assets/achievement-first-clear.webp",
         title: "첫 클리어",
         description: "첫 번째 코드 퀘스트를 완료했어요.",
         check: (profile) => profile.totalRuns >= 1
@@ -161,6 +162,7 @@ const ACHIEVEMENTS = [
     {
         id: "perfect_code",
         icon: "100",
+        image: "assets/achievement-perfect-code.webp",
         title: "퍼펙트 플레이",
         description: "정확도 100%로 퀘스트를 클리어했어요.",
         check: (profile) => profile.perfectRuns >= 1
@@ -168,6 +170,7 @@ const ACHIEVEMENTS = [
     {
         id: "combo_50",
         icon: "×50",
+        image: "assets/achievement-combo-50.webp",
         title: "50 COMBO",
         description: "한 판에서 50 콤보를 달성했어요.",
         check: (_profile, result) => Boolean(result && result.maxCombo >= 50)
@@ -175,6 +178,7 @@ const ACHIEVEMENTS = [
     {
         id: "boss_clear",
         icon: "B",
+        image: "assets/achievement-boss-clear.webp",
         title: "파이널 클리어",
         description: "긴 코드 파이널 스테이지를 완료했어요.",
         check: (_profile, result) => Boolean(result && result.length === "long")
@@ -182,6 +186,7 @@ const ACHIEVEMENTS = [
     {
         id: "ten_clears",
         icon: "10",
+        image: "assets/achievement-ten-clears.webp",
         title: "10판 완료",
         description: "코드 퀘스트를 누적 10회 완료했어요.",
         check: (profile) => profile.totalRuns >= 10
@@ -189,6 +194,7 @@ const ACHIEVEMENTS = [
     {
         id: "speed_250",
         icon: "250",
+        image: "assets/achievement-speed-250.webp",
         title: "스피드 스타",
         description: "타수/분 250 이상을 달성했어요.",
         check: (profile) => profile.bestCpm >= 250
@@ -1724,7 +1730,14 @@ function renderResult(result) {
         result.newAchievements.forEach((achievement) => {
             const chip = document.createElement("span");
             chip.className = "unlock-chip";
-            chip.textContent = `${achievement.icon} · ${achievement.title}`;
+            const image = document.createElement("img");
+            image.src = achievement.image;
+            image.alt = "";
+            image.width = 40;
+            image.height = 40;
+            const label = document.createElement("span");
+            label.textContent = achievement.title;
+            chip.append(image, label);
             unlockList.appendChild(chip);
         });
         unlockSection.hidden = false;
@@ -1979,7 +1992,9 @@ function renderStats() {
         const card = document.createElement("article");
         card.className = `achievement-card ${unlocked ? "" : "locked"}`;
         card.innerHTML = `
-            <span class="achievement-icon" aria-hidden="true">${escapeHTML(achievement.icon)}</span>
+            <span class="achievement-icon" aria-hidden="true">
+                <img src="${escapeHTML(achievement.image)}" alt="" width="320" height="320" loading="lazy">
+            </span>
             <div>
                 <h3>${escapeHTML(unlocked ? achievement.title : "잠긴 업적")}</h3>
                 <p>${escapeHTML(unlocked ? achievement.description : "미션을 진행하면 조건이 공개됩니다.")}</p>
