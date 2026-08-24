@@ -422,7 +422,13 @@ function clearLegacyProfileStorage() {
 async function parseProfileResponse(response, fallbackMessage) {
     const payload = await response.json().catch(() => ({}));
     if (response.status === 401) {
-        window.location.replace("/login");
+        // Same iframe-safety rule as auth.js's loadAuthenticatedUser(): while
+        // embedded, sso-guard.js may still be mid-handshake (this fetch can
+        // easily lose that race on first load) — don't nest our own login
+        // page inside the platform's iframe over a 401 that's likely transient.
+        if (window.self === window.top) {
+            window.location.replace("/login");
+        }
         throw new Error("로그인이 만료되었습니다.");
     }
     if (!response.ok) throw new Error(payload.error || fallbackMessage);
