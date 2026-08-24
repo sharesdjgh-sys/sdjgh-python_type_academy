@@ -150,10 +150,71 @@ const LEVEL_TITLES = [
     { level: 20, title: "코드 레전드" }
 ];
 
-const ACHIEVEMENTS = [
+const BADGE_ACCURACY_THRESHOLD = 80;
+
+const STAGE_BADGES = [
+    { id: "grammar_warmup", difficulty: "beginner", length: "short", title: "문법 스파크", image: "assets/badge-grammar-warmup.webp" },
+    { id: "grammar_main", difficulty: "beginner", length: "medium", title: "문법 크리스탈", image: "assets/badge-grammar-main.webp" },
+    { id: "grammar_final", difficulty: "beginner", length: "long", title: "플레이룸 챔피언", image: "assets/badge-grammar-final.webp" },
+    { id: "logic_warmup", difficulty: "intermediate", length: "short", title: "로직 스파크", image: "assets/badge-logic-warmup.webp" },
+    { id: "logic_main", difficulty: "intermediate", length: "medium", title: "로직 큐브", image: "assets/badge-logic-main.webp" },
+    { id: "logic_final", difficulty: "intermediate", length: "long", title: "아케이드 챔피언", image: "assets/badge-logic-final.webp" },
+    { id: "data_warmup", difficulty: "advanced", length: "short", title: "데이터 스파크", image: "assets/badge-data-warmup.webp" },
+    { id: "data_main", difficulty: "advanced", length: "medium", title: "데이터 코어", image: "assets/badge-data-main.webp" },
+    { id: "data_final", difficulty: "advanced", length: "long", title: "데이터 챔피언", image: "assets/badge-data-final.webp" }
+];
+
+const MASTER_BADGES = [
+    { id: "grammar_master", difficulty: "beginner", title: "문법 마스터", image: "assets/badge-grammar-master.webp" },
+    { id: "logic_master", difficulty: "intermediate", title: "로직 마스터", image: "assets/badge-logic-master.webp" },
+    { id: "data_master", difficulty: "advanced", title: "데이터 마스터", image: "assets/badge-data-master.webp" }
+];
+
+function qualifiedMissionProgress(profile, difficulty, length, metadata = AppState.metadata) {
+    const codes = metadata?.[difficulty]?.[length] || [];
+    const qualified = codes.filter((code) =>
+        Number(profile.missions[code.id]?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+    ).length;
+    return { current: qualified, total: codes.length };
+}
+
+function masterBadgeProgress(profile, difficulty, metadata = AppState.metadata) {
+    const lengths = Object.keys(LENGTH_CONFIG);
+    const current = lengths.filter((length) => {
+        const progress = qualifiedMissionProgress(profile, difficulty, length, metadata);
+        return progress.total > 0 && progress.current === progress.total;
+    }).length;
+    return { current, total: lengths.length };
+}
+
+const STAGE_ACHIEVEMENTS = [
+    ...STAGE_BADGES.map((badge) => ({
+        ...badge,
+        worldTitle: WORLD_CONFIG[badge.difficulty].title,
+        description: `${LENGTH_CONFIG[badge.length].label} 퀘스트를 모두 정확도 ${BADGE_ACCURACY_THRESHOLD}% 이상으로 완료했어요.`,
+        condition: `${LENGTH_CONFIG[badge.length].label} 퀘스트 15개를 각각 정확도 ${BADGE_ACCURACY_THRESHOLD}% 이상으로 완료`,
+        progress: (profile) => qualifiedMissionProgress(profile, badge.difficulty, badge.length),
+        check: (profile) => {
+            const progress = qualifiedMissionProgress(profile, badge.difficulty, badge.length);
+            return progress.total > 0 && progress.current === progress.total;
+        }
+    })),
+    ...MASTER_BADGES.map((badge) => ({
+        ...badge,
+        worldTitle: WORLD_CONFIG[badge.difficulty].title,
+        description: `${WORLD_CONFIG[badge.difficulty].title}의 세 스테이지를 모두 정복했어요.`,
+        condition: `${WORLD_CONFIG[badge.difficulty].title} 스테이지 배지 3개 획득`,
+        progress: (profile) => masterBadgeProgress(profile, badge.difficulty),
+        check: (profile) => {
+            const progress = masterBadgeProgress(profile, badge.difficulty);
+            return progress.current === progress.total;
+        }
+    }))
+];
+
+const HIDDEN_ACHIEVEMENTS = [
     {
         id: "first_clear",
-        icon: "01",
         image: "assets/achievement-first-clear.webp",
         title: "첫 클리어",
         description: "첫 번째 코드 퀘스트를 완료했어요.",
@@ -161,7 +222,6 @@ const ACHIEVEMENTS = [
     },
     {
         id: "perfect_code",
-        icon: "100",
         image: "assets/achievement-perfect-code.webp",
         title: "퍼펙트 플레이",
         description: "정확도 100%로 퀘스트를 클리어했어요.",
@@ -169,7 +229,6 @@ const ACHIEVEMENTS = [
     },
     {
         id: "combo_50",
-        icon: "×50",
         image: "assets/achievement-combo-50.webp",
         title: "50 COMBO",
         description: "한 판에서 50 콤보를 달성했어요.",
@@ -177,15 +236,16 @@ const ACHIEVEMENTS = [
     },
     {
         id: "boss_clear",
-        icon: "B",
         image: "assets/achievement-boss-clear.webp",
         title: "파이널 클리어",
-        description: "긴 코드 파이널 스테이지를 완료했어요.",
-        check: (_profile, result) => Boolean(result && result.length === "long")
+        description: "파이널 스테이지 퀘스트를 완료했어요.",
+        check: (profile, result) => Boolean(
+            result?.length === "long"
+            || Object.values(profile.missions).some((mission) => mission.length === "long")
+        )
     },
     {
         id: "ten_clears",
-        icon: "10",
         image: "assets/achievement-ten-clears.webp",
         title: "10판 완료",
         description: "코드 퀘스트를 누적 10회 완료했어요.",
@@ -193,13 +253,16 @@ const ACHIEVEMENTS = [
     },
     {
         id: "speed_250",
-        icon: "250",
         image: "assets/achievement-speed-250.webp",
         title: "스피드 스타",
         description: "타수/분 250 이상을 달성했어요.",
         check: (profile) => profile.bestCpm >= 250
     }
-];
+].map((achievement) => ({ ...achievement, secret: true }));
+
+const ACHIEVEMENTS = [...STAGE_ACHIEVEMENTS, ...HIDDEN_ACHIEVEMENTS];
+
+const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((achievement) => achievement.id));
 
 const AppState = {
     currentScreen: "main-menu",
@@ -210,6 +273,7 @@ const AppState = {
     game: null,
     profile: null,
     metadata: null,
+    pendingAchievements: [],
     pyodide: null,
     pyodidePromise: null,
     audioContext: null,
@@ -309,7 +373,7 @@ function mergeProfile(stored) {
             ? candidate.missions
             : {},
         achievements: Array.isArray(candidate.achievements)
-            ? candidate.achievements
+            ? candidate.achievements.filter((id) => ACHIEVEMENT_IDS.has(id))
             : [],
         recentRuns: Array.isArray(candidate.recentRuns)
             ? candidate.recentRuns.slice(0, 12)
@@ -583,7 +647,9 @@ async function renderWorldCards() {
 
         for (const [difficulty, config] of Object.entries(WORLD_CONFIG)) {
             const codes = Object.values(metadata[difficulty] || {}).flat();
-            const completed = codes.filter((code) => AppState.profile.missions[code.id]).length;
+            const completed = codes.filter((code) =>
+                Number(AppState.profile.missions[code.id]?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+            ).length;
             const percentage = codes.length > 0 ? Math.round((completed / codes.length) * 100) : 0;
 
             const card = document.createElement("button");
@@ -603,7 +669,7 @@ async function renderWorldCards() {
 >
                     <span class="world-card-index">
                         <span>${escapeHTML(config.code)}</span>
-                        <span>${completed}/${codes.length} 미션</span>
+                        <span>${completed}/${codes.length} 인증</span>
                     </span>
                     <span class="world-card-symbol" aria-hidden="true">${escapeHTML(config.symbol)}</span>
                 </span>
@@ -613,7 +679,7 @@ async function renderWorldCards() {
                     <p>${escapeHTML(config.cardDescription)}</p>
                     <span class="world-card-footer">
                         <span class="world-card-progress">
-                            <span>${percentage}% 완료</span>
+                            <span>${percentage}% 배지 진행</span>
                             <span class="wide-progress"><span style="width:${percentage}%"></span></span>
                         </span>
                         <span class="world-card-arrow" aria-hidden="true">→</span>
@@ -713,7 +779,9 @@ async function renderMissionScreen() {
     const modeConfig = LENGTH_CONFIG[length];
     const codes = metadata[difficulty]?.[length] || [];
     const allWorldCodes = Object.values(metadata[difficulty] || {}).flat();
-    const completedWorld = allWorldCodes.filter((code) => AppState.profile.missions[code.id]).length;
+    const completedWorld = allWorldCodes.filter((code) =>
+        Number(AppState.profile.missions[code.id]?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+    ).length;
     const worldPercentage = allWorldCodes.length
         ? Math.round((completedWorld / allWorldCodes.length) * 100)
         : 0;
@@ -724,7 +792,7 @@ async function renderMissionScreen() {
     setText("mission-world-kicker", config.kicker);
     setText("mission-world-title", config.headline);
     setText("mission-world-description", config.description);
-    setText("world-progress-label", `${completedWorld} / ${allWorldCodes.length} 미션`);
+    setText("world-progress-label", `${completedWorld} / ${allWorldCodes.length} 인증`);
     setText("world-brief-progress-value", `${worldPercentage}%`);
     setText("mode-entry-code", modeConfig.code);
     setText("mode-entry-count", `${codes.length} QUESTS`);
@@ -763,6 +831,16 @@ async function renderMissionScreen() {
 
     $$(".mission-mode-tabs button").forEach((button) => {
         button.setAttribute("aria-selected", button.dataset.length === length ? "true" : "false");
+        const modeCodes = metadata[difficulty]?.[button.dataset.length] || [];
+        const qualified = modeCodes.filter((code) =>
+            Number(AppState.profile.missions[code.id]?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+        ).length;
+        const progressLabel = button.querySelector(".mode-card-footer > span:first-child");
+        if (progressLabel) {
+            progressLabel.textContent = qualified === modeCodes.length && modeCodes.length > 0
+                ? "BADGE COMPLETE"
+                : `${qualified} / ${modeCodes.length} 인증`;
+        }
     });
 
     const groups = new Map();
@@ -778,7 +856,9 @@ async function renderMissionScreen() {
     const orderedGroups = [...groups.entries()].sort((a, b) => a[0] - b[0]);
 
     for (const [stageIndex, [level, stageCodes]] of orderedGroups.entries()) {
-        const completedCount = stageCodes.filter((code) => AppState.profile.missions[code.id]).length;
+        const completedCount = stageCodes.filter((code) =>
+            Number(AppState.profile.missions[code.id]?.bestAccuracy || 0) >= BADGE_ACCURACY_THRESHOLD
+        ).length;
         const stageStars = stageCodes.reduce(
             (total, code) => total + (AppState.profile.missions[code.id]?.stars || 0),
             0
@@ -863,7 +943,9 @@ async function findRecommendedMission() {
     for (const difficulty of difficulties) {
         for (const length of lengths) {
             const codes = metadata[difficulty]?.[length] || [];
-            const unfinished = codes.find((code) => !AppState.profile.missions[code.id]);
+            const unfinished = codes.find((code) =>
+                Number(AppState.profile.missions[code.id]?.bestAccuracy || 0) < BADGE_ACCURACY_THRESHOLD
+            );
             if (unfinished) return { difficulty, length, code: unfinished };
         }
     }
@@ -1515,6 +1597,15 @@ class TypingBattle {
         updateProfileUI();
         showScreen("result-screen");
 
+        if (result.newAchievements.length > 0) {
+            const revealDelay = AppState.profile.settings.motion ? 520 : 0;
+            window.setTimeout(() => {
+                if (AppState.currentScreen === "result-screen") {
+                    showAchievementReveal(result.newAchievements);
+                }
+            }, revealDelay);
+        }
+
         executeAndRenderCode(result.code);
     }
 
@@ -1548,7 +1639,7 @@ function updateStreak(profile) {
     profile.streak.lastPlayed = today;
 }
 
-function unlockAchievements(profile, result) {
+function unlockAchievements(profile, result = null) {
     const unlocked = new Set(profile.achievements);
     const newlyUnlocked = [];
 
@@ -1632,6 +1723,9 @@ function resultMessage(result) {
 }
 
 function coachTip(result) {
+    if (result.accuracy < BADGE_ACCURACY_THRESHOLD) {
+        return `이번 기록은 배지 진행 기준인 정확도 ${BADGE_ACCURACY_THRESHOLD}%에 도달하지 못했어요. 같은 퀘스트를 다시 도전해 인증해봐요.`;
+    }
     if (result.accuracy < 95) {
         return `수정 ${result.corrections}회 · 다음 판에는 괄호와 들여쓰기부터 천천히 맞춰봐요.`;
     }
@@ -1670,6 +1764,134 @@ function launchResultConfetti() {
     window.setTimeout(() => {
         container.innerHTML = "";
     }, 2200);
+}
+
+function playAchievementFanfare() {
+    if (!AppState.profile.settings.sound) return;
+
+    try {
+        if (!AppState.audioContext) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            AppState.audioContext = new AudioContext();
+        }
+
+        const context = AppState.audioContext;
+        context.resume().catch(() => {});
+        const startAt = context.currentTime + 0.02;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+
+        notes.forEach((frequency, index) => {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            const noteStart = startAt + index * 0.11;
+            const noteEnd = noteStart + (index === notes.length - 1 ? 0.42 : 0.22);
+
+            oscillator.type = index === notes.length - 1 ? "sine" : "triangle";
+            oscillator.frequency.setValueAtTime(frequency, noteStart);
+            gain.gain.setValueAtTime(0.0001, noteStart);
+            gain.gain.exponentialRampToValueAtTime(0.045, noteStart + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(noteStart);
+            oscillator.stop(noteEnd);
+        });
+    } catch (error) {
+        console.debug("배지 획득 효과음을 재생하지 못했습니다.", error);
+    }
+}
+
+function showAchievementReveal(achievements) {
+    const reveal = $("#achievement-reveal");
+    const list = $("#achievement-reveal-list");
+    const particles = reveal?.querySelector(".achievement-reveal-particles");
+    if (!reveal || !list || !particles || achievements.length === 0) return;
+
+    const secretOnly = achievements.every((achievement) => achievement.secret);
+    const hasSecret = achievements.some((achievement) => achievement.secret);
+    const kicker = reveal.querySelector(".achievement-reveal-kicker");
+    const title = $("#achievement-reveal-title");
+    const message = reveal.querySelector(".achievement-reveal-message");
+    if (kicker) {
+        kicker.innerHTML = `<span>✦</span> ${secretOnly ? "SECRET BADGE DISCOVERED" : "ACHIEVEMENT UNLOCKED"} <span>✦</span>`;
+    }
+    if (title) {
+        title.textContent = secretOnly
+            ? "히든 배지를 발견했어요!"
+            : hasSecret
+                ? "새로운 배지들을 획득했어요!"
+                : "새 배지를 획득했어요!";
+    }
+    if (message) {
+        message.textContent = secretOnly
+            ? "특별한 플레이로 숨겨진 컬렉션을 발견했습니다."
+            : "멋진 플레이의 증표가 컬렉션에 추가됩니다.";
+    }
+
+    list.innerHTML = "";
+    particles.innerHTML = "";
+
+    achievements.forEach((achievement, index) => {
+        const card = document.createElement("article");
+        card.className = `achievement-reward-card${achievement.secret ? " is-secret" : ""}`;
+        card.style.setProperty("--reveal-index", index);
+
+        const imageWrap = document.createElement("div");
+        imageWrap.className = "achievement-reward-image";
+        const image = document.createElement("img");
+        image.src = achievement.image;
+        image.alt = "";
+        image.width = 320;
+        image.height = 320;
+        imageWrap.appendChild(image);
+
+        const title = document.createElement("h3");
+        title.textContent = achievement.title;
+        const description = document.createElement("p");
+        description.textContent = achievement.description;
+        card.append(imageWrap, title, description);
+        list.appendChild(card);
+    });
+
+    if (AppState.profile.settings.motion) {
+        const colors = ["#ffd45c", "#ff7f83", "#72c9f3", "#ae8ce0", "#68c99b"];
+        for (let index = 0; index < 36; index += 1) {
+            const particle = document.createElement("i");
+            particle.className = index % 4 === 0 ? "reward-particle is-star" : "reward-particle";
+            particle.textContent = index % 4 === 0 ? "✦" : "";
+            particle.style.setProperty("--particle-x", `${3 + ((index * 31) % 94)}%`);
+            particle.style.setProperty("--particle-delay", `${(index % 9) * 45}ms`);
+            particle.style.setProperty("--particle-drift", `${-70 + ((index * 43) % 140)}px`);
+            particle.style.setProperty("--particle-color", colors[index % colors.length]);
+            particles.appendChild(particle);
+        }
+    }
+
+    reveal.hidden = false;
+    document.body.classList.add("achievement-reveal-open");
+    document.querySelector(".app-shell")?.setAttribute("inert", "");
+    window.requestAnimationFrame(() => reveal.classList.add("is-active"));
+    playAchievementFanfare();
+
+    window.setTimeout(() => {
+        reveal.querySelector(".achievement-claim-button")?.focus();
+    }, AppState.profile.settings.motion ? 850 : 0);
+}
+
+function closeAchievementReveal() {
+    const reveal = $("#achievement-reveal");
+    if (!reveal || reveal.hidden) return;
+
+    reveal.classList.remove("is-active");
+    document.body.classList.remove("achievement-reveal-open");
+    document.querySelector(".app-shell")?.removeAttribute("inert");
+    const delay = AppState.profile.settings.motion ? 180 : 0;
+    window.setTimeout(() => {
+        reveal.hidden = true;
+        reveal.querySelector(".achievement-reveal-particles")?.replaceChildren();
+        $("[data-action='next-mission']")?.focus();
+    }, delay);
 }
 
 function renderResult(result) {
@@ -1980,15 +2202,24 @@ function renderStats() {
     setText("stats-streak", profile.streak.best);
     setText("stats-stars", summary.stars);
     setText("stats-perfect", profile.perfectRuns);
-    setText("achievement-count", `${profile.achievements.length} / ${ACHIEVEMENTS.length} 획득`);
+    const stageUnlocked = STAGE_ACHIEVEMENTS.filter((achievement) =>
+        profile.achievements.includes(achievement.id)
+    ).length;
+    const hiddenUnlocked = HIDDEN_ACHIEVEMENTS.filter((achievement) =>
+        profile.achievements.includes(achievement.id)
+    ).length;
+    setText("achievement-count", `${stageUnlocked} / ${STAGE_ACHIEVEMENTS.length} 획득`);
+    setText("hidden-achievement-count", `${hiddenUnlocked} / ${HIDDEN_ACHIEVEMENTS.length} 발견`);
 
     renderRecentRuns(profile);
 
     const grid = $("#achievement-grid");
     grid.innerHTML = "";
 
-    ACHIEVEMENTS.forEach((achievement) => {
+    STAGE_ACHIEVEMENTS.forEach((achievement) => {
         const unlocked = profile.achievements.includes(achievement.id);
+        const progress = achievement.progress(profile);
+        const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
         const card = document.createElement("article");
         card.className = `achievement-card ${unlocked ? "" : "locked"}`;
         card.innerHTML = `
@@ -1996,11 +2227,40 @@ function renderStats() {
                 <img src="${escapeHTML(achievement.image)}" alt="" width="320" height="320" loading="lazy">
             </span>
             <div>
-                <h3>${escapeHTML(unlocked ? achievement.title : "잠긴 업적")}</h3>
-                <p>${escapeHTML(unlocked ? achievement.description : "미션을 진행하면 조건이 공개됩니다.")}</p>
+                <span class="achievement-world-label">${escapeHTML(achievement.worldTitle)}</span>
+                <h3>${escapeHTML(achievement.title)}</h3>
+                <p>${escapeHTML(unlocked ? achievement.description : achievement.condition)}</p>
+                <div class="achievement-progress" aria-label="배지 진행도 ${progress.current} / ${progress.total}">
+                    <span><i style="width:${percentage}%"></i></span>
+                    <strong>${unlocked ? "획득 완료" : `${progress.current} / ${progress.total}`}</strong>
+                </div>
             </div>
         `;
         grid.appendChild(card);
+    });
+
+    const hiddenGrid = $("#hidden-achievement-grid");
+    hiddenGrid.innerHTML = "";
+
+    HIDDEN_ACHIEVEMENTS.forEach((achievement) => {
+        const unlocked = profile.achievements.includes(achievement.id);
+        const card = document.createElement("article");
+        card.className = `achievement-card secret ${unlocked ? "" : "locked"}`;
+        card.innerHTML = `
+            <span class="achievement-icon" aria-hidden="true">
+                <img src="${escapeHTML(achievement.image)}" alt="" width="320" height="320" loading="lazy">
+            </span>
+            <div>
+                <span class="achievement-world-label">SECRET BADGE</span>
+                <h3>${escapeHTML(unlocked ? achievement.title : "???")}</h3>
+                <p>${escapeHTML(unlocked ? achievement.description : "숨겨진 플레이 조건을 발견해보세요.")}</p>
+                <div class="achievement-secret-status">
+                    <span aria-hidden="true">${unlocked ? "✦" : "?"}</span>
+                    <strong>${unlocked ? "발견 완료" : "미발견"}</strong>
+                </div>
+            </div>
+        `;
+        hiddenGrid.appendChild(card);
     });
 }
 
@@ -2170,6 +2430,9 @@ async function handleAction(button) {
         case "close-mission-preview":
             closeMissionPreview();
             break;
+        case "close-achievement-reveal":
+            closeAchievementReveal();
+            break;
         case "confirm-mission-preview": {
             const dialog = $("#mission-preview");
             if (!dialog?.dataset.codeId) break;
@@ -2246,6 +2509,13 @@ function bindEvents() {
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
 
+        const achievementReveal = $("#achievement-reveal");
+        if (achievementReveal && !achievementReveal.hidden) {
+            event.preventDefault();
+            closeAchievementReveal();
+            return;
+        }
+
         if ($("#mission-preview")?.open) {
             event.preventDefault();
             closeMissionPreview();
@@ -2277,6 +2547,18 @@ async function initializeApp() {
     updateProfileUI();
 
     try {
+        await getMetadata();
+        const achievementsBeforeSync = [...AppState.profile.achievements];
+        AppState.pendingAchievements = unlockAchievements(AppState.profile);
+        if (AppState.pendingAchievements.length > 0) {
+            try {
+                await saveProfile();
+            } catch {
+                AppState.profile.achievements = achievementsBeforeSync;
+                AppState.pendingAchievements = [];
+                showToast("기존 기록의 배지 동기화에 실패했습니다. 다음 접속 때 다시 시도합니다.", "error");
+            }
+        }
         await renderHome();
     } catch (error) {
         console.error("앱 초기화 실패:", error);
@@ -2284,6 +2566,12 @@ async function initializeApp() {
     }
 
     showScreen("main-menu", { focus: false, preserveScroll: true });
+
+    if (AppState.pendingAchievements.length > 0) {
+        const pending = [...AppState.pendingAchievements];
+        AppState.pendingAchievements = [];
+        window.setTimeout(() => showAchievementReveal(pending), AppState.profile.settings.motion ? 520 : 0);
+    }
 }
 
 window.PythonQuest = {

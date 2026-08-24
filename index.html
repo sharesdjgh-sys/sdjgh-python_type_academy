@@ -347,7 +347,7 @@
                 </div>
                     </div>
 
-                    <p class="mode-lobby-hint"><span aria-hidden="true">◆</span> 플레이할 카드를 눌러 스테이지 맵에 입장하세요.</p>
+                    <p class="mode-lobby-hint"><span aria-hidden="true">◆</span> 각 퀘스트를 정확도 80% 이상으로 완료하면 배지 진행에 인증됩니다.</p>
                 </section>
 
                 <section id="stage-route-view" class="stage-route-view" aria-labelledby="mode-entry-title" hidden>
@@ -1153,9 +1153,21 @@
                             <p class="eyebrow">BADGE COLLECTION</p>
                             <h2 id="achievements-title">내가 모은 배지</h2>
                         </div>
-                        <p id="achievement-count">0 / 6 획득</p>
+                        <p id="achievement-count">0 / 12 획득</p>
                     </div>
                     <div id="achievement-grid" class="achievement-grid"></div>
+
+                    <section class="hidden-achievement-section" aria-labelledby="hidden-achievements-title">
+                        <div class="hidden-achievement-heading">
+                            <div>
+                                <p class="eyebrow">SECRET DISCOVERY</p>
+                                <h3 id="hidden-achievements-title">히든 배지</h3>
+                            </div>
+                            <p id="hidden-achievement-count">0 / 6 발견</p>
+                        </div>
+                        <p class="hidden-achievement-guide">특별한 플레이를 달성하면 조건과 배지의 정체가 공개됩니다.</p>
+                        <div id="hidden-achievement-grid" class="achievement-grid hidden-achievement-grid"></div>
+                    </section>
                 </section>
             </section>
 
@@ -1197,6 +1209,30 @@
             </section>
         </main>
     </div>
+
+    <section
+        id="achievement-reveal"
+        class="achievement-reveal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="achievement-reveal-title"
+        hidden
+    >
+        <div class="achievement-reveal-particles" aria-hidden="true"></div>
+        <div class="achievement-reveal-panel">
+            <div class="achievement-reveal-burst" aria-hidden="true"></div>
+            <div class="achievement-reveal-content">
+                <p class="achievement-reveal-kicker"><span>✦</span> ACHIEVEMENT UNLOCKED <span>✦</span></p>
+                <h2 id="achievement-reveal-title">새 배지를 획득했어요!</h2>
+                <div id="achievement-reveal-list" class="achievement-reveal-list"></div>
+                <p class="achievement-reveal-message">멋진 플레이의 증표가 컬렉션에 추가됩니다.</p>
+                <button class="achievement-claim-button" type="button" data-action="close-achievement-reveal">
+                    <span>컬렉션에 담기</span>
+                    <strong aria-hidden="true">→</strong>
+                </button>
+            </div>
+        </div>
+    </section>
 
     <dialog id="mission-preview" class="mission-preview" aria-labelledby="mission-preview-title">
         <div class="mission-preview-card">

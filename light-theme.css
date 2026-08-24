@@ -2294,6 +2294,62 @@ input:focus-visible {
     background: #fff0ed;
 }
 
+.achievement-reveal {
+    background: rgba(77, 49, 60, 0.74);
+}
+
+.achievement-reveal-panel {
+    border-color: rgba(233, 167, 61, 0.42);
+    background:
+        radial-gradient(circle at 50% 38%, rgba(255, 217, 86, 0.25), transparent 19rem),
+        linear-gradient(145deg, #fffaf0 0%, #ffe9e2 100%);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.72) inset,
+        0 34px 90px rgba(91, 53, 66, 0.32),
+        0 0 70px rgba(255, 210, 79, 0.18);
+}
+
+.achievement-reveal-content > h2 {
+    color: #503e46;
+}
+
+.achievement-reveal-kicker,
+.achievement-reward-card h3 {
+    color: #c87842;
+}
+
+.achievement-reward-card {
+    border-color: rgba(120, 75, 91, 0.12);
+    background: rgba(255, 255, 255, 0.68);
+    box-shadow: 0 16px 30px rgba(120, 75, 91, 0.1);
+}
+
+.achievement-reward-card.is-secret {
+    border-color: rgba(139, 112, 193, 0.26);
+    background: rgba(247, 240, 255, 0.9);
+    box-shadow: 0 16px 34px rgba(112, 75, 160, 0.16);
+}
+
+.achievement-reward-card.is-secret h3 {
+    color: #7656b0;
+}
+
+.achievement-reward-card p,
+.achievement-reveal-message {
+    color: #876e78;
+}
+
+.achievement-claim-button {
+    border-color: #e76e70;
+    background: linear-gradient(135deg, #ef7d7f, #df6267);
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(220, 88, 94, 0.24);
+}
+
+.achievement-claim-button:hover {
+    box-shadow: 0 14px 30px rgba(220, 88, 94, 0.34);
+}
+
 .unlock-chip {
     border-color: rgba(233, 109, 112, 0.2);
     border-radius: 10px;
@@ -2469,8 +2525,36 @@ input:focus-visible {
 }
 
 .achievement-card.locked {
-    opacity: 0.48;
-    filter: grayscale(0.35);
+    opacity: 0.72;
+    filter: grayscale(0.52);
+}
+
+.achievement-progress > span {
+    background: rgba(105, 75, 86, 0.11);
+}
+
+.achievement-progress strong {
+    color: var(--text-soft);
+}
+
+.hidden-achievement-section {
+    border-top-color: var(--line);
+}
+
+.achievement-card.secret {
+    border-color: rgba(139, 112, 193, 0.22);
+    background:
+        radial-gradient(circle at 12% 20%, rgba(139, 112, 193, 0.13), transparent 8rem),
+        #fbf8ff;
+}
+
+.achievement-card.secret.locked {
+    opacity: 0.84;
+    filter: none;
+}
+
+.achievement-card.secret.locked .achievement-icon img {
+    filter: brightness(0) opacity(0.22) drop-shadow(0 7px 8px rgba(139, 112, 193, 0.24));
 }
 
 .settings-panel {
