@@ -218,6 +218,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-first-clear.webp",
         title: "첫 클리어",
         description: "첫 번째 코드 퀘스트를 완료했어요.",
+        condition: "코드 퀘스트를 1회 완료",
         check: (profile) => profile.totalRuns >= 1
     },
     {
@@ -225,6 +226,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-perfect-code.webp",
         title: "퍼펙트 플레이",
         description: "정확도 100%로 퀘스트를 클리어했어요.",
+        condition: "한 퀘스트를 정확도 100%로 완료",
         check: (profile) => profile.perfectRuns >= 1
     },
     {
@@ -232,6 +234,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-combo-50.webp",
         title: "50 COMBO",
         description: "한 판에서 50 콤보를 달성했어요.",
+        condition: "한 번의 플레이에서 50 콤보 달성",
         check: (_profile, result) => Boolean(result && result.maxCombo >= 50)
     },
     {
@@ -239,6 +242,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-boss-clear.webp",
         title: "파이널 클리어",
         description: "파이널 스테이지 퀘스트를 완료했어요.",
+        condition: "아무 월드의 파이널 스테이지 퀘스트를 1회 완료",
         check: (profile, result) => Boolean(
             result?.length === "long"
             || Object.values(profile.missions).some((mission) => mission.length === "long")
@@ -249,6 +253,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-ten-clears.webp",
         title: "10판 완료",
         description: "코드 퀘스트를 누적 10회 완료했어요.",
+        condition: "코드 퀘스트를 누적 10회 완료",
         check: (profile) => profile.totalRuns >= 10
     },
     {
@@ -256,6 +261,7 @@ const HIDDEN_ACHIEVEMENTS = [
         image: "assets/achievement-speed-250.webp",
         title: "스피드 스타",
         description: "타수/분 250 이상을 달성했어요.",
+        condition: "한 퀘스트에서 타수/분 250 이상 달성",
         check: (profile) => profile.bestCpm >= 250
     }
 ].map((achievement) => ({ ...achievement, secret: true }));
@@ -274,6 +280,7 @@ const AppState = {
     profile: null,
     metadata: null,
     pendingAchievements: [],
+    achievementDetailTrigger: null,
     pyodide: null,
     pyodidePromise: null,
     audioContext: null,
@@ -2186,6 +2193,294 @@ async function executeAndRenderCode(code) {
     }
 }
 
+function getAchievementById(achievementId) {
+    return ACHIEVEMENTS.find((achievement) => achievement.id === achievementId) || null;
+}
+
+function formatBadgeAccuracy(value) {
+    const accuracy = Math.max(0, Number(value) || 0);
+    return Number.isInteger(accuracy) ? String(accuracy) : accuracy.toFixed(1);
+}
+
+function buildAchievementDetail(achievement) {
+    const profile = AppState.profile;
+    const unlocked = profile.achievements.includes(achievement.id);
+
+    if (achievement.secret) {
+        if (!unlocked) {
+            return {
+                unlocked,
+                secretLocked: true,
+                kicker: "SECRET BADGE · 미발견",
+                title: "히든 배지 ???",
+                image: achievement.image,
+                status: "조건 탐색 중",
+                condition: "획득 전까지 정확한 조건은 비밀이에요.",
+                progress: null,
+                sectionTitle: "히든 배지 플레이 힌트",
+                countLabel: "플레이 힌트",
+                items: [
+                    {
+                        type: "hint",
+                        title: "여러 방식으로 플레이해보세요",
+                        meta: "정확도·속도·콤보·누적 플레이처럼 평소와 다른 목표에 도전하면 발견할 수 있어요."
+                    }
+                ],
+                target: null
+            };
+        }
+
+        return {
+            unlocked,
+            secretLocked: false,
+            kicker: "SECRET BADGE · 발견 완료",
+            title: achievement.title,
+            image: achievement.image,
+            status: "획득 완료",
+            condition: achievement.condition,
+            progress: { current: 1, total: 1 },
+            sectionTitle: "히든 배지 획득 기록",
+            countLabel: "완료",
+            items: [
+                {
+                    type: "complete",
+                    title: "히든 조건을 달성했어요",
+                    meta: achievement.description
+                }
+            ],
+            target: null
+        };
+    }
+
+    if (achievement.length) {
+        const codes = AppState.metadata?.[achievement.difficulty]?.[achievement.length] || [];
+        const progress = achievement.progress(profile);
+        const questItems = codes.map((code) => {
+            const record = profile.missions[code.id];
+            const bestAccuracy = Number(record?.bestAccuracy || 0);
+            const attempted = Boolean(record);
+            const qualified = bestAccuracy >= BADGE_ACCURACY_THRESHOLD;
+            const gap = Math.max(0, BADGE_ACCURACY_THRESHOLD - bestAccuracy);
+            const stars = clamp(Number(record?.stars) || 0, 0, 3);
+            const bestScore = Math.max(0, Number(record?.bestScore) || 0);
+            return {
+                type: qualified ? "complete" : attempted ? "retry" : "untried",
+                title: code.title || "코드 퀘스트",
+                statusLabel: qualified ? "인증 완료" : attempted ? "재인증 필요" : "미도전",
+                accuracyValue: attempted ? `${formatBadgeAccuracy(bestAccuracy)}%` : "—",
+                scoreValue: attempted ? `${bestScore.toLocaleString("ko-KR")}점` : "—",
+                guidance: qualified
+                    ? `${BADGE_ACCURACY_THRESHOLD}% 인증 기준 통과`
+                    : attempted
+                        ? `인증까지 ${formatBadgeAccuracy(gap)}%p 더 필요`
+                        : "첫 플레이 기록을 만들어보세요",
+                stars,
+                progressValue: clamp(bestAccuracy, 0, 100),
+                progressLabel: `최고 정확도 ${formatBadgeAccuracy(bestAccuracy)}%`,
+                thresholdMarker: true,
+                actionLabel: attempted ? "다시 도전" : "도전하기",
+                target: {
+                    difficulty: achievement.difficulty,
+                    length: achievement.length,
+                    codeId: code.id
+                }
+            };
+        });
+        const missing = questItems.filter((item) => item.type !== "complete");
+
+        return {
+            unlocked,
+            secretLocked: false,
+            kicker: `${achievement.worldTitle} · ${LENGTH_CONFIG[achievement.length].label}`,
+            title: achievement.title,
+            image: achievement.image,
+            status: unlocked ? "획득 완료" : `${missing.length}개 퀘스트 남음`,
+            condition: achievement.condition,
+            progress,
+            sectionTitle: "퀘스트별 인증 현황",
+            countLabel: `${progress.current} / ${progress.total} 인증 · 기준 ${BADGE_ACCURACY_THRESHOLD}%`,
+            items: questItems,
+            target: missing[0]?.target || null
+        };
+    }
+
+    const progress = achievement.progress(profile);
+    const stageItems = Object.keys(LENGTH_CONFIG).map((length) => {
+        const stageProgress = qualifiedMissionProgress(profile, achievement.difficulty, length);
+        const complete = stageProgress.total > 0 && stageProgress.current === stageProgress.total;
+        const codes = AppState.metadata?.[achievement.difficulty]?.[length] || [];
+        const firstMissing = codes.find((code) =>
+            Number(profile.missions[code.id]?.bestAccuracy || 0) < BADGE_ACCURACY_THRESHOLD
+        );
+        return {
+            type: complete ? "complete" : stageProgress.current > 0 ? "retry" : "untried",
+            title: `${LENGTH_CONFIG[length].label} 스테이지`,
+            meta: complete
+                ? `${stageProgress.current} / ${stageProgress.total} 퀘스트 인증 완료`
+                : `${stageProgress.current} / ${stageProgress.total} 퀘스트 인증 · 각 정확도 ${BADGE_ACCURACY_THRESHOLD}% 이상`,
+            progressValue: stageProgress.total > 0
+                ? Math.round((stageProgress.current / stageProgress.total) * 100)
+                : 0,
+            progressLabel: `${stageProgress.current} / ${stageProgress.total} 퀘스트 인증`,
+            actionLabel: complete ? null : "이어 도전",
+            target: firstMissing
+                ? {
+                    difficulty: achievement.difficulty,
+                    length,
+                    codeId: firstMissing.id
+                }
+                : null
+        };
+    });
+    const incompleteStages = stageItems.filter((item) => item.type !== "complete");
+    const firstIncomplete = incompleteStages.find((item) => item.target);
+
+    return {
+        unlocked,
+        secretLocked: false,
+        kicker: `${achievement.worldTitle} · MASTER BADGE`,
+        title: achievement.title,
+        image: achievement.image,
+        status: unlocked ? "획득 완료" : `${incompleteStages.length}개 스테이지 남음`,
+        condition: achievement.condition,
+        progress,
+        sectionTitle: "스테이지별 인증 현황",
+        countLabel: `${progress.current} / ${progress.total} 배지 획득`,
+        items: stageItems,
+        target: firstIncomplete?.target || null
+    };
+}
+
+function closeAchievementDetail(options = {}) {
+    const dialog = $("#achievement-detail-dialog");
+    if (!dialog?.open) return;
+
+    const restoreFocus = options.restoreFocus !== false;
+    dialog.close();
+    document.body.classList.remove("achievement-detail-open");
+
+    if (restoreFocus && AppState.achievementDetailTrigger?.isConnected) {
+        window.requestAnimationFrame(() => AppState.achievementDetailTrigger.focus());
+    }
+    AppState.achievementDetailTrigger = null;
+}
+
+async function openAchievementDetail(achievementId, trigger) {
+    const achievement = getAchievementById(achievementId);
+    const dialog = $("#achievement-detail-dialog");
+    if (!achievement || !dialog) return;
+
+    await getMetadata();
+    const detail = buildAchievementDetail(achievement);
+    const progressSection = $("#achievement-detail-progress");
+    const progressFill = $("#achievement-detail-progress-fill");
+    const missingList = $("#achievement-detail-missing-list");
+    const action = $("#achievement-detail-action");
+    const actions = $(".achievement-detail-actions", dialog);
+    const status = $("#achievement-detail-status");
+
+    AppState.achievementDetailTrigger = trigger || document.activeElement;
+    dialog.classList.toggle("is-secret-locked", detail.secretLocked);
+    setText("achievement-detail-kicker", detail.kicker);
+    setText("achievement-detail-title", detail.title);
+    setText("achievement-detail-condition", detail.condition);
+    setText("achievement-detail-status", detail.status);
+    setText("achievement-detail-missing-title", detail.sectionTitle);
+    setText("achievement-detail-missing-count", detail.countLabel);
+    $("#achievement-detail-image").src = detail.image;
+    status.className = `achievement-detail-status ${detail.unlocked ? "is-complete" : "is-in-progress"}`;
+
+    progressSection.hidden = !detail.progress;
+    if (detail.progress) {
+        const percentage = detail.progress.total > 0
+            ? Math.round((detail.progress.current / detail.progress.total) * 100)
+            : 0;
+        setText("achievement-detail-progress-value", detail.unlocked
+            ? "획득 완료"
+            : `${detail.progress.current} / ${detail.progress.total}`);
+        progressFill.style.width = `${percentage}%`;
+        progressSection.setAttribute(
+            "aria-label",
+            `배지 진행도 ${detail.progress.current} / ${detail.progress.total}`
+        );
+    }
+
+    missingList.innerHTML = detail.items.map((item) => {
+        const itemProgress = Number.isFinite(item.progressValue)
+            ? `
+                <span class="achievement-detail-item-progress ${item.thresholdMarker ? "has-threshold" : ""}" aria-label="${escapeHTML(item.progressLabel)}">
+                    <i style="width:${clamp(item.progressValue, 0, 100)}%"></i>
+                    ${item.thresholdMarker ? `<b aria-hidden="true" title="인증 기준 ${BADGE_ACCURACY_THRESHOLD}%"></b>` : ""}
+                </span>
+            `
+            : "";
+        const itemAction = item.target && item.actionLabel
+            ? `
+                <button
+                    class="achievement-detail-item-action"
+                    type="button"
+                    data-action="go-achievement-quest"
+                    data-difficulty="${escapeHTML(item.target.difficulty)}"
+                    data-length="${escapeHTML(item.target.length)}"
+                    data-code-id="${escapeHTML(item.target.codeId)}"
+                    aria-label="${escapeHTML(item.title)} ${escapeHTML(item.actionLabel)}"
+                >${escapeHTML(item.actionLabel)}<i aria-hidden="true">→</i></button>
+            `
+            : "";
+        const itemStars = Number.isFinite(item.stars)
+            ? `<span class="achievement-detail-item-stars" aria-label="획득 별 ${item.stars}개">${missionStarsMarkup(item.stars)}</span>`
+            : "";
+        const itemMetrics = item.statusLabel
+            ? `
+                <span class="achievement-detail-item-metrics">
+                    <span class="achievement-detail-item-state">${escapeHTML(item.statusLabel)}</span>
+                    <span class="achievement-detail-item-metric">
+                        <small>최고 정확도</small>
+                        <strong>${escapeHTML(item.accuracyValue)}</strong>
+                    </span>
+                    <span class="achievement-detail-item-metric">
+                        <small>최고 점수</small>
+                        <strong>${escapeHTML(item.scoreValue)}</strong>
+                    </span>
+                    <span class="achievement-detail-item-guidance">${escapeHTML(item.guidance)}</span>
+                </span>
+            `
+            : `<small>${escapeHTML(item.meta)}</small>`;
+
+        return `
+            <li class="achievement-detail-item is-${escapeHTML(item.type)}">
+                <span class="achievement-detail-item-icon" aria-hidden="true">${item.type === "complete" ? "✓" : item.type === "hint" ? "?" : item.type === "untried" ? "+" : "!"}</span>
+                <span class="achievement-detail-item-copy">
+                    <span class="achievement-detail-item-title">
+                        <strong>${escapeHTML(item.title)}</strong>
+                        ${itemStars}
+                    </span>
+                    ${itemMetrics}
+                    ${itemProgress}
+                </span>
+                ${itemAction}
+            </li>
+        `;
+    }).join("");
+
+    action.hidden = !detail.target;
+    actions.classList.toggle("has-primary", Boolean(detail.target));
+    if (detail.target) {
+        action.dataset.difficulty = detail.target.difficulty;
+        action.dataset.length = detail.target.length;
+        action.dataset.codeId = detail.target.codeId;
+    } else {
+        delete action.dataset.difficulty;
+        delete action.dataset.length;
+        delete action.dataset.codeId;
+    }
+
+    if (dialog.open) dialog.close();
+    dialog.showModal();
+    document.body.classList.add("achievement-detail-open");
+    window.requestAnimationFrame(() => $(".achievement-detail-close", dialog)?.focus());
+}
+
 function renderStats() {
     const profile = AppState.profile;
     const levelData = getLevelData(profile.xp);
@@ -2220,8 +2515,12 @@ function renderStats() {
         const unlocked = profile.achievements.includes(achievement.id);
         const progress = achievement.progress(profile);
         const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
-        const card = document.createElement("article");
+        const card = document.createElement("button");
+        card.type = "button";
         card.className = `achievement-card ${unlocked ? "" : "locked"}`;
+        card.dataset.action = "open-achievement-detail";
+        card.dataset.achievementId = achievement.id;
+        card.setAttribute("aria-label", `${achievement.title} 배지 상세 정보 보기. ${unlocked ? "획득 완료" : `진행도 ${progress.current} / ${progress.total}`}`);
         card.innerHTML = `
             <span class="achievement-icon" aria-hidden="true">
                 <img src="${escapeHTML(achievement.image)}" alt="" width="320" height="320" loading="lazy">
@@ -2234,6 +2533,7 @@ function renderStats() {
                     <span><i style="width:${percentage}%"></i></span>
                     <strong>${unlocked ? "획득 완료" : `${progress.current} / ${progress.total}`}</strong>
                 </div>
+                <span class="achievement-card-action">상세 보기 <i aria-hidden="true">→</i></span>
             </div>
         `;
         grid.appendChild(card);
@@ -2244,8 +2544,14 @@ function renderStats() {
 
     HIDDEN_ACHIEVEMENTS.forEach((achievement) => {
         const unlocked = profile.achievements.includes(achievement.id);
-        const card = document.createElement("article");
+        const card = document.createElement("button");
+        card.type = "button";
         card.className = `achievement-card secret ${unlocked ? "" : "locked"}`;
+        card.dataset.action = "open-achievement-detail";
+        card.dataset.achievementId = achievement.id;
+        card.setAttribute("aria-label", unlocked
+            ? `${achievement.title} 히든 배지 상세 정보 보기. 발견 완료`
+            : "미발견 히든 배지의 플레이 힌트 보기");
         card.innerHTML = `
             <span class="achievement-icon" aria-hidden="true">
                 <img src="${escapeHTML(achievement.image)}" alt="" width="320" height="320" loading="lazy">
@@ -2258,6 +2564,7 @@ function renderStats() {
                     <span aria-hidden="true">${unlocked ? "✦" : "?"}</span>
                     <strong>${unlocked ? "발견 완료" : "미발견"}</strong>
                 </div>
+                <span class="achievement-card-action">${unlocked ? "상세 보기" : "힌트 보기"} <i aria-hidden="true">→</i></span>
             </div>
         `;
         hiddenGrid.appendChild(card);
@@ -2427,6 +2734,20 @@ async function handleAction(button) {
                 button.dataset.codeId
             );
             break;
+        case "open-achievement-detail":
+            await openAchievementDetail(button.dataset.achievementId, button);
+            break;
+        case "close-achievement-detail":
+            closeAchievementDetail();
+            break;
+        case "go-achievement-quest": {
+            const { difficulty, length, codeId } = button.dataset;
+            if (!difficulty || !length || !codeId) break;
+            closeAchievementDetail({ restoreFocus: false });
+            await showWorld(difficulty, length, "stages");
+            await showMissionPreview(difficulty, length, codeId);
+            break;
+        }
         case "close-mission-preview":
             closeMissionPreview();
             break;
@@ -2482,12 +2803,23 @@ async function handleAction(button) {
 }
 
 function bindEvents() {
+    $("#achievement-detail-dialog")?.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeAchievementDetail();
+    });
+
     $("#mission-preview")?.addEventListener("cancel", (event) => {
         event.preventDefault();
         closeMissionPreview();
     });
 
     document.addEventListener("click", (event) => {
+        const achievementDetail = $("#achievement-detail-dialog");
+        if (event.target === achievementDetail) {
+            closeAchievementDetail();
+            return;
+        }
+
         const preview = $("#mission-preview");
         if (event.target === preview) {
             closeMissionPreview();
@@ -2513,6 +2845,12 @@ function bindEvents() {
         if (achievementReveal && !achievementReveal.hidden) {
             event.preventDefault();
             closeAchievementReveal();
+            return;
+        }
+
+        if ($("#achievement-detail-dialog")?.open) {
+            event.preventDefault();
+            closeAchievementDetail();
             return;
         }
 

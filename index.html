@@ -1234,6 +1234,69 @@
         </div>
     </section>
 
+    <dialog
+        id="achievement-detail-dialog"
+        class="achievement-detail-dialog"
+        aria-labelledby="achievement-detail-title"
+        aria-describedby="achievement-detail-condition"
+    >
+        <article class="achievement-detail-card">
+            <button
+                class="achievement-detail-close"
+                type="button"
+                data-action="close-achievement-detail"
+                aria-label="배지 상세 정보 닫기"
+            >×</button>
+
+            <header class="achievement-detail-hero">
+                <div class="achievement-detail-image" aria-hidden="true">
+                    <img id="achievement-detail-image" src="" alt="" width="320" height="320">
+                </div>
+                <div class="achievement-detail-heading">
+                    <p id="achievement-detail-kicker">BADGE COLLECTION</p>
+                    <h2 id="achievement-detail-title">배지 상세 정보</h2>
+                    <span id="achievement-detail-status" class="achievement-detail-status">도전 중</span>
+                </div>
+            </header>
+
+            <section class="achievement-detail-condition-panel" aria-labelledby="achievement-detail-condition-label">
+                <span id="achievement-detail-condition-label">획득 조건</span>
+                <strong id="achievement-detail-condition"></strong>
+            </section>
+
+            <section id="achievement-detail-progress" class="achievement-detail-progress" aria-label="배지 진행도">
+                <div>
+                    <span>현재 진행도</span>
+                    <strong id="achievement-detail-progress-value">0 / 0</strong>
+                </div>
+                <span class="achievement-detail-progress-track" aria-hidden="true">
+                    <i id="achievement-detail-progress-fill"></i>
+                </span>
+            </section>
+
+            <section class="achievement-detail-missing" aria-labelledby="achievement-detail-missing-title">
+                <div class="achievement-detail-section-heading">
+                    <h3 id="achievement-detail-missing-title">퀘스트별 인증 현황</h3>
+                    <span id="achievement-detail-missing-count"></span>
+                </div>
+                <ul id="achievement-detail-missing-list"></ul>
+            </section>
+
+            <footer class="achievement-detail-actions">
+                <button class="achievement-detail-secondary" type="button" data-action="close-achievement-detail">닫기</button>
+                <button
+                    id="achievement-detail-action"
+                    class="achievement-detail-primary"
+                    type="button"
+                    data-action="go-achievement-quest"
+                    hidden
+                >
+                    <span>첫 부족 퀘스트 도전하기</span><i aria-hidden="true">→</i>
+                </button>
+            </footer>
+        </article>
+    </dialog>
+
     <dialog id="mission-preview" class="mission-preview" aria-labelledby="mission-preview-title">
         <div class="mission-preview-card">
             <header class="mission-preview-header">
