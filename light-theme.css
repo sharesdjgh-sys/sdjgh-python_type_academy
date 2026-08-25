@@ -2198,45 +2198,44 @@ input:focus-visible {
 .result-report {
     border-color: rgba(105, 75, 86, 0.12);
     background:
-        radial-gradient(circle at 94% 4%, rgba(233, 109, 112, 0.11), transparent 15rem),
+        radial-gradient(circle at 94% 4%, var(--result-glow), transparent 16rem),
         #ffffff;
     box-shadow: 0 22px 54px rgba(120, 75, 91, 0.11);
 }
 
 .score-dashboard {
     border-color: rgba(105, 75, 86, 0.11);
-    background: rgba(255, 250, 247, 0.78);
+    background: color-mix(in srgb, var(--result-soft) 46%, rgba(255, 255, 255, 0.82));
     box-shadow: inset 0 1px rgba(255, 255, 255, 0.9);
 }
 
 .score-ring {
     background:
         radial-gradient(circle at center, #fffdfb 62%, transparent 63%),
-        conic-gradient(var(--accent) var(--score-progress), rgba(120, 82, 97, 0.1) 0);
+        conic-gradient(var(--result-accent) var(--score-progress), rgba(120, 82, 97, 0.1) 0);
     box-shadow:
         0 18px 38px rgba(177, 83, 91, 0.16),
-        inset 0 0 26px rgba(233, 109, 112, 0.08);
+        inset 0 0 26px var(--result-glow);
 }
 
 .score-ring::before {
-    border-color: rgba(233, 109, 112, 0.18);
+    border-color: color-mix(in srgb, var(--result-accent) 24%, transparent);
 }
 
 .score-ring::after {
-    border-color: rgba(233, 109, 112, 0.2);
+    border-color: color-mix(in srgb, var(--result-accent) 28%, transparent);
 }
 
 .score-ring-core strong,
 .score-breakdown-heading > div > span,
-.score-part strong,
 .result-metrics dt > span {
-    color: var(--accent-strong);
+    color: var(--result-deep);
 }
 
 .score-max-badge {
-    border-color: rgba(233, 109, 112, 0.19);
-    background: #fff0ed;
-    color: var(--accent-strong);
+    border-color: color-mix(in srgb, var(--result-accent) 22%, transparent);
+    background: var(--result-soft);
+    color: var(--result-deep);
 }
 
 .score-part-track {
@@ -2244,30 +2243,30 @@ input:focus-visible {
 }
 
 .score-part-track > span {
-    background: linear-gradient(90deg, var(--accent), #f2b56d);
-    box-shadow: 0 0 14px rgba(233, 109, 112, 0.2);
+    background: linear-gradient(90deg, var(--result-accent), var(--result-metal));
+    box-shadow: 0 0 14px var(--result-glow);
 }
 
 .result-metrics div {
     border-color: rgba(105, 75, 86, 0.1);
-    background: #fffdfc;
+    background: linear-gradient(145deg, #fffdfc, color-mix(in srgb, var(--result-soft) 34%, #ffffff));
     box-shadow: 0 8px 18px rgba(120, 75, 91, 0.045);
 }
 
 .result-metrics div:nth-child(1),
 .result-metrics div:nth-child(4) {
-    background: #fff8f4;
+    background: linear-gradient(145deg, #ffffff, color-mix(in srgb, var(--result-soft) 52%, #ffffff));
 }
 
 .coach-tip {
-    border-color: rgba(79, 151, 196, 0.14);
-    background: #edf8ff;
-    color: #4b738c;
+    border-color: color-mix(in srgb, var(--result-accent) 18%, rgba(105, 75, 86, 0.1));
+    background: color-mix(in srgb, var(--result-soft) 68%, #ffffff);
+    color: var(--text-soft);
 }
 
 .coach-tip::before {
     margin: 0;
-    background: #5aa2cc;
+    background: var(--result-accent);
     color: #ffffff;
     content: "✦";
 }
