@@ -292,7 +292,7 @@ const AppState = {
 
 const RESULT_RANK_SEQUENCE = ["A", "B", "C", "S"];
 const RESULT_RANK_SOURCES = Object.freeze(Object.fromEntries(
-    RESULT_RANK_SEQUENCE.map((rank) => [rank, `assets/ranks/rank-${rank.toLowerCase()}.png`])
+    RESULT_RANK_SEQUENCE.map((rank) => [rank, `assets/ranks/rank-${rank.toLowerCase()}.webp`])
 ));
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -1966,8 +1966,8 @@ function revealResultStars(earnedStars) {
     $$(".result-star", resultStars).forEach((star, index) => {
         const earned = index < earnedCount;
         star.src = earned
-            ? "assets/result-ui/star-earned.png"
-            : "assets/result-ui/star-unearned.png";
+            ? "assets/result-ui/star-earned.webp"
+            : "assets/result-ui/star-unearned.webp";
         star.classList.toggle("is-earned", earned);
     });
     resultStars.setAttribute("aria-label", `획득 별 ${earnedCount}개`);
@@ -1978,7 +1978,7 @@ function resetResultStars() {
     if (!resultStars) return;
 
     $$(".result-star", resultStars).forEach((star) => {
-        star.src = "assets/result-ui/star-unearned.png";
+        star.src = "assets/result-ui/star-unearned.webp";
         star.classList.remove("is-earned");
     });
     resultStars.setAttribute("aria-label", "별 획득 결과 공개 중");

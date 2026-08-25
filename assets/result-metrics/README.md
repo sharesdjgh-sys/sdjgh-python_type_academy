@@ -2,9 +2,9 @@
 
 Transparent 3D game UI icons generated for the result report:
 
-- `metric-accuracy.png` — accuracy target
-- `metric-speed.png` — typing speed gauge
-- `metric-time.png` — completion stopwatch
-- `metric-edit.png` — correction/backspace key
+- `metric-accuracy.webp` — accuracy target
+- `metric-speed.webp` — typing speed gauge
+- `metric-time.webp` — completion stopwatch
+- `metric-edit.webp` — correction/backspace key
 
-All project assets are optimized to 256 × 256 pixels.
+The app uses optimized 256 × 256 transparent WebP assets. PNG files are retained as source masters.

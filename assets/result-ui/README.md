@@ -1,6 +1,6 @@
 # Result UI assets
 
-- `star-earned.png` — luminous gold and coral 3D reward star
-- `star-unearned.png` — frosted silver and lavender inactive star
+- `star-earned.webp` — luminous gold and coral 3D reward star
+- `star-unearned.webp` — frosted silver and lavender inactive star
 
-Both assets are transparent PNGs generated to match the result rank emblem materials.
+The app uses optimized transparent WebP assets. PNG files are retained as source masters.

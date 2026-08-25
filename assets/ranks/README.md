@@ -2,9 +2,9 @@
 
 Generated game-result rank assets:
 
-- `rank-s.png` — violet and gold crown emblem
-- `rank-a.png` — coral and gold star emblem
-- `rank-b.png` — blue and silver diamond emblem
-- `rank-c.png` — apricot and bronze round emblem
+- `rank-s.webp` — violet and gold crown emblem
+- `rank-a.webp` — coral and gold star emblem
+- `rank-b.webp` — blue and silver diamond emblem
+- `rank-c.webp` — apricot and bronze round emblem
 
-All assets use transparent backgrounds and a shared glossy 3D achievement-badge style.
+The app uses optimized transparent WebP assets. PNG files are retained as source masters.
