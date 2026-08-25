@@ -2035,26 +2035,32 @@ function revealResultRank(finalRank, finalStars) {
         return;
     }
 
-    const delays = [70, 70, 75, 80, 85, 95, 105, 120, 140, 165];
-    let step = 0;
+    const revealDuration = 2000;
+    const startedAt = window.performance.now();
+    let previousRank = "";
     rankEmblem.classList.add("is-shuffling");
     rankEmblem.setAttribute("aria-label", "등급 공개 중");
 
     const tick = () => {
         if (revealToken !== AppState.resultRankRevealToken) return;
 
-        showRank(RESULT_RANK_SEQUENCE[step % RESULT_RANK_SEQUENCE.length]);
+        const elapsed = window.performance.now() - startedAt;
+        if (elapsed >= revealDuration) {
+            settle();
+            return;
+        }
+
+        const candidates = RESULT_RANK_SEQUENCE.filter((rank) => rank !== previousRank);
+        const randomRank = candidates[Math.floor(Math.random() * candidates.length)];
+        previousRank = randomRank;
+        showRank(randomRank);
         rankImage.classList.remove("is-swapping");
         void rankImage.offsetWidth;
         rankImage.classList.add("is-swapping");
 
-        if (step >= delays.length - 1) {
-            window.setTimeout(settle, delays[step]);
-            return;
-        }
-
-        window.setTimeout(tick, delays[step]);
-        step += 1;
+        const remaining = revealDuration - elapsed;
+        const nextDelay = 90 + Math.floor(Math.random() * 91);
+        window.setTimeout(tick, Math.min(nextDelay, remaining));
     };
 
     tick();
