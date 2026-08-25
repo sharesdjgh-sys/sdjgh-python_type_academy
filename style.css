@@ -3629,10 +3629,6 @@ body.preview-open {
     filter: drop-shadow(0 15px 18px var(--rank-glow));
 }
 
-.result-rank.is-shuffling img.is-swapping {
-    animation: result-rank-swap 0.08s ease-out both;
-}
-
 .result-rank.is-settled img {
     animation:
         result-rank-in 0.58s cubic-bezier(0.16, 1, 0.3, 1) both,
@@ -3701,11 +3697,6 @@ body.preview-open {
     from { filter: drop-shadow(0 15px 18px var(--rank-glow)) brightness(1.5) saturate(1.3); transform: scale(1.22) rotate(-5deg); }
     62% { filter: drop-shadow(0 15px 18px var(--rank-glow)) brightness(1.08) saturate(1.08); transform: scale(0.96) rotate(1.5deg); }
     to { filter: drop-shadow(0 15px 18px var(--rank-glow)) brightness(1) saturate(1); opacity: 1; transform: translateY(0) rotate(0) scale(1); }
-}
-
-@keyframes result-rank-swap {
-    from { opacity: 0.72; filter: drop-shadow(0 15px 18px var(--rank-glow)) brightness(1.16); transform: scale(0.9) rotate(-2deg); }
-    to { opacity: 1; filter: drop-shadow(0 15px 18px var(--rank-glow)) brightness(1); transform: scale(1) rotate(0); }
 }
 
 @keyframes result-rank-burst {
