@@ -285,8 +285,15 @@ const AppState = {
     pyodidePromise: null,
     audioContext: null,
     profileSaveQueue: Promise.resolve(),
+    resultRankPreloads: [],
+    resultRankRevealToken: 0,
     initialized: false
 };
+
+const RESULT_RANK_SEQUENCE = ["A", "B", "C", "S"];
+const RESULT_RANK_SOURCES = Object.freeze(Object.fromEntries(
+    RESULT_RANK_SEQUENCE.map((rank) => [rank, `assets/ranks/rank-${rank.toLowerCase()}.png`])
+));
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1035,6 +1042,7 @@ async function startGame(difficulty, length, codeId) {
     AppState.currentLength = length;
     AppState.currentCode = code;
     AppState.currentResult = null;
+    preloadResultRankEmblems();
 
     showScreen("game-screen");
 
@@ -1941,6 +1949,87 @@ function closeAchievementReveal() {
     }, delay);
 }
 
+function preloadResultRankEmblems() {
+    if (AppState.resultRankPreloads.length > 0) return;
+    AppState.resultRankPreloads = RESULT_RANK_SEQUENCE.map((rank) => {
+        const image = new Image();
+        image.src = RESULT_RANK_SOURCES[rank];
+        return image;
+    });
+}
+
+function revealResultRank(finalRank) {
+    const rankEmblem = $("#result-rank");
+    const rankImage = $("#result-rank-image");
+    if (!rankEmblem || !rankImage) return;
+
+    const normalizedFinalRank = RESULT_RANK_SEQUENCE.includes(finalRank) ? finalRank : "C";
+    const revealToken = ++AppState.resultRankRevealToken;
+
+    const showRank = (rank) => {
+        rankEmblem.dataset.rank = rank;
+        rankImage.src = RESULT_RANK_SOURCES[rank];
+    };
+
+    const settle = () => {
+        if (revealToken !== AppState.resultRankRevealToken) return;
+        const resultHero = rankEmblem.closest(".result-hero");
+        const resultLayout = rankEmblem.closest(".result-layout");
+        rankEmblem.classList.remove("is-shuffling");
+        rankImage.classList.remove("is-swapping");
+        showRank(normalizedFinalRank);
+        rankEmblem.setAttribute("aria-label", `${normalizedFinalRank} 랭크`);
+        rankEmblem.classList.remove("is-settled");
+        void rankEmblem.offsetWidth;
+        rankEmblem.classList.add("is-settled");
+        if (resultHero) {
+            resultHero.dataset.rank = normalizedFinalRank;
+            resultHero.classList.remove("is-rank-settled");
+            void resultHero.offsetWidth;
+            resultHero.classList.add("is-rank-settled");
+        }
+        if (resultLayout) resultLayout.dataset.rank = normalizedFinalRank;
+    };
+
+    rankEmblem.classList.remove("is-settled");
+    const resultHero = rankEmblem.closest(".result-hero");
+    const resultLayout = rankEmblem.closest(".result-layout");
+    if (resultHero) {
+        resultHero.removeAttribute("data-rank");
+        resultHero.classList.remove("is-rank-settled");
+    }
+    if (resultLayout) resultLayout.removeAttribute("data-rank");
+
+    if (!AppState.profile.settings.motion) {
+        settle();
+        return;
+    }
+
+    const delays = [70, 70, 75, 80, 85, 95, 105, 120, 140, 165];
+    let step = 0;
+    rankEmblem.classList.add("is-shuffling");
+    rankEmblem.setAttribute("aria-label", "등급 공개 중");
+
+    const tick = () => {
+        if (revealToken !== AppState.resultRankRevealToken) return;
+
+        showRank(RESULT_RANK_SEQUENCE[step % RESULT_RANK_SEQUENCE.length]);
+        rankImage.classList.remove("is-swapping");
+        void rankImage.offsetWidth;
+        rankImage.classList.add("is-swapping");
+
+        if (step >= delays.length - 1) {
+            window.setTimeout(settle, delays[step]);
+            return;
+        }
+
+        window.setTimeout(tick, delays[step]);
+        step += 1;
+    };
+
+    tick();
+}
+
 function renderResult(result) {
     const targetCpm = result.targetCpm || LENGTH_CONFIG[result.length]?.targetCpm || 1;
     const fallbackAccuracyScore = Math.round(result.accuracy * 6);
@@ -1951,8 +2040,19 @@ function renderResult(result) {
         combo: result.score - fallbackAccuracyScore - fallbackSpeedScore
     };
 
-    setText("result-rank", result.rank);
-    setText("result-stars", "★".repeat(result.stars) + "☆".repeat(3 - result.stars));
+    window.requestAnimationFrame(() => revealResultRank(result.rank));
+    const resultStars = $("#result-stars");
+    if (resultStars) {
+        const stars = $$(".result-star", resultStars);
+        stars.forEach((star, index) => {
+            const earned = index < result.stars;
+            star.src = earned
+                ? "assets/result-ui/star-earned.png"
+                : "assets/result-ui/star-unearned.png";
+            star.classList.toggle("is-earned", earned);
+        });
+        resultStars.setAttribute("aria-label", `획득 별 ${result.stars}개`);
+    }
     setText("result-title", `${result.title} 클리어`);
     setText("result-message", resultMessage(result));
     setText("reward-xp", result.xp);

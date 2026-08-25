@@ -527,32 +527,45 @@
                 <div class="result-layout">
                     <section class="result-hero">
                         <div id="result-confetti" class="result-confetti" aria-hidden="true"></div>
-                        <p class="eyebrow">QUEST CLEAR!</p>
-                        <div id="result-rank" class="result-rank">A</div>
-                        <div id="result-stars" class="result-stars" aria-label="획득 별 1개">★☆☆</div>
+                        <div class="quest-clear-banner">
+                            <span aria-hidden="true">✦</span>
+                            <p class="eyebrow">QUEST CLEAR!</p>
+                            <span aria-hidden="true">✦</span>
+                        </div>
+                        <div id="result-rank" class="result-rank" data-rank="A" aria-label="A 랭크">
+                            <img id="result-rank-image" src="assets/ranks/rank-a.png" alt="" width="512" height="512">
+                        </div>
+                        <div id="result-stars" class="result-stars" aria-label="획득 별 1개">
+                            <img class="result-star is-earned" src="assets/result-ui/star-earned.png" alt="" width="256" height="256">
+                            <img class="result-star" src="assets/result-ui/star-unearned.png" alt="" width="256" height="256">
+                            <img class="result-star" src="assets/result-ui/star-unearned.png" alt="" width="256" height="256">
+                        </div>
                         <h1 id="result-title">스테이지 클리어</h1>
                         <p id="result-message">오늘의 코드 플레이를 멋지게 끝냈어요!</p>
 
-                        <div class="reward-strip" aria-label="획득 보상">
-                            <div>
-                                <span>LEVEL UP</span>
-                                <strong>+<span id="reward-xp">0</span> XP</strong>
-                            </div>
-                            <div>
-                                <span>COIN</span>
-                                <strong>+<span id="reward-coins">0</span> ◆</strong>
-                            </div>
-                            <div>
-                                <span>BEST COMBO</span>
-                                <strong>×<span id="result-combo">0</span></strong>
-                            </div>
-                        </div>
-
                         <div class="result-finish-scene" aria-hidden="true">
+                            <span class="finish-speed-lines"></span>
+                            <span class="finish-impact-ring"></span>
+                            <span class="finish-dust"></span>
                             <span class="finish-sparkle finish-sparkle-one">★</span>
                             <span class="finish-sparkle finish-sparkle-two">✦</span>
                             <span class="finish-sparkle finish-sparkle-three">★</span>
                             <img class="result-finish-kart" src="assets/python-kart-racer.png" alt="" width="512" height="512">
+                        </div>
+
+                        <div class="reward-strip" aria-label="획득 보상">
+                            <div class="result-reward result-reward-xp">
+                                <span class="reward-label">LEVEL UP</span>
+                                <strong>+<span id="reward-xp">0</span><small> XP</small></strong>
+                            </div>
+                            <div class="result-reward result-reward-coin">
+                                <span class="reward-label">COIN</span>
+                                <strong>+<span id="reward-coins">0</span></strong>
+                            </div>
+                            <div class="result-reward result-reward-combo">
+                                <span class="reward-label">BEST COMBO</span>
+                                <strong>×<span id="result-combo">0</span></strong>
+                            </div>
                         </div>
                     </section>
 
