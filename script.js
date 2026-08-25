@@ -1958,10 +1958,39 @@ function preloadResultRankEmblems() {
     });
 }
 
-function revealResultRank(finalRank) {
+function revealResultStars(earnedStars) {
+    const resultStars = $("#result-stars");
+    if (!resultStars) return;
+
+    const earnedCount = Math.max(0, Math.min(3, Number(earnedStars) || 0));
+    $$(".result-star", resultStars).forEach((star, index) => {
+        const earned = index < earnedCount;
+        star.src = earned
+            ? "assets/result-ui/star-earned.png"
+            : "assets/result-ui/star-unearned.png";
+        star.classList.toggle("is-earned", earned);
+    });
+    resultStars.setAttribute("aria-label", `획득 별 ${earnedCount}개`);
+}
+
+function resetResultStars() {
+    const resultStars = $("#result-stars");
+    if (!resultStars) return;
+
+    $$(".result-star", resultStars).forEach((star) => {
+        star.src = "assets/result-ui/star-unearned.png";
+        star.classList.remove("is-earned");
+    });
+    resultStars.setAttribute("aria-label", "별 획득 결과 공개 중");
+}
+
+function revealResultRank(finalRank, finalStars) {
     const rankEmblem = $("#result-rank");
     const rankImage = $("#result-rank-image");
-    if (!rankEmblem || !rankImage) return;
+    if (!rankEmblem || !rankImage) {
+        revealResultStars(finalStars);
+        return;
+    }
 
     const normalizedFinalRank = RESULT_RANK_SEQUENCE.includes(finalRank) ? finalRank : "C";
     const revealToken = ++AppState.resultRankRevealToken;
@@ -1978,6 +2007,7 @@ function revealResultRank(finalRank) {
         rankEmblem.classList.remove("is-shuffling");
         rankImage.classList.remove("is-swapping");
         showRank(normalizedFinalRank);
+        revealResultStars(finalStars);
         rankEmblem.setAttribute("aria-label", `${normalizedFinalRank} 랭크`);
         rankEmblem.classList.remove("is-settled");
         void rankEmblem.offsetWidth;
@@ -2040,19 +2070,8 @@ function renderResult(result) {
         combo: result.score - fallbackAccuracyScore - fallbackSpeedScore
     };
 
-    window.requestAnimationFrame(() => revealResultRank(result.rank));
-    const resultStars = $("#result-stars");
-    if (resultStars) {
-        const stars = $$(".result-star", resultStars);
-        stars.forEach((star, index) => {
-            const earned = index < result.stars;
-            star.src = earned
-                ? "assets/result-ui/star-earned.png"
-                : "assets/result-ui/star-unearned.png";
-            star.classList.toggle("is-earned", earned);
-        });
-        resultStars.setAttribute("aria-label", `획득 별 ${result.stars}개`);
-    }
+    resetResultStars();
+    window.requestAnimationFrame(() => revealResultRank(result.rank, result.stars));
     setText("result-title", `${result.title} 클리어`);
     setText("result-message", resultMessage(result));
     setText("reward-xp", result.xp);

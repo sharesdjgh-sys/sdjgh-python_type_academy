@@ -3920,8 +3920,8 @@ body.preview-open {
 
 .result-screen.active .result-finish-kart {
     animation:
-        result-kart-victory-in 0.82s 0.12s cubic-bezier(0.16, 1, 0.3, 1) both,
-        result-kart-victory-idle 3.2s 0.94s ease-in-out infinite;
+        result-kart-victory-in 0.62s cubic-bezier(0.16, 1, 0.3, 1) both,
+        result-kart-victory-idle 3.2s 0.62s ease-in-out infinite;
 }
 
 .finish-speed-lines {
@@ -4018,8 +4018,8 @@ body.preview-open {
 }
 
 @keyframes result-kart-victory-in {
-    from { opacity: 0; filter: drop-shadow(0 28px 25px rgba(0, 0, 0, 0.18)) brightness(1.45) saturate(1.2); transform: translate(-50%, 38px) rotate(-5deg) scale(0.68); }
-    68% { opacity: 1; transform: translate(-50%, -5px) rotate(1.5deg) scale(1.04); }
+    from { opacity: 1; filter: drop-shadow(0 28px 25px rgba(0, 0, 0, 0.22)) brightness(1.18) saturate(1.08); transform: translate(-50%, 12px) rotate(-2deg) scale(0.92); }
+    68% { opacity: 1; transform: translate(-50%, -4px) rotate(1deg) scale(1.025); }
     to { opacity: 1; filter: drop-shadow(0 28px 25px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 22px var(--result-glow)) brightness(1); transform: translate(-50%, 0) rotate(0) scale(1); }
 }
 
