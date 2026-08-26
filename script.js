@@ -294,6 +294,8 @@ const RESULT_RANK_SEQUENCE = ["A", "B", "C", "S"];
 const RESULT_RANK_SOURCES = Object.freeze(Object.fromEntries(
     RESULT_RANK_SEQUENCE.map((rank) => [rank, `assets/ranks/rank-${rank.toLowerCase()}.webp`])
 ));
+const RESULT_RANK_REVEAL_DURATION_MS = 2000;
+const RESULT_RANK_SETTLE_DURATION_MS = 800;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1635,33 +1637,31 @@ class TypingBattle {
         const finishDelay = AppState.profile.settings.motion ? 850 : 80;
         await new Promise((resolve) => window.setTimeout(resolve, finishDelay));
 
-        let rewardState;
-        try {
-            rewardState = await applyRewards(result);
-        } catch {
-            showToast("DB 저장에 실패해 이번 기록은 반영되지 않았습니다. 다시 시도해 주세요.", "error");
-            await showHome();
-            return;
-        }
+        const rewardState = applyRewards(result);
 
         result.isPersonalBest = rewardState.isPersonalBest;
         result.newAchievements = rewardState.newAchievements;
         AppState.currentResult = result;
 
-        renderResult(result);
+        renderResult(result, {
+            onRankRevealed: () => {
+                if (
+                    AppState.currentScreen !== "result-screen"
+                    || AppState.currentResult?.clientRunId !== result.clientRunId
+                ) return;
+
+                executeAndRenderCode(result.code);
+                if (result.newAchievements.length > 0) {
+                    showAchievementReveal(result.newAchievements);
+                }
+            }
+        });
         updateProfileUI();
         showScreen("result-screen");
 
-        if (result.newAchievements.length > 0) {
-            const revealDelay = AppState.profile.settings.motion ? 520 : 0;
-            window.setTimeout(() => {
-                if (AppState.currentScreen === "result-screen") {
-                    showAchievementReveal(result.newAchievements);
-                }
-            }, revealDelay);
-        }
-
-        executeAndRenderCode(result.code);
+        // 결과 공개를 DB 왕복 시간으로 막지 않습니다. 실패 시 saveProfile이
+        // 오류를 안내하고, 현재 세션의 낙관적 보상 상태는 그대로 유지합니다.
+        window.setTimeout(() => saveProfile(result).catch(() => {}), 0);
     }
 
     destroy() {
@@ -1710,8 +1710,7 @@ function unlockAchievements(profile, result = null) {
     return newlyUnlocked;
 }
 
-async function applyRewards(result) {
-    const previousProfile = JSON.parse(JSON.stringify(AppState.profile));
+function applyRewards(result) {
     const profile = AppState.profile;
     const previous = profile.missions[result.codeId];
     const isPersonalBest = !previous || result.score > (previous.bestScore || 0);
@@ -1760,13 +1759,6 @@ async function applyRewards(result) {
     updateStreak(profile);
 
     const newAchievements = unlockAchievements(profile, result);
-    try {
-        await saveProfile(result);
-    } catch (error) {
-        AppState.profile = mergeProfile(previousProfile);
-        throw error;
-    }
-
     return { isPersonalBest, newAchievements };
 }
 
@@ -1984,16 +1976,18 @@ function resetResultStars() {
     resultStars.setAttribute("aria-label", "별 획득 결과 공개 중");
 }
 
-function revealResultRank(finalRank, finalStars) {
+function revealResultRank(finalRank, finalStars, onRevealed = null) {
     const rankEmblem = $("#result-rank");
     const rankImage = $("#result-rank-image");
     if (!rankEmblem || !rankImage) {
         revealResultStars(finalStars);
+        if (typeof onRevealed === "function") onRevealed();
         return;
     }
 
     const normalizedFinalRank = RESULT_RANK_SEQUENCE.includes(finalRank) ? finalRank : "C";
     const revealToken = ++AppState.resultRankRevealToken;
+    let revealCompleted = false;
 
     const showRank = (rank) => {
         rankEmblem.dataset.rank = rank;
@@ -2019,6 +2013,16 @@ function revealResultRank(finalRank, finalStars) {
             resultHero.classList.add("is-rank-settled");
         }
         if (resultLayout) resultLayout.dataset.rank = normalizedFinalRank;
+
+        if (!revealCompleted && typeof onRevealed === "function") {
+            revealCompleted = true;
+            const callbackDelay = AppState.profile.settings.motion
+                ? RESULT_RANK_SETTLE_DURATION_MS
+                : 0;
+            window.setTimeout(() => {
+                if (revealToken === AppState.resultRankRevealToken) onRevealed();
+            }, callbackDelay);
+        }
     };
 
     rankEmblem.classList.remove("is-settled");
@@ -2035,7 +2039,6 @@ function revealResultRank(finalRank, finalStars) {
         return;
     }
 
-    const revealDuration = 2000;
     const shuffleInterval = 120;
     let previousRank = "";
     rankEmblem.classList.add("is-shuffling");
@@ -2060,10 +2063,10 @@ function revealResultRank(finalRank, finalStars) {
     window.setTimeout(() => {
         window.clearInterval(shuffleTimer);
         settle();
-    }, revealDuration);
+    }, RESULT_RANK_REVEAL_DURATION_MS);
 }
 
-function renderResult(result) {
+function renderResult(result, { onRankRevealed = null } = {}) {
     const targetCpm = result.targetCpm || LENGTH_CONFIG[result.length]?.targetCpm || 1;
     const fallbackAccuracyScore = Math.round(result.accuracy * 6);
     const fallbackSpeedScore = Math.round(Math.min(250, (result.cpm / targetCpm) * 180));
@@ -2074,7 +2077,7 @@ function renderResult(result) {
     };
 
     resetResultStars();
-    window.requestAnimationFrame(() => revealResultRank(result.rank, result.stars));
+    window.requestAnimationFrame(() => revealResultRank(result.rank, result.stars, onRankRevealed));
     setText("result-title", `${result.title} 클리어`);
     setText("result-message", resultMessage(result));
     setText("reward-xp", result.xp);
