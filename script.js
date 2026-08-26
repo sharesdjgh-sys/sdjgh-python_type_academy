@@ -287,6 +287,7 @@ const AppState = {
     profileSaveQueue: Promise.resolve(),
     resultRankPreloads: [],
     resultRankRevealToken: 0,
+    resultReportRevealToken: 0,
     initialized: false
 };
 
@@ -296,6 +297,7 @@ const RESULT_RANK_SOURCES = Object.freeze(Object.fromEntries(
 ));
 const RESULT_RANK_REVEAL_DURATION_MS = 2000;
 const RESULT_RANK_SETTLE_DURATION_MS = 800;
+const RESULT_REPORT_REVEAL_DURATION_MS = 1400;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -1644,7 +1646,12 @@ class TypingBattle {
         AppState.currentResult = result;
 
         renderResult(result, {
-            onRankRevealed: () => {
+            onRankSettled: () => {
+                if (AppState.currentResult?.clientRunId !== result.clientRunId) return;
+                setText("result-message", resultMessage(result));
+                setText("result-coach-tip", coachTip(result));
+            },
+            onSequenceComplete: () => {
                 if (
                     AppState.currentScreen !== "result-screen"
                     || AppState.currentResult?.clientRunId !== result.clientRunId
@@ -1652,6 +1659,8 @@ class TypingBattle {
 
                 executeAndRenderCode(result.code);
                 if (result.newAchievements.length > 0) {
+                    const unlockSection = $("#achievement-unlocks");
+                    if (unlockSection) unlockSection.hidden = false;
                     showAchievementReveal(result.newAchievements);
                 }
             }
@@ -1976,17 +1985,19 @@ function resetResultStars() {
     resultStars.setAttribute("aria-label", "별 획득 결과 공개 중");
 }
 
-function revealResultRank(finalRank, finalStars, onRevealed = null) {
+function revealResultRank(finalRank, finalStars, { onSettled = null, onRevealed = null } = {}) {
     const rankEmblem = $("#result-rank");
     const rankImage = $("#result-rank-image");
     if (!rankEmblem || !rankImage) {
         revealResultStars(finalStars);
+        if (typeof onSettled === "function") onSettled();
         if (typeof onRevealed === "function") onRevealed();
         return;
     }
 
     const normalizedFinalRank = RESULT_RANK_SEQUENCE.includes(finalRank) ? finalRank : "C";
     const revealToken = ++AppState.resultRankRevealToken;
+    let rankSettled = false;
     let revealCompleted = false;
 
     const showRank = (rank) => {
@@ -2013,6 +2024,11 @@ function revealResultRank(finalRank, finalStars, onRevealed = null) {
             resultHero.classList.add("is-rank-settled");
         }
         if (resultLayout) resultLayout.dataset.rank = normalizedFinalRank;
+
+        if (!rankSettled && typeof onSettled === "function") {
+            rankSettled = true;
+            onSettled();
+        }
 
         if (!revealCompleted && typeof onRevealed === "function") {
             revealCompleted = true;
@@ -2066,7 +2082,101 @@ function revealResultRank(finalRank, finalStars, onRevealed = null) {
     }, RESULT_RANK_REVEAL_DURATION_MS);
 }
 
-function renderResult(result, { onRankRevealed = null } = {}) {
+function updateResultReportProgress(result, scoreBreakdown, progress) {
+    const normalizedProgress = clamp(progress, 0, 1);
+    const easedProgress = normalizedProgress < 0.5
+        ? 4 * Math.pow(normalizedProgress, 3)
+        : 1 - Math.pow(-2 * normalizedProgress + 2, 3) / 2;
+    const scaleInteger = (value) => Math.round((Number(value) || 0) * easedProgress);
+    const scaleDecimal = (value) => {
+        const finalValue = Number(value) || 0;
+        if (normalizedProgress >= 1) return finalValue;
+        return Math.round(finalValue * easedProgress * 10) / 10;
+    };
+
+    const displayedScore = scaleInteger(result.score);
+    setText("result-score", displayedScore);
+    setText("result-accuracy-score", scaleInteger(scoreBreakdown.accuracy));
+    setText("result-speed-score", scaleInteger(scoreBreakdown.speed));
+    setText("result-combo-score", scaleInteger(scoreBreakdown.combo));
+    setText("result-accuracy", scaleDecimal(result.accuracy));
+    setText("result-cpm", scaleInteger(result.cpm));
+    setText("result-time", `${scaleDecimal(result.durationSeconds)}초`);
+    setText("result-corrections", scaleInteger(result.corrections));
+    setText("reward-xp", scaleInteger(result.xp));
+    setText("reward-coins", scaleInteger(result.coins));
+    setText("result-combo", scaleInteger(result.maxCombo));
+
+    const scoreRing = $("#result-score-ring");
+    if (scoreRing) {
+        scoreRing.setAttribute("aria-valuenow", String(displayedScore));
+        scoreRing.style.setProperty(
+            "--score-progress",
+            `${clamp((result.score / 10) * easedProgress, 0, 100)}%`
+        );
+    }
+
+    const scoreFills = [
+        ["result-accuracy-score-fill", (scoreBreakdown.accuracy / 600) * 100],
+        ["result-speed-score-fill", (scoreBreakdown.speed / 250) * 100],
+        ["result-combo-score-fill", (scoreBreakdown.combo / 150) * 100]
+    ];
+    scoreFills.forEach(([id, value]) => setWidth(id, clamp(value * easedProgress, 0, 100)));
+}
+
+function settleResultReport(result, scoreBreakdown, revealToken) {
+    if (revealToken !== AppState.resultReportRevealToken) return;
+
+    updateResultReportProgress(result, scoreBreakdown, 1);
+    const report = $(".result-report");
+    if (report?.classList.contains("is-counting")) {
+        report.classList.remove("is-counting");
+        report.classList.remove("is-settled");
+        void report.offsetWidth;
+        report.classList.add("is-settled");
+    }
+
+    const bestBadge = $("#personal-best-badge");
+    if (bestBadge) bestBadge.hidden = !result.isPersonalBest;
+}
+
+function revealResultReport(result, scoreBreakdown, onRevealed = null) {
+    const revealToken = ++AppState.resultReportRevealToken;
+    let revealCompleted = false;
+    const report = $(".result-report");
+    report?.classList.remove("is-settled");
+    report?.classList.add("is-counting");
+    updateResultReportProgress(result, scoreBreakdown, 0);
+
+    const finishReveal = () => {
+        settleResultReport(result, scoreBreakdown, revealToken);
+        if (!revealCompleted && typeof onRevealed === "function") {
+            revealCompleted = true;
+            onRevealed();
+        }
+    };
+
+    if (!AppState.profile.settings.motion) {
+        finishReveal();
+        return revealToken;
+    }
+
+    const startedAt = window.performance.now();
+    const tick = (now) => {
+        if (revealToken !== AppState.resultReportRevealToken) return;
+        const progress = clamp((now - startedAt) / RESULT_REPORT_REVEAL_DURATION_MS, 0, 1);
+        updateResultReportProgress(result, scoreBreakdown, progress);
+        if (progress < 1) {
+            window.requestAnimationFrame(tick);
+        } else {
+            finishReveal();
+        }
+    };
+    window.requestAnimationFrame(tick);
+    return revealToken;
+}
+
+function renderResult(result, { onRankSettled = null, onSequenceComplete = null } = {}) {
     const targetCpm = result.targetCpm || LENGTH_CONFIG[result.length]?.targetCpm || 1;
     const fallbackAccuracyScore = Math.round(result.accuracy * 6);
     const fallbackSpeedScore = Math.round(Math.min(250, (result.cpm / targetCpm) * 180));
@@ -2076,45 +2186,26 @@ function renderResult(result, { onRankRevealed = null } = {}) {
         combo: result.score - fallbackAccuracyScore - fallbackSpeedScore
     };
 
+    const resultReport = $(".result-report");
+    resultReport?.classList.remove("is-counting", "is-settled");
     resetResultStars();
-    window.requestAnimationFrame(() => revealResultRank(result.rank, result.stars, onRankRevealed));
+    updateResultReportProgress(result, scoreBreakdown, 0);
+    window.requestAnimationFrame(() => {
+        revealResultRank(result.rank, result.stars, {
+            onSettled: () => {
+                if (typeof onRankSettled === "function") onRankSettled();
+            },
+            onRevealed: () => revealResultReport(result, scoreBreakdown, onSequenceComplete)
+        });
+    });
     setText("result-title", `${result.title} 클리어`);
-    setText("result-message", resultMessage(result));
-    setText("reward-xp", result.xp);
-    setText("reward-coins", result.coins);
-    setText("result-combo", result.maxCombo);
-    setText("result-score", result.score);
-    setText("result-accuracy", result.accuracy);
-    setText("result-cpm", result.cpm);
-    setText("result-time", `${result.durationSeconds}초`);
-    setText("result-corrections", result.corrections);
+    setText("result-message", "플레이 데이터를 분석하고 있어요…");
     setText("result-target-cpm", targetCpm);
-    setText("result-accuracy-score", scoreBreakdown.accuracy);
-    setText("result-speed-score", scoreBreakdown.speed);
-    setText("result-combo-score", scoreBreakdown.combo);
-    setText("result-coach-tip", coachTip(result));
+    setText("result-coach-tip", "정확도와 레이스 리듬을 집계하고 있어요…");
     setText("result-code", result.code);
 
-    const scoreRing = $("#result-score-ring");
-    if (scoreRing) {
-        scoreRing.setAttribute("aria-valuenow", String(result.score));
-        scoreRing.style.setProperty("--score-progress", "0%");
-    }
-
-    const scoreFills = [
-        ["result-accuracy-score-fill", (scoreBreakdown.accuracy / 600) * 100],
-        ["result-speed-score-fill", (scoreBreakdown.speed / 250) * 100],
-        ["result-combo-score-fill", (scoreBreakdown.combo / 150) * 100]
-    ];
-
-    scoreFills.forEach(([id]) => setWidth(id, 0));
-    window.requestAnimationFrame(() => {
-        if (scoreRing) scoreRing.style.setProperty("--score-progress", `${clamp(result.score / 10, 0, 100)}%`);
-        scoreFills.forEach(([id, value]) => setWidth(id, clamp(value, 0, 100)));
-    });
-
     const bestBadge = $("#personal-best-badge");
-    if (bestBadge) bestBadge.hidden = !result.isPersonalBest;
+    if (bestBadge) bestBadge.hidden = true;
 
     const unlockSection = $("#achievement-unlocks");
     const unlockList = $("#achievement-unlock-list");
@@ -2134,7 +2225,7 @@ function renderResult(result, { onRankRevealed = null } = {}) {
             chip.append(image, label);
             unlockList.appendChild(chip);
         });
-        unlockSection.hidden = false;
+        unlockSection.hidden = true;
     } else {
         unlockSection.hidden = true;
     }
@@ -2146,13 +2237,13 @@ function renderResult(result, { onRankRevealed = null } = {}) {
     const status = $("#execution-status");
 
     loading.hidden = false;
-    loading.textContent = "파이썬 엔진을 불러오고 있습니다…";
+    loading.textContent = "결과 집계 후 파이썬 코드를 실행합니다…";
     output.hidden = true;
     error.hidden = true;
     output.textContent = "";
     error.textContent = "";
     images.innerHTML = "";
-    status.textContent = "엔진 준비 중";
+    status.textContent = "결과 집계 중";
     status.className = "execution-status";
 
     launchResultConfetti();
@@ -2319,6 +2410,10 @@ async function executeAndRenderCode(code) {
     const status = $("#execution-status");
 
     try {
+        loading.hidden = false;
+        loading.textContent = "파이썬 엔진을 불러오고 있습니다…";
+        status.textContent = "엔진 준비 중";
+        status.className = "execution-status";
         const result = await runPythonCode(code);
         loading.hidden = true;
 
