@@ -36,10 +36,8 @@ const SSO_ROLE_MAP = { 학생: "student", 교사: "teacher", 관리자: "admin" 
 // The platform's uid is "입학연도-학번" (e.g. "24-10101"); this app's own
 // student numbers are the bare 5-digit part, so strip the year prefix to
 // match existing/CSV-imported pyrun accounts instead of creating duplicates.
-function ssoUidToStudentNumber(uid) {
-    const dashIndex = uid.indexOf("-");
-    return dashIndex >= 0 ? uid.slice(dashIndex + 1) : uid;
-}
+// 교직원·특수 형식 uid는 접두를 떼면 다른 사람과 겹치므로 sso-legacy-account.js 규칙을 따른다.
+const { chooseLegacySsoAccount, legacySsoUsernameCandidates } = require("./sso-legacy-account");
 
 // Mirrors pyrun's lib/student-number.ts (GCCNN: 1 digit grade, 2 digit class, 2 digit seat).
 function parseSchoolStudentNumber(value) {
@@ -749,8 +747,13 @@ function createBattleServer(options = {}) {
             return;
         }
 
-        const studentNumber = ssoUidToStudentNumber(ssoUser.uid);
         const role = SSO_ROLE_MAP[ssoUser.role] || "student";
+        const usernames = legacySsoUsernameCandidates(ssoUser.uid);
+        if (!usernames.length) {
+            // 빈 uid는 여러 계정이 같은 빈 계정을 공유하게 되므로 받지 않는다.
+            response.status(403).json({ error: "이 계정은 학번 정보가 없어 연결할 수 없습니다." });
+            return;
+        }
 
         try {
             const schoolResult = await databasePool.query(
@@ -765,13 +768,18 @@ function createBattleServer(options = {}) {
 
             const existing = await databasePool.query(
                 `SELECT id, school_id, username, student_number, role, display_name, nickname
-                 FROM public.users WHERE school_id = $1 AND username = $2 LIMIT 1`,
-                [school.id, studentNumber]
+                 FROM public.users WHERE school_id = $1 AND username = ANY($2::text[]) LIMIT 2`,
+                [school.id, usernames]
             );
 
-            let user = existing.rows[0];
+            const choice = chooseLegacySsoAccount(
+                { uid: ssoUser.uid, name: ssoUser.name, role },
+                existing.rows
+            );
+            let user = choice.kind === "existing" ? choice.user : null;
             if (!user) {
-                const classInfo = role === "student" ? parseSchoolStudentNumber(studentNumber) : null;
+                const studentNumber = choice.studentNumber;
+                const classInfo = role === "student" && studentNumber ? parseSchoolStudentNumber(studentNumber) : null;
                 const randomPasswordHash = await bcrypt.hash(crypto.randomBytes(24).toString("hex"), 10);
                 const inserted = await databasePool.query(
                     `INSERT INTO public.users
@@ -779,7 +787,7 @@ function createBattleServer(options = {}) {
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                      RETURNING id, school_id, username, student_number, role, display_name, nickname`,
                     [
-                        school.id, studentNumber, randomPasswordHash, role, ssoUser.name, "코드러너", studentNumber,
+                        school.id, choice.username, randomPasswordHash, role, ssoUser.name, "코드러너", studentNumber,
                         classInfo?.grade ?? null, classInfo?.classNumber ?? null, classInfo?.seatNumber ?? null
                     ]
                 );
